@@ -11,3 +11,5 @@ For making lists in [Atom](https://atom.io). FoldingText is an outline editor wi
 
 - Use *File > New Outline* to start.
 - [Learn More](http://www.foldingtext.com/foldingtext-for-atom)
+
+NOTE: FoldingText for Atom is comercial software. It's free as I work toward a 1.0 release, but I will eventually charge for it. Source code is included, but it is *not* "open source". Your are not allowed to redistrubute FoldingText's code.
