@@ -1,0 +1,268 @@
+@import (reference) "./variables";
+
+//
+// Outline Editor
+//
+
+ft-outline-editor {
+  display: block;
+  color: @syntax-text-color;
+  background-color: @syntax-background-color;
+  font-family: @ft-font-family;
+  font-size: @ft-font-size;
+  line-height: @ft-line-height-mult;
+  overflow-y: auto;
+  overflow-x: hidden;
+  .user-select(none);
+  width: 100%;
+  height: 100%;
+  &:focus {
+    outline-color: transparent;
+    outline-style: none;
+  }
+  > ul.top-item-list {
+    cursor: text;
+    min-height: 100%;
+    margin: 0 auto;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+  }
+  > ul.background-message {
+    margin: 1em;
+    line-height: 1em;
+    .keystroke {
+      border: 2px solid;
+      padding: 0 @component-padding/2;
+      border-radius: @component-border-radius * 3;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+    }
+  }
+}
+
+#ft-text-calculation-frame {
+  position: absolute;
+  left:-9999px;
+}
+
+input[is="ft-outline-editor-focus"] {
+  position: fixed;
+  width:1px;
+  height:1px;
+  color: transparent;
+  background: none;
+  border:none;
+  margin:0;
+  padding:0;
+  pointer-events: none;
+  &:focus {
+    outline-color: transparent;
+    outline-style: none;
+  }
+}
+
+//
+// Structure
+//
+
+.ft-item {
+  display:flex;
+  flex-direction: row;
+  &.ft-hoistedItem {
+    margin: round(@ft-line-height-pixels / 2);
+    > .ft-branch-controls {
+      display: none;
+    }
+    > .ft-branch {
+      > .ft-item-content {
+        display: none;
+        &:before {
+          display: none;
+        }
+      }
+    }
+  }
+}
+
+.ft-branch-controls {
+  .user-select(none);
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  align-items: center;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.ft-handle {
+  cursor: pointer;
+  pointer-events: all;
+  line-height: @ft-line-height-mult;
+  font-size: @ft-font-size;
+  text-decoration:none;
+  flex-grow: 0;
+  padding: @ft-item-vertical-spacing 0;
+  color: @syntax-text-color;
+  &:before {
+    display: inline-block;
+    width: @ft-item-indent-spacing;
+    font-weight: normal;
+    color: @syntax-invisible-character-color;
+    content: '▸︎';
+  }
+}
+
+.ft-border {
+  flex-grow: 1;
+}
+
+.ft-branch {
+  flex-grow: 1;
+}
+
+.ft-item-content {
+  line-height: @ft-line-height-mult;
+  margin: 0;
+  padding: @ft-item-vertical-spacing 0;
+}
+
+.ft-body-text {
+  .user-select(text);
+  .user-modify(read-write);
+  white-space: pre-wrap;
+  margin-right: @ft-item-badge-spacing;
+  a {
+    color: @base-accent-color;
+    text-decoration: underline;
+  }
+  &:focus {
+    outline-color: transparent;
+    outline-style: none;
+  }
+
+  cite {
+    font-style: italic;
+  }
+
+  code {
+    white-space: pre-wrap;
+  }
+
+  kbd {
+    border: 1px solid mix(transparent, @syntax-invisible-character-color, 50%);
+    background-color: mix(transparent, @syntax-invisible-character-color, 90%);
+    padding: 0 4px;
+    border-radius: 4px;
+    font-family: @ft-font-family;
+  }
+}
+
+//
+// Badges
+//
+
+.ft-badges {
+  display: inline-block;
+  vertical-align: baseline;
+  font-size: round(@ft-font-size * 0.7);
+}
+
+.ft-badge {
+  display: inline-block;
+  vertical-align: baseline;
+  padding: 0px 2px;
+  border-radius: 2px;
+  margin-right: @ft-item-badge-spacing;
+  color: @syntax-background-color;
+  background: @syntax-invisible-character-color;
+  text-decoration:none;
+  &:hover {
+    color: @syntax-background-color;
+    text-decoration: none;
+  }
+}
+
+//
+// Children
+//
+
+.ft-children {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.ft-expanded > .ft-branch-controls > .ft-border {
+  border-left: 1px dotted @syntax-indent-guide-color;
+}
+
+.ft-has-children:not(.ft-expanded) > .ft-branch-controls > .ft-handle:before {
+  color: @syntax-text-color;
+}
+
+//
+// Selection
+//
+
+::selection {
+  // http://stackoverflow.com/questions/14970891/css-selection-color-behaving-strangely-on-chrome
+  background-color: fade(@syntax-selection-color, 99%);
+}
+
+.ft-itemselected {
+  > .ft-branch {
+    background: @ft-syntax-secondary-selection-color;
+    > .ft-item-content {
+      background-color: @syntax-selection-color;
+      *::selection {
+        background-color: transparent;
+      }
+    }
+  }
+}
+
+.ft-text-selected > .ft-branch > .ft-item-content {
+  background-color: transparent;
+}
+
+//
+// Simulated selection/cursor used for animated elements
+//
+
+.ft-simulated-selection-cursor {
+  background-color: @syntax-text-color;
+}
+
+.ft-simulated-selection {
+  background-color: @syntax-selection-color;
+}
+
+//
+// Drag and Drop
+//
+
+.ft-drop-before > .ft-branch > .ft-item-content,
+.ft-drop-after > .ft-branch > .ft-item-content {
+  position: relative;
+}
+
+@drop-ball-radius: round(@ft-font-size / 4);
+@drop-ball-diameter: round(@drop-ball-radius * 2.0);
+
+.ft-drop-before > .ft-branch > .ft-item-content::before,
+.ft-drop-after > .ft-branch > .ft-item-content::after {
+  pointer-events: none;
+  display:block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: @drop-ball-diameter;
+  margin: -(@drop-ball-radius + @ft-item-vertical-spacing) 0 0 -@drop-ball-diameter;
+  content: "";
+  background-image: url('data:image/svg+xml;utf8,<svg width="10000rem" height="0.5rem" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg"><g id="dropIndicator"><circle fill="none" stroke="@{syntax-cursor-color}" stroke-width="2" cx="4" cy="4" r="3.0" /><line fill="none" stroke="@{syntax-cursor-color}" stroke-width="2" x1="7" y1="4" x2="10000" y2="4" /></g></svg>');
+  background-repeat: no-repeat;
+}
+
+.ft-drop-after > .ft-branch > .ft-item-content::after {
+  margin: -@drop-ball-radius + @ft-item-vertical-spacing 0 0 -@drop-ball-diameter;
+}

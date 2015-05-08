@@ -1,0 +1,15 @@
+@import "prefixer";
+@import "ui-variables";
+@import "syntax-variables";
+
+@base-accent-color: @syntax-cursor-color;
+
+@ft-font-size: 16px;
+@ft-font-family: 'Open Sans', Helvetica;
+@ft-line-height-mult: 1.5;
+@ft-line-height-pixels: round(@ft-font-size * @ft-line-height-mult);
+@ft-item-indent-spacing: round(@ft-font-size * @ft-line-height-mult);
+@ft-item-vertical-spacing: round(@ft-font-size / 4.0);
+@ft-item-badge-spacing: round(@ft-line-height-pixels / 4);
+@ft-syntax-secondary-selection-color: mix(@syntax-selection-color, @syntax-background-color, 35%);
+@ft-hoist-animation-duration: 0.4s;

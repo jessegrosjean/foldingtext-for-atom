@@ -1,0 +1,33 @@
+@priority-color-3: #f4ce33; // yellow
+@priority-color-4: #6ccb49; // green
+@priority-color-5: #40b8f3; // blue
+
+.ft-badge.bstatus {
+  &[data-status="todo"] {
+    background: @priority-color-5;
+    &:before {
+      content: "todo";
+    }
+  }
+  &[data-status="waiting"] {
+    background: @priority-color-3;
+    &:before {
+      content: "waiting";
+    }
+  }
+  &[data-status="active"] {
+    background: @priority-color-4;
+    &:before {
+      content: "active";
+    }
+  }
+  &[data-status="complete"] {
+    &:before {
+      content: "complete";
+    }
+  }
+}
+
+.ft-item[data-status="complete"] > .ft-branch > .ft-item-content > .ft-body-text {
+  text-decoration: line-through;
+}

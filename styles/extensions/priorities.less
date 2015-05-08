@@ -1,0 +1,54 @@
+// Copyright (c) 2015 Jesse Grosjean. All rights reserved.
+
+@priority-color-1: #ff6259; // red
+@priority-color-2: #f8a633; // orange
+@priority-color-3: #f4ce33; // yellow
+@priority-color-4: #6ccb49; // green
+@priority-color-5: #40b8f3; // blue
+@priority-color-6: #d088e1; // purple
+@priority-color-7: #a4a4a7; // gray
+
+.ft-badge.bpriority {
+  &[data-priority="1"] {
+    background: @priority-color-1;
+    &:before {
+      content: "1";
+    }
+  }
+  &[data-priority="2"] {
+    background: @priority-color-2;
+    &:before {
+      content: "2";
+    }
+  }
+  &[data-priority="3"] {
+    background: @priority-color-3;
+    &:before {
+      content: "3";
+    }
+  }
+  &[data-priority="4"] {
+    background: @priority-color-4;
+    &:before {
+      content: "4";
+    }
+  }
+  &[data-priority="5"] {
+    background: @priority-color-5;
+    &:before {
+      content: "5";
+    }
+  }
+  &[data-priority="6"] {
+    background: @priority-color-6;
+    &:before {
+      content: "6";
+    }
+  }
+  &[data-priority="7"] {
+    background: @priority-color-7;
+    &:before {
+      content: "7";
+    }
+  }
+}

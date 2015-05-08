@@ -1,0 +1,13 @@
+@import "syntax-variables";
+
+.ft-badge.btag {
+  &:before {
+    content: "#";
+  }
+  &.selected-tag {
+    background: @base-accent-color;
+  }
+  &[data-tag="done"] {
+    background: black;
+  }
+}

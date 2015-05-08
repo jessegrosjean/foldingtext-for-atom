@@ -1,0 +1,25 @@
+@import (reference) '../editor/variables';
+
+.ft-search-status-bar-item {
+  vertical-align: middle !important;
+  max-width: none !important;
+  overflow: visible !important;
+
+  position: relative; // hack for one themes that don't put status bar text in exact middle
+  top: -1px;
+
+  > .ft-text-input-addon {
+    &:before {
+      font-size: inherit;
+      line-height: inherit;
+      width: auto;
+    }
+  }
+
+  > atom-text-editor[mini] {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: 1.5em;
+    overflow: visible;
+  }
+}

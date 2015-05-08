@@ -1,0 +1,39 @@
+@import (reference) '../../editor/variables';
+
+ft-token-input {
+  cursor: text;
+  position: relative;
+
+  > ol {
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    pointer-events: none;
+    list-style-type: none;
+    z-index: 1;
+
+    > li {
+      display: inline;
+      cursor: default;
+      padding: 0px 2px;
+      border-radius: 2px;
+      margin-right: @ft-item-badge-spacing;
+      color: @syntax-background-color;
+      background: @syntax-invisible-character-color;
+      pointer-events: all;
+      &:before {
+        content: "#";
+      }
+      &.selected {
+        color: @syntax-background-color;
+        background: @syntax-cursor-color;
+      }
+    }
+  }
+
+  &.has-token-selected > ft-text-input > atom-text-editor[mini]::shadow {
+    .cursors {
+      visibility: hidden;
+    }
+  }
+}
