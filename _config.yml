@@ -1,0 +1,11 @@
+# Site settings
+title: FoldingText for Atom
+email: jesse@hogbaysoftware.com
+description: > # FoldingText for Atom is an outline editor with productivity features for the Atom text editor.
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "http://www.foldingtext.com" # the base hostname & protocol for your site
+twitter_username: foldingtext
+github_username: foldingtext
+
+# Build settings
+markdown: kramdown

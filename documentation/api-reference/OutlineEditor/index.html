@@ -1,0 +1,2082 @@
+---
+layout: class
+title: OutlineEditor
+breadcrumb: OutlineEditor
+---
+<p>Editor for <a class='reference' href='../Outline'>Outline</a>s.</p>
+<p>Maintains all editing state for the outline incuding: hoisted items,
+filtering items, expanded items, and item selection.</p>
+<p>A single <a class='reference' href='../Outline'>Outline</a> can belong to multiple editors. For example, if the same
+outline is open in two different panes, Atom creates a separate editor for
+each pane. If the outline is manipulated the changes are reflected in both
+editors, but each maintains its own selection, expanded items, etc.</p>
+<p>The easiest way to get hold of <code>OutlineEditor</code> objects is by registering a
+callback with <code>::observeOutlineEditors</code> through the <a class='reference' href='../FoldingTextService'>FoldingTextService</a>. </p>
+
+<h2>Attributes</h2>
+<dl>
+  
+  
+  <dt class='property-def' id='instance-id'>
+  <span class='signature'>::id</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only unique (not persistent) <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> editor ID. </p>
+  
+</dd>
+<dt class='property-def' id='instance-outline'>
+  <span class='signature'>::outline</span>
+</dt>
+<dd class='property-def'>
+  <p>The <a class='reference' href='../Outline'>Outline</a> that is being edited. </p>
+  
+</dd>
+  
+  
+</dl>
+<h2>Event Subscription</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-onDidChangeTitle'>
+  <span class='signature'>::onDidChangeTitle(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Calls your <code>callback</code> when the editor’s outline title has
+changed.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a>
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidChangePath'>
+  <span class='signature'>::onDidChangePath(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Calls your <code>callback</code> when the editor’s outline path, and
+therefore title, has changed.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a>
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidChange'>
+  <span class='signature'>::onDidChange(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback when the editor’s outline changes.</p>
+<p>See <a class='reference' href='../Outline'>Outline</a> Examples for an example of subscribing to these events.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called when the outline changes.
+    <ul>
+  <li>
+  <code>mutations</code>
+  &mdash;
+  <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of <a class='reference' href='../Mutation'>Mutation</a>s describing the changes.
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidChangeModified'>
+  <span class='signature'>::onDidChangeModified(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Calls your <code>callback</code> when the result of <a class='reference' href='#instance-isModified'>::isModified</a> changes.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a>
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidConflict'>
+  <span class='signature'>::onDidConflict(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Calls your <code>callback</code> when the editor’s outline’s underlying
+file changes on disk at a moment when the result of <a class='reference' href='#instance-isModified'>::isModified</a> is
+true.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a>
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidSave'>
+  <span class='signature'>::onDidSave(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback after the editor’s outline is saved to
+disk.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called after the buffer is saved.
+    <ul>
+  <li>
+  <code>event</code>
+  &mdash;
+  <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object'>Object</a> with the following keys:
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidDestroy'>
+  <span class='signature'>::onDidDestroy(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback when the editor is destroyed.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called when the editor is destroyed.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidChangeSelection'>
+  <span class='signature'>::onDidChangeSelection(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Calls your <code>callback</code> when <a class='reference' href='../Selection'>Selection</a> changes in the editor.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a>
+    <ul>
+  <li>
+  <code>selection</code>
+  &mdash;
+  <a class='reference' href='../Selection'>Selection</a> in editor.
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-observeSelection'>
+  <span class='signature'>::observeSelection(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Calls your <code>callback</code> when <a class='reference' href='../Selection'>Selection</a> changes in the editor.
+Immediately calls your callback for existing selection.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a>
+    <ul>
+  <li>
+  <code>selection</code>
+  &mdash;
+  <a class='reference' href='../Selection'>Selection</a> in editor.
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidChangeHoistedItem'>
+  <span class='signature'>::onDidChangeHoistedItem(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Calls your <code>callback</code> when the hoisted <a class='reference' href='../Item'>Item</a> changes in the
+editor.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a>
+    <ul>
+  <li>
+  <code>item</code>
+  &mdash;
+  Hoisted <a class='reference' href='../Item'>Item</a> in editor.
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidChangeSearch'>
+  <span class='signature'>::onDidChangeSearch(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Calls your <code>callback</code> when the editor’s search changes.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a>
+    <ul>
+  <li>
+  <code>searchInfo</code>
+  &mdash;
+  
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+</dl>
+<h2>Hoisting Items</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-getHoistedItem'>
+  <span class='signature'>::getHoistedItem()</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns the current hoisted <a class='reference' href='../Item'>Item</a>.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-hoistItem'>
+  <span class='signature'>::hoistItem(item)</span>
+</dt>
+<dd class='method-def'>
+  <p>Push a new hoisted <a class='reference' href='../Item'>Item</a>.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a> to hoist. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  
+</dd>
+<dt class='method-def' id='instance-unhoist'>
+  <span class='signature'>::unhoist()</span>
+</dt>
+<dd class='method-def'>
+  <p>Pop the current hoisted <a class='reference' href='../Item'>Item</a>. </p>
+  
+  
+  
+</dd>
+</dl>
+<h2>Expanding Items</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-isExpanded'>
+  <span class='signature'>::isExpanded(item)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a> to test. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns true if the item is expanded.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-isCollapsed'>
+  <span class='signature'>::isCollapsed(item)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a> to test. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns true if the item is collapsed.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-setExpanded'>
+  <span class='signature'>::setExpanded(items)</span>
+</dt>
+<dd class='method-def'>
+  <p>Expand the given items in this editor.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>items</th><td>
+    <a class='reference' href='../Item'>Item</a> or <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of items. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  
+</dd>
+<dt class='method-def' id='instance-setCollapsed'>
+  <span class='signature'>::setCollapsed(items)</span>
+</dt>
+<dd class='method-def'>
+  <p>Collapse the given items in this editor.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>items</th><td>
+    <a class='reference' href='../Item'>Item</a> or <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of items. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  
+</dd>
+</dl>
+<h2>Searching Items</h2>
+<dl>
+  
+  <dt class='property-def' id='static-ITEM_PATH_SEARCH'>
+  <span class='signature'>.ITEM_PATH_SEARCH</span>
+</dt>
+<dd class='property-def'>
+  <p>Search type used for item path search syntax. </p>
+  
+</dd>
+<dt class='property-def' id='static-X_PATH_SEARCH'>
+  <span class='signature'>.X_PATH_SEARCH</span>
+</dt>
+<dd class='property-def'>
+  <p>Search type used for xpath search syntax. </p>
+  
+</dd>
+  
+  
+  <dt class='method-def' id='instance-addSearchAttributeShortcut'>
+  <span class='signature'>::addSearchAttributeShortcut(shortcutName, attributeName)</span>
+</dt>
+<dd class='method-def'>
+  <p>Add a shortcut for an attribute name in the
+<a class='reference' href='../OutlineEditor#static-ITEM_PATH_SEARCH'>OutlineEditor.ITEM_PATH_SEARCH</a> search syntax. For example if you want
+the user to be able to type <code>@status</code> instead of having to type <code>@data-
+status</code> then you can add <code>status</code> as a shortcut for <code>data-status</code>.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>shortcutName</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> Shortcut name, <code>status</code> for example.
+    
+  </td>
+</tr>
+<tr><th>attributeName</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> Attribute name, ‘data-status’ for example.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  
+</dd>
+<dt class='method-def' id='instance-getSearch'>
+  <span class='signature'>::getSearch(query, type, keywords, error)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>query</th><td>
+    Search <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a>
+    
+  </td>
+</tr>
+<tr><th>type</th><td>
+    either <a class='reference' href='../OutlineEditor#static-ITEM_PATH_SEARCH'>OutlineEditor.ITEM_PATH_SEARCH</a> or <a class='reference' href='../OutlineEditor#static-X_PATH_SEARCH'>OutlineEditor.X_PATH_SEARCH</a>
+    
+  </td>
+</tr>
+<tr><th>keywords</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of recognized keyword ranges.
+    
+  </td>
+</tr>
+<tr><th>error</th><td>
+    Any error encountered while parsing search query. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns search <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object'>Object</a> with keys:
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-setSearch'>
+  <span class='signature'>::setSearch(query, type<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  <p>Sets search used to filter the contents of this outline. The
+search <code>type</code> parameter determines how the search is performed. It
+defaults to <a class='reference' href='../OutlineEditor#static-ITEM_PATH_SEARCH'>OutlineEditor.ITEM_PATH_SEARCH</a> syntax, but you can also use
+<a class='reference' href='../OutlineEditor#static-X_PATH_SEARCH'>OutlineEditor.X_PATH_SEARCH</a> syntax.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>query</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> Search query.
+    
+  </td>
+</tr>
+<tr><th>type<sup>?</sup></th><td>
+    <a class='reference' href='../OutlineEditor#static-ITEM_PATH_SEARCH'>OutlineEditor.ITEM_PATH_SEARCH</a> (default) or <a class='reference' href='../OutlineEditor#static-X_PATH_SEARCH'>OutlineEditor.X_PATH_SEARCH</a> 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  
+</dd>
+</dl>
+<h2>Rendering Items</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-addItemBodyTextRenderer'>
+  <span class='signature'>::addItemBodyTextRenderer(callback, priority<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  <p>Render additional text formatting elements in an <a class='reference' href='../Item'>Item</a>‘s body
+text. Intended to support syntax highlighting.</p>
+  <h2>Examples</h2>
+<pre><code class="lang-coffee">editor.addItemBodyTextRenderer (item, renderElementInBodyTextRange) -&gt;
+  highlight = <span class="hljs-string">'super!'</span>
+  <span class="hljs-keyword">while</span> (index = item.bodyText.indexOf highlight, index) <span class="hljs-keyword">isnt</span> -<span class="hljs-number">1</span>
+    renderElementInBodyTextRange <span class="hljs-string">'B'</span>, <span class="hljs-literal">null</span>, index, highlight.length
+    index += highlight.length
+</code></pre>
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> Text rendering function.
+    <ul>
+  <li>
+  <code>item</code>
+  &mdash;
+  <a class='reference' href='../Item'>Item</a> being rendered.
+</li>
+<li>
+  <code>renderElementInBodyTextRange</code>
+  &mdash;
+  <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> Render text element, accepts the same parameters as <a class='reference' href='../Item#instance-addElementInBodyTextRange'>Item::addElementInBodyTextRange</a>.
+</li>
+</ul>
+  </td>
+</tr>
+<tr><th>priority<sup>?</sup></th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number'>Number</a> Determines rendering order.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to remove the renderer.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-addItemBadgeRenderer'>
+  <span class='signature'>::addItemBadgeRenderer(callback, priority<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  <p>Render item badges after an <a class='reference' href='../Item'>Item</a>‘s body text. Item badges are
+intended to make visible item attribute values. For example badges are
+used to display the <code>data-priority</code> attribute of an item.</p>
+  <h2>Examples</h2>
+<pre><code class="lang-coffee">editor.addItemBadgeRenderer (item, renderBadgeElement) -&gt;
+  <span class="hljs-keyword">if</span> tags = item.getAttribute <span class="hljs-string">'data-tags'</span>, <span class="hljs-literal">true</span>
+    <span class="hljs-keyword">for</span> each <span class="hljs-keyword">in</span> tags
+      span = <span class="hljs-built_in">document</span>.createElement <span class="hljs-string">'A'</span>
+      span.className = <span class="hljs-string">'btag'</span>
+      span.textContent = each.trim()
+      renderBadgeElement span
+</code></pre>
+
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> Badge rendering function.
+    <ul>
+  <li>
+  <code>item</code>
+  &mdash;
+  <a class='reference' href='../Item'>Item</a> being rendered.
+</li>
+<li>
+  <code>renderBadgeElement</code>
+  &mdash;
+  <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> Render passed in badge element.
+</li>
+</ul>
+  </td>
+</tr>
+<tr><th>priority<sup>?</sup></th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number'>Number</a> Determines rendering order.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to remove the renderer.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+</dl>
+<h2>Item Visibility</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-isVisible'>
+  <span class='signature'>::isVisible(item, hoistedItem<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  <p>Determine if an <a class='reference' href='../Item'>Item</a> is visible. An item is visible if it
+descends from the current hoisted item, and it isn’t filtered, and all
+ancestors up to hoisted node are expanded.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a> to test.
+    
+  </td>
+</tr>
+<tr><th>hoistedItem<sup>?</sup></th><td>
+    Hoisted item <a class='reference' href='../Item'>Item</a> case to consider.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean'>Boolean</a> indicating if item is visible.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-makeVisible'>
+  <span class='signature'>::makeVisible(item)</span>
+</dt>
+<dd class='method-def'>
+  <p>Make the given item visible in the outline, expanding ancestors,
+removing filter, and unhoisting as needed.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a> to make visible. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  
+</dd>
+<dt class='method-def' id='instance-getFirstVisibleItem'>
+  <span class='signature'>::getFirstVisibleItem(hoistedItem<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>hoistedItem<sup>?</sup></th><td>
+    Hoisted item <a class='reference' href='../Item'>Item</a> case to consider. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns first visible <a class='reference' href='../Item'>Item</a> in editor.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getLastVisibleItem'>
+  <span class='signature'>::getLastVisibleItem(hoistedItem<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>hoistedItem<sup>?</sup></th><td>
+    Hoisted item <a class='reference' href='../Item'>Item</a> case to consider. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns last visible <a class='reference' href='../Item'>Item</a> in editor.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getPreviousVisibleSibling'>
+  <span class='signature'>::getPreviousVisibleSibling(item, hoistedItem<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a>
+    
+  </td>
+</tr>
+<tr><th>hoistedItem<sup>?</sup></th><td>
+    Hoisted item <a class='reference' href='../Item'>Item</a> case to consider. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns previous visible sibling <a class='reference' href='../Item'>Item</a> relative to given item.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getNextVisibleSibling'>
+  <span class='signature'>::getNextVisibleSibling(item, hoistedItem<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a>
+    
+  </td>
+</tr>
+<tr><th>hoistedItem<sup>?</sup></th><td>
+    Hoisted item <a class='reference' href='../Item'>Item</a> case to consider. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns next visible sibling <a class='reference' href='../Item'>Item</a> relative to given item.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getNextVisibleItem'>
+  <span class='signature'>::getNextVisibleItem(item, hoistedItem<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a>
+    
+  </td>
+</tr>
+<tr><th>hoistedItem<sup>?</sup></th><td>
+    Hoisted item <a class='reference' href='../Item'>Item</a> case to consider. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns next visible <a class='reference' href='../Item'>Item</a> relative to given item.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getPreviousVisibleItem'>
+  <span class='signature'>::getPreviousVisibleItem(item, hoistedItem<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a>
+    
+  </td>
+</tr>
+<tr><th>hoistedItem<sup>?</sup></th><td>
+    Hoisted item <a class='reference' href='../Item'>Item</a> case to consider. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns previous visible <a class='reference' href='../Item'>Item</a> relative to given item.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getFirstVisibleChild'>
+  <span class='signature'>::getFirstVisibleChild(item, hoistedItem<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a>
+    
+  </td>
+</tr>
+<tr><th>hoistedItem<sup>?</sup></th><td>
+    Hoisted item <a class='reference' href='../Item'>Item</a> case to consider. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns first visible child <a class='reference' href='../Item'>Item</a> relative to given item.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getLastVisibleChild'>
+  <span class='signature'>::getLastVisibleChild(item, hoistedItem<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a>
+    
+  </td>
+</tr>
+<tr><th>hoistedItem<sup>?</sup></th><td>
+    Hoisted item <a class='reference' href='../Item'>Item</a> case to consider. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns last visible child <a class='reference' href='../Item'>Item</a> relative to given item.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getPreviousVisibleBranch'>
+  <span class='signature'>::getPreviousVisibleBranch(item, hoistedItem<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a>
+    
+  </td>
+</tr>
+<tr><th>hoistedItem<sup>?</sup></th><td>
+    Hoisted item <a class='reference' href='../Item'>Item</a> case to consider. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns previous visible branch <a class='reference' href='../Item'>Item</a> relative to given item.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getNextVisibleBranch'>
+  <span class='signature'>::getNextVisibleBranch(item, hoistedItem<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a>
+    
+  </td>
+</tr>
+<tr><th>hoistedItem<sup>?</sup></th><td>
+    Hoisted item <a class='reference' href='../Item'>Item</a> case to consider. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns next visible branch <a class='reference' href='../Item'>Item</a> relative to given item.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+</dl>
+<h2>Focus</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-isFocused'>
+  <span class='signature'>::isFocused()</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean'>Boolean</a> indicating if this editor has focus.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-focus'>
+  <span class='signature'>::focus()</span>
+</dt>
+<dd class='method-def'>
+  <p>Focus this editor. </p>
+  
+  
+  
+</dd>
+</dl>
+<h2>Selection</h2>
+<dl>
+  
+  
+  <dt class='property-def' id='instance-selection'>
+  <span class='signature'>::selection</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only current <a class='reference' href='../Selection'>Selection</a>. </p>
+  
+</dd>
+  
+  <dt class='method-def' id='instance-isSelected'>
+  <span class='signature'>::isSelected(item)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a> 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean'>Boolean</a> indicating if given item is selected.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-isOutlineMode'>
+  <span class='signature'>::isOutlineMode()</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns <code>true</code> if is selecting at item level.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-isTextMode'>
+  <span class='signature'>::isTextMode()</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns <code>true</code> if is selecting at text level.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-moveBackward'>
+  <span class='signature'>::moveBackward()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection backward. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveBackwardAndModifySelection'>
+  <span class='signature'>::moveBackwardAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection backward and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveForward'>
+  <span class='signature'>::moveForward()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection forward. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveForwardAndModifySelection'>
+  <span class='signature'>::moveForwardAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection forward and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveUp'>
+  <span class='signature'>::moveUp()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection up. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveUpAndModifySelection'>
+  <span class='signature'>::moveUpAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection up and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveDown'>
+  <span class='signature'>::moveDown()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection down. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveDownAndModifySelection'>
+  <span class='signature'>::moveDownAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection down and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveLeft'>
+  <span class='signature'>::moveLeft()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection left. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveLeftAndModifySelection'>
+  <span class='signature'>::moveLeftAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection left and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveToBeginningOfLine'>
+  <span class='signature'>::moveToBeginningOfLine()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to begining of line. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveToBeginningOfLineAndModifySelection'>
+  <span class='signature'>::moveToBeginningOfLineAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to begining of line and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveToBeginningOfParagraph'>
+  <span class='signature'>::moveToBeginningOfParagraph()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to begining of paragraph. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveToBeginningOfParagraphAndModifySelection'>
+  <span class='signature'>::moveToBeginningOfParagraphAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to begining of paragraph and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveParagraphBackward'>
+  <span class='signature'>::moveParagraphBackward()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to next start of paragraph. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveParagraphBackwardAndModifySelection'>
+  <span class='signature'>::moveParagraphBackwardAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to next start of paragraph and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveWordLeft'>
+  <span class='signature'>::moveWordLeft()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection word left. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveWordLeftAndModifySelection'>
+  <span class='signature'>::moveWordLeftAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection word left and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveRight'>
+  <span class='signature'>::moveRight()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection right. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveRightAndModifySelection'>
+  <span class='signature'>::moveRightAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection right and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveWordRight'>
+  <span class='signature'>::moveWordRight()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection word right. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveWordRightAndModifySelection'>
+  <span class='signature'>::moveWordRightAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection word right and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveToEndOfLine'>
+  <span class='signature'>::moveToEndOfLine()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to end of line. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveToEndOfLineAndModifySelection'>
+  <span class='signature'>::moveToEndOfLineAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to end of line and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveToEndOfParagraph'>
+  <span class='signature'>::moveToEndOfParagraph()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to end of paragraph. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveToEndOfParagraphAndModifySelection'>
+  <span class='signature'>::moveToEndOfParagraphAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to end of paragraph and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveParagraphForward'>
+  <span class='signature'>::moveParagraphForward()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to next end of paragraph. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveParagraphForwardAndModifySelection'>
+  <span class='signature'>::moveParagraphForwardAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to next end of paragraph and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveToBeginningOfDocument'>
+  <span class='signature'>::moveToBeginningOfDocument()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to begining of document. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveToBeginningOfDocumentAndModifySelection'>
+  <span class='signature'>::moveToBeginningOfDocumentAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to begining of document and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveToEndOfDocument'>
+  <span class='signature'>::moveToEndOfDocument()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to end of document. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveToEndOfDocumentAndModifySelection'>
+  <span class='signature'>::moveToEndOfDocumentAndModifySelection()</span>
+</dt>
+<dd class='method-def'>
+  <p>Move selection to end of document and modify selection. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-moveSelectionRange'>
+  <span class='signature'>::moveSelectionRange(focusItem, focusOffset<sup>?</sup>, anchorItem<sup>?</sup>, anchorOffset<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  <p>Set a new <a class='reference' href='../Selection'>Selection</a>.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>focusItem</th><td>
+    Selection focus <a class='reference' href='../Item'>Item</a>
+    
+  </td>
+</tr>
+<tr><th>focusOffset<sup>?</sup></th><td>
+    Selection focus offset index. Or <code>undefined</code>  when selecting at item level.
+    
+  </td>
+</tr>
+<tr><th>anchorItem<sup>?</sup></th><td>
+    Selection anchor <a class='reference' href='../Item'>Item</a>
+    
+  </td>
+</tr>
+<tr><th>anchorOffset<sup>?</sup></th><td>
+    Selection anchor offset index. Or <code>undefined</code>  when selecting at item level. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  
+</dd>
+<dt class='method-def' id='instance-extendSelectionRange'>
+  <span class='signature'>::extendSelectionRange(focusItem, focusOffset<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  <p>Extend the <a class='reference' href='../Selection'>Selection</a> to a new focus item/offset.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>focusItem</th><td>
+    Selection focus <a class='reference' href='../Item'>Item</a>
+    
+  </td>
+</tr>
+<tr><th>focusOffset<sup>?</sup></th><td>
+    Selection focus offset index. Or <code>undefined</code>  when selecting at item level. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  
+</dd>
+<dt class='method-def' id='instance-selectAll'>
+  <span class='signature'>::selectAll()</span>
+</dt>
+<dd class='method-def'>
+  <p>Select all children of the current <a class='reference' href='#instance-hoistedItem'>::hoistedItem</a> item. </p>
+  
+  
+  
+</dd>
+</dl>
+<h2>Insert Items</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-insertText'>
+  <span class='signature'>::insertText(text)</span>
+</dt>
+<dd class='method-def'>
+  <p>Insert text at current selection. If is in text selection mode the
+current text selection will get replaced with this text. If in item
+selection mode a new item will get inserted.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>text</th><td>
+    Text <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> or <a class='reference' href='../AttributedString'>AttributedString</a> to insert 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  
+</dd>
+<dt class='method-def' id='instance-insertItem'>
+  <span class='signature'>::insertItem(text)</span>
+</dt>
+<dd class='method-def'>
+  <p>Insert item at current selection.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>text</th><td>
+    Text <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> or <a class='reference' href='../AttributedString'>AttributedString</a> for new item.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns the new <a class='reference' href='../Item'>Item</a>.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+</dl>
+<h2>Undo</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-undo'>
+  <span class='signature'>::undo()</span>
+</dt>
+<dd class='method-def'>
+  <p>Undo the last change. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-redo'>
+  <span class='signature'>::redo()</span>
+</dt>
+<dd class='method-def'>
+  <p>Redo the last change. </p>
+  
+  
+  
+</dd>
+</dl>
+<h2>Util</h2>
+<dl>
+  
+  
+  
+  <dt class='method-def' id='static-findOutlineEditor'>
+  <span class='signature'>.findOutlineEditor(element)</span>
+</dt>
+<dd class='method-def'>
+  <p>Given a view DOM element find and return the <a class='reference' href='../OutlineEditor'>OutlineEditor</a> that
+contains it. For example this is useful when doing event handling. If you
+detect a click on some element you use this method to find the associated
+editor.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>element</th><td>
+    DOM element.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns <a class='reference' href='../OutlineEditor'>OutlineEditor</a>.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+  
+</dl>

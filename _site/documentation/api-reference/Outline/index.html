@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Outline</title>
+    <meta name="description" content="">
+
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="canonical" href="http://www.foldingtext.com/documentation/api-reference/Outline/">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">FoldingText for Atom</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        <a class="page-link" href="/About">About</a>
+        <a class="page-link" href="/documentation">Documentation</a>
+        <a class="page-link" href="http://support.foldingtext.com/">Support</a>
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="wrapper breadcrumbwrapper">
+      
+        <ol class="breadcrumb">
+<li><a href="/">Home</a></li>
+
+
+
+
+    
+    
+    
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+            <li >
+    
+                <a href="/documentation/">Documentation</a>
+            </li>
+        
+    
+        
+    
+
+    
+    
+    
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+            <li >
+    
+                <a href="/documentation/api-reference/">API Reference</a>
+            </li>
+        
+    
+        
+    
+        
+    
+        
+    
+
+    
+    
+    
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+            <li >
+    
+                <a href="/documentation/api-reference/Outline/">Outline</a>
+            </li>
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+</ol>
+      
+    </div>
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="api">
+
+  <header class="api-header">
+    <h1 class="api-title">Outline</h1>
+  </header>
+
+  <article class="api-content">
+    <p>A mutable outline of <a class='reference' href='../Item'>Item</a>s.</p>
+<p>Use outlines to create new items, find existing items, and watch for changes
+in items. Outlines also coordinate loading and saving items.</p>
+<p>Internally a <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/API/HTMLDocument'>HTMLDocument</a> is used to store the underlying outline data.
+You should never modify the content of this HTMLDocument directly, but you
+can query it using <a class='reference' href='#instance-evaluateXPath'>::evaluateXPath</a>. The structure of this document is
+described in <a href="README#ft-markup-language">FoldingText Markup Language</a>.</p>
+<h2>Examples</h2>
+Group multiple changes:
+<pre><code class="lang-coffeescript">outline.beginUpdates()
+root = outline.root
+root.appendChild outline.createItem()
+root.appendChild outline.createItem()
+root.firstChild.bodyText = <span class="hljs-string">'first'</span>
+root.lastChild.bodyText = <span class="hljs-string">'last'</span>
+outline.endUpdates()
+</code></pre>
+Watch for outline changes:
+<pre><code class="lang-coffeescript">disposable = outline.onDidChange (mutations) -&gt;
+  <span class="hljs-keyword">for</span> mutation <span class="hljs-keyword">in</span> mutations
+    <span class="hljs-keyword">switch</span> mutation.type
+      <span class="hljs-keyword">when</span> Mutation.ATTRIBUTE_CHANGED
+        <span class="hljs-built_in">console</span>.log mutation.attributeName
+      <span class="hljs-keyword">when</span> Mutation.BODT_TEXT_CHANGED
+        <span class="hljs-built_in">console</span>.log mutation.target.bodyText
+      <span class="hljs-keyword">when</span> Mutation.CHILDREN_CHANGED
+        <span class="hljs-built_in">console</span>.log mutation.addedItems
+        <span class="hljs-built_in">console</span>.log mutation.removedItems
+</code></pre>
+Use XPath to list all items with bold text:
+<pre><code class="lang-coffeescript"><span class="hljs-keyword">for</span> each <span class="hljs-keyword">in</span> outline.getItemsForXPath(<span class="hljs-string">'//b'</span>)
+  <span class="hljs-built_in">console</span>.log each
+</code></pre>
+
+
+<h2>Construction</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-constructor'>
+  <span class='signature'>::constructor()</span>
+</dt>
+<dd class='method-def'>
+  <p>Create a new outline. </p>
+  
+  
+  
+</dd>
+</dl>
+<h2>Finding Outlines</h2>
+<dl>
+  
+  
+  <dt class='property-def' id='instance-id'>
+  <span class='signature'>::id</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only unique (not persistent) <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> outline ID. </p>
+  
+</dd>
+  <dt class='method-def' id='static-getOutlineForID'>
+  <span class='signature'>.getOutlineForID(id)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>id</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> outline id. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns existing <a class='reference' href='../Outline'>Outline</a> with the given outline id.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+  
+</dl>
+<h2>Event Subscription</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-onWillChange'>
+  <span class='signature'>::onWillChange(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback synchronously <em>before</em> the outline
+changes.</p>
+<p>Because observers are invoked synchronously, it’s important not to perform
+any expensive operations via this method.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called when the outline will change.
+    <ul>
+  <li>
+  <code>mutation</code>
+  &mdash;
+  <a class='reference' href='../Mutation'>Mutation</a> describing the change.
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidChange'>
+  <span class='signature'>::onDidChange(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback when the outline changes.</p>
+<p>See <a class='reference' href='../Outline'>Outline</a> Examples for an example of subscribing to this event.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called when the outline changes.
+    <ul>
+  <li>
+  <code>mutations</code>
+  &mdash;
+  <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of <a class='reference' href='../Mutation'>Mutation</a>s describing the changes.
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidConflict'>
+  <span class='signature'>::onDidConflict(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback when the in-memory contents of the
+outline become in conflict with the contents of the file on disk.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called when the outline enters conflict.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidChangeModified'>
+  <span class='signature'>::onDidChangeModified(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback when the value of <a class='reference' href='#instance-isModified'>::isModified</a> changes.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called when <a class='reference' href='#instance-isModified'>::isModified</a> changes.
+    <ul>
+  <li>
+  <code>modified</code>
+  &mdash;
+  <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean'>Boolean</a> indicating whether the outline is modified.
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidChangePath'>
+  <span class='signature'>::onDidChangePath(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback when the value of <a class='reference' href='#instance-getPath'>::getPath</a> changes.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called when the path changes.
+    <ul>
+  <li>
+  <code>path</code>
+  &mdash;
+  <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> representing the outline’s current path on disk.
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onWillSave'>
+  <span class='signature'>::onWillSave(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback before the outline is saved to disk.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called before the outline is saved.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidSave'>
+  <span class='signature'>::onDidSave(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback after the outline is saved to disk.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called after the outline is saved.
+    <ul>
+  <li>
+  <code>event</code>
+  &mdash;
+  <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object'>Object</a> with the following keys:
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidDelete'>
+  <span class='signature'>::onDidDelete(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback after the file backing the outline is
+deleted.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called after the outline is deleted.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onWillReload'>
+  <span class='signature'>::onWillReload(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback before the outline is reloaded from the
+contents of its file on disk.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called before the outline is reloaded.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidReload'>
+  <span class='signature'>::onDidReload(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback after the outline is reloaded from the
+contents of its file on disk.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called after the outline is reloaded.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidDestroy'>
+  <span class='signature'>::onDidDestroy(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback when the outline is destroyed.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called when the outline is destroyed.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onWillThrowWatchError'>
+  <span class='signature'>::onWillThrowWatchError(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback when there is an error in watching the
+file.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> callback
+    <ul>
+  <li>
+  <code>errorObject</code>
+  &mdash;
+  <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object'>Object</a>
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+</dl>
+<h2>Reading Items</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-getItems'>
+  <span class='signature'>::getItems()</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns an <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of all <a class='reference' href='../Item'>Item</a>s in the outline (except the
+root) in outline order.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getItemForID'>
+  <span class='signature'>::getItemForID(id)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>id</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> id. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns <a class='reference' href='../Item'>Item</a> for given id.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getItemsForIDs'>
+  <span class='signature'>::getItemsForIDs(ids)</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>ids</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of ids. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of <a class='reference' href='../Item'>Item</a>s for given <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of ids.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+</dl>
+<h2>Creating Items</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-createItem'>
+  <span class='signature'>::createItem(text<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  <p>Create a new item. The new item is owned by this outline, but is
+not yet inserted into it so it won’t be visible until you insert it.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>text<sup>?</sup></th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> or <a class='reference' href='../AttributedString'>AttributedString</a>. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  
+</dd>
+<dt class='method-def' id='instance-importItem'>
+  <span class='signature'>::importItem(item)</span>
+</dt>
+<dd class='method-def'>
+  <p>Creates a copy of an <a class='reference' href='../Item'>Item</a> from an external outline that can be
+inserted into the current outline.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>item</th><td>
+    <a class='reference' href='../Item'>Item</a> to import.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns <a class='reference' href='../Item'>Item</a> copy.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+</dl>
+<h2>Querying Items</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-evaluateXPath'>
+  <span class='signature'>::evaluateXPath(xpathExpression, contextItem<sup>?</sup>, namespaceResolver<sup>?</sup>, resultType<sup>?</sup>, result<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  <p>XPath query internal HTML structure.</p>
+<p>This query evaluates on the underlying HTMLDocument. Please refer to the
+standard <a href="https://developer.mozilla.org/en-
+US/docs/Web/API/document.evaluate">document.evaluate</a> documentation for details.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>xpathExpression</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> xpath expression
+    
+  </td>
+</tr>
+<tr><th>contextItem<sup>?</sup></th><td>
+    
+    
+  </td>
+</tr>
+<tr><th>namespaceResolver<sup>?</sup></th><td>
+    
+    
+  </td>
+</tr>
+<tr><th>resultType<sup>?</sup></th><td>
+    
+    
+  </td>
+</tr>
+<tr><th>result<sup>?</sup></th><td>
+    
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns an <a href="https://developer.mozilla.org/en-
+US/docs/XPathResult">XPathResult</a> based on an <a href="https://developer.mozilla.org/en-
+US/docs/Web/XPath">XPath</a> expression and other given parameters.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getItemsForXPath'>
+  <span class='signature'>::getItemsForXPath(xpathExpression, contextItem<sup>?</sup>, namespaceResolver<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  <p>XPath query internal HTML structure for matching {Items}.</p>
+<p>Items are considered to match if they, or a node contained in their body
+text, matches the XPath.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>xpathExpression</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> xpath expression
+    
+  </td>
+</tr>
+<tr><th>contextItem<sup>?</sup></th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a>
+    
+  </td>
+</tr>
+<tr><th>namespaceResolver<sup>?</sup></th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a>
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns an <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of all <a class='reference' href='../Item'>Item</a> matching the
+<a href="https://developer.mozilla.org/en-US/docs/Web/XPath">XPath</a> expression.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+</dl>
+<h2>Grouping Changes</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-isUpdating'>
+  <span class='signature'>::isUpdating()</span>
+</dt>
+<dd class='method-def'>
+  
+  
+  
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean'>Boolean</a> true if outline is updating.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-beginUpdates'>
+  <span class='signature'>::beginUpdates()</span>
+</dt>
+<dd class='method-def'>
+  <p>Begin grouping changes. Must later call <a class='reference' href='#instance-endUpdates'>::endUpdates</a> to balance
+this call. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-endUpdates'>
+  <span class='signature'>::endUpdates()</span>
+</dt>
+<dd class='method-def'>
+  <p>End grouping changes. Must call to balance a previous
+<a class='reference' href='#instance-beginUpdates'>::beginUpdates</a> call. </p>
+  
+  
+  
+</dd>
+</dl>
+<h2>Undo</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-undo'>
+  <span class='signature'>::undo()</span>
+</dt>
+<dd class='method-def'>
+  <p>Undo the last change. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-redo'>
+  <span class='signature'>::redo()</span>
+</dt>
+<dd class='method-def'>
+  <p>Redo the last change. </p>
+  
+  
+  
+</dd>
+</dl>
+<h2>File Details</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-isModified'>
+  <span class='signature'>::isModified()</span>
+</dt>
+<dd class='method-def'>
+  <p>Determine if the outline has changed since it was loaded.</p>
+<p>If the outline is unsaved, always returns <code>true</code> unless the outline is
+empty.</p>
+  
+  
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean'>Boolean</a>.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-isInConflict'>
+  <span class='signature'>::isInConflict()</span>
+</dt>
+<dd class='method-def'>
+  <p>Determine if the in-memory contents of the outline conflict with the
+on-disk contents of its associated file.</p>
+  
+  
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean'>Boolean</a>.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getPath'>
+  <span class='signature'>::getPath()</span>
+</dt>
+<dd class='method-def'>
+  <p>Get the path of the associated file.</p>
+  
+  
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a>.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-setPath'>
+  <span class='signature'>::setPath(filePath)</span>
+</dt>
+<dd class='method-def'>
+  <p>Set the path for the outlines’s associated file.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>filePath</th><td>
+    A <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> representing the new file path 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  
+</dd>
+</dl>
+<h2>File Content Operations</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-save'>
+  <span class='signature'>::save()</span>
+</dt>
+<dd class='method-def'>
+  <p>Save the outline. </p>
+  
+  
+  
+</dd>
+<dt class='method-def' id='instance-saveAs'>
+  <span class='signature'>::saveAs(filePath)</span>
+</dt>
+<dd class='method-def'>
+  <p>Save the outline at a specific path.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>filePath</th><td>
+    The path to save at. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  
+</dd>
+<dt class='method-def' id='instance-reload'>
+  <span class='signature'>::reload()</span>
+</dt>
+<dd class='method-def'>
+  <p>Reload the outline’s contents from disk.</p>
+<p>Sets the outline’s content to the cached disk contents. </p>
+  
+  
+  
+</dd>
+</dl>
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+
+      <div class="footer-col  footer-col-1">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/foldingtext">
+              <span class="icon  icon--github">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+                </svg>
+              </span>
+
+              <span class="username">foldingtext</span>
+            </a>
+          </li>
+          
+
+          
+          <li>
+            <a href="https://twitter.com/foldingtext">
+              <span class="icon  icon--twitter">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809
+                  c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/>
+                </svg>
+              </span>
+
+              <span class="username">foldingtext</span>
+            </a>
+          </li>
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+        <p class="text"></p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

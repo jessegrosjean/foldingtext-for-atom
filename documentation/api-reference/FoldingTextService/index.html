@@ -1,0 +1,409 @@
+---
+layout: class
+title: FoldingTextService
+breadcrumb: FoldingTextService
+---
+<p>This is the Atom <a href="https://atom.io/docs/latest/creating-a-package#interacting-with-other-
+packages-via-services">services
+API</a> object vended for <code>ft-foldingtext-service</code>.
+Please see the <a href="README#customizing-ft">Customizing FoldingText</a> to get started
+in creating a package that uses this service. </p>
+
+<h2>Classes</h2>
+<dl>
+  
+  
+  <dt class='property-def' id='instance-Item'>
+  <span class='signature'>::Item</span>
+</dt>
+<dd class='property-def'>
+  <p><a class='reference' href='../Item'>Item</a> Class </p>
+  
+</dd>
+<dt class='property-def' id='instance-Outline'>
+  <span class='signature'>::Outline</span>
+</dt>
+<dd class='property-def'>
+  <p><a class='reference' href='../Outline'>Outline</a> Class </p>
+  
+</dd>
+<dt class='property-def' id='instance-Mutation'>
+  <span class='signature'>::Mutation</span>
+</dt>
+<dd class='property-def'>
+  <p><a class='reference' href='../Mutation'>Mutation</a> Class </p>
+  
+</dd>
+<dt class='property-def' id='instance-OutlineEditor'>
+  <span class='signature'>::OutlineEditor</span>
+</dt>
+<dd class='property-def'>
+  <p><a class='reference' href='../OutlineEditor'>OutlineEditor</a> Class </p>
+  
+</dd>
+  
+  
+</dl>
+<h2>Workspace Outline Editors</h2>
+<dl>
+  
+  
+  
+  
+  <dt class='method-def' id='instance-getOutlineEditors'>
+  <span class='signature'>::getOutlineEditors()</span>
+</dt>
+<dd class='method-def'>
+  <p>Get all outline editors in the workspace.</p>
+  
+  
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns an <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of <a class='reference' href='../OutlineEditor'>OutlineEditor</a>s.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getActiveOutlineEditor'>
+  <span class='signature'>::getActiveOutlineEditor()</span>
+</dt>
+<dd class='method-def'>
+  <p>Get the active item if it is an <a class='reference' href='../OutlineEditor'>OutlineEditor</a>.</p>
+  
+  
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns an <a class='reference' href='../OutlineEditor'>OutlineEditor</a> or `` if the current active item is
+not an <a class='reference' href='../OutlineEditor'>OutlineEditor</a>.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-getOutlineEditorsForOutline'>
+  <span class='signature'>::getOutlineEditorsForOutline(outline)</span>
+</dt>
+<dd class='method-def'>
+  <p>Get all outline editors for a given outine the workspace.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>outline</th><td>
+    The <a class='reference' href='../Outline'>Outline</a> to search for.
+    
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns an <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of <a class='reference' href='../OutlineEditor'>OutlineEditor</a>s.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+</dl>
+<h2>Event Subscription</h2>
+<dl>
+  
+  
+  <dt class='property-def' id='instance-eventRegistery'>
+  <span class='signature'>::eventRegistery</span>
+</dt>
+<dd class='property-def'>
+  <p>{EventRegistery} instance. </p>
+  
+</dd>
+  
+  <dt class='method-def' id='instance-onDidAddOutlineEditor'>
+  <span class='signature'>::onDidAddOutlineEditor(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback when an outline editor is added to the
+workspace.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called panes are added.
+    <ul>
+  <li>
+  <code>event</code>
+  &mdash;
+  <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object'>Object</a> with the following keys:
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-observeOutlineEditors'>
+  <span class='signature'>::observeOutlineEditors(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback with all current and future outline
+editors in the workspace.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called with current and future outline  editors.
+    <ul>
+  <li>
+  <code>editor</code>
+  &mdash;
+  An <a class='reference' href='../OutlineEditor'>OutlineEditor</a> that is present in <a class='reference' href='#instance-getOutlineEditors'>::getOutlineEditors</a>  at the time of subscription or that is added at some later time.
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidChangeActiveOutlineEditor'>
+  <span class='signature'>::onDidChangeActiveOutlineEditor(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback when the active <a class='reference' href='../OutlineEditor'>OutlineEditor</a> changes.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called when the active <a class='reference' href='../OutlineEditor'>OutlineEditor</a> changes.
+    <ul>
+  <li>
+  <code>outlineEditor</code>
+  &mdash;
+  The active OutlineEditor.
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-observeActiveOutlineEditor'>
+  <span class='signature'>::observeActiveOutlineEditor(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback with the current <a class='reference' href='../OutlineEditor'>OutlineEditor</a> and
+with all future active outline editors in the workspace.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called when the <a class='reference' href='../OutlineEditor'>OutlineEditor</a> changes.
+    <ul>
+  <li>
+  <code>outlineEditor</code>
+  &mdash;
+  The current active {OultineEditor}.
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-onDidChangeActiveOutlineEditorSelection'>
+  <span class='signature'>::onDidChangeActiveOutlineEditorSelection(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback when the active <a class='reference' href='../OutlineEditor'>OutlineEditor</a>
+<a class='reference' href='../Selection'>Selection</a> changes.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called when the active <a class='reference' href='../OutlineEditor'>OutlineEditor</a> <a class='reference' href='../Selection'>Selection</a> changes.
+    <ul>
+  <li>
+  <code>selection</code>
+  &mdash;
+  The active <a class='reference' href='../OutlineEditor'>OutlineEditor</a> <a class='reference' href='../Selection'>Selection</a>.
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+<dt class='method-def' id='instance-observeActiveOutlineEditorSelection'>
+  <span class='signature'>::observeActiveOutlineEditorSelection(callback)</span>
+</dt>
+<dd class='method-def'>
+  <p>Invoke the given callback with the active <a class='reference' href='../OutlineEditor'>OutlineEditor</a> <a class='reference' href='../Selection'>Selection</a> and
+with all future active outline editor selections in the workspace.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback</th><td>
+    <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function'>Function</a> to be called when the <a class='reference' href='../OutlineEditor'>OutlineEditor</a> <a class='reference' href='../Selection'>Selection</a> changes.
+    <ul>
+  <li>
+  <code>selection</code>
+  &mdash;
+  The current active {OultineEditor} <a class='reference' href='../Selection'>Selection</a>.
+</li>
+</ul>
+  </td>
+</tr>
+  </tbody>
+</table>
+  <table class='return-value table table-condensed table-hover'>
+  <thead>
+    <tr>
+      <th>Return Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+  <td>Returns a <a class='reference' href='https://atom.io/docs/api/latest/Disposable'>Disposable</a> on which <code>.dispose()</code> can be called to unsubscribe.
+</td>
+</tr>
+  </tbody>
+</table>
+</dd>
+</dl>

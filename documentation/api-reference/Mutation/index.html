@@ -1,0 +1,129 @@
+---
+layout: class
+title: Mutation
+breadcrumb: Mutation
+---
+<p>A record of a single change in a target <a class='reference' href='../Item'>Item</a>.</p>
+<p>A new mutation is created to record each attribute set, body text change,
+and child item’s update. Use <a class='reference' href='../Outline#instance-onDidChange'>Outline::onDidChange</a> to receive this mutation
+record so you can track what has changed as an outline is edited. </p>
+
+<h2>Constants</h2>
+<dl>
+  
+  <dt class='property-def' id='static-ATTRIBUTE_CHANGED'>
+  <span class='signature'>.ATTRIBUTE_CHANGED</span>
+</dt>
+<dd class='property-def'>
+  <p>ATTRIBUTE_CHANGED Mutation type constant. </p>
+  
+</dd>
+<dt class='property-def' id='static-BODT_TEXT_CHANGED'>
+  <span class='signature'>.BODT_TEXT_CHANGED</span>
+</dt>
+<dd class='property-def'>
+  <p>BODT_TEXT_CHANGED Mutation type constant. </p>
+  
+</dd>
+<dt class='property-def' id='static-CHILDREN_CHANGED'>
+  <span class='signature'>.CHILDREN_CHANGED</span>
+</dt>
+<dd class='property-def'>
+  <p>CHILDREN_CHANGED Mutation type constant. </p>
+  
+</dd>
+  
+  
+  
+</dl>
+<h2>Attributes</h2>
+<dl>
+  
+  
+  <dt class='property-def' id='instance-target'>
+  <span class='signature'>::target</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only <a class='reference' href='../Item'>Item</a> target of the change delta. </p>
+  
+</dd>
+<dt class='property-def' id='instance-type'>
+  <span class='signature'>::type</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only type of change. <a class='reference' href='../Mutation#static-ATTRIBUTE_CHANGED'>Mutation.ATTRIBUTE_CHANGED</a>,
+<a class='reference' href='../Mutation#static-BODT_TEXT_CHANGED'>Mutation.BODT_TEXT_CHANGED</a>, or <a class='reference' href='../Mutation#static-CHILDREN_CHANGED'>Mutation.CHILDREN_CHANGED</a>. </p>
+  
+</dd>
+<dt class='property-def' id='instance-attributeName'>
+  <span class='signature'>::attributeName</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only name of changed attribute in the target <a class='reference' href='../Item'>Item</a>, or null. </p>
+  
+</dd>
+<dt class='property-def' id='instance-attributeOldValue'>
+  <span class='signature'>::attributeOldValue</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only previous value of changed attribute in the target
+<a class='reference' href='../Item'>Item</a>, or null. </p>
+  
+</dd>
+<dt class='property-def' id='instance-insertedTextLocation'>
+  <span class='signature'>::insertedTextLocation</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only value of the body text location where the insert started
+in the target <a class='reference' href='../Item'>Item</a>, or null. </p>
+  
+</dd>
+<dt class='property-def' id='instance-insertedTextLength'>
+  <span class='signature'>::insertedTextLength</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only value of length of the inserted body text in the target
+<a class='reference' href='../Item'>Item</a>, or null. </p>
+  
+</dd>
+<dt class='property-def' id='instance-replacedText'>
+  <span class='signature'>::replacedText</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only value of replaced body text in the target <a class='reference' href='../Item'>Item</a>, or
+null. </p>
+  
+</dd>
+<dt class='property-def' id='instance-addedItems'>
+  <span class='signature'>::addedItems</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of child <a class='reference' href='../Item'>Item</a>s added to the target. </p>
+  
+</dd>
+<dt class='property-def' id='instance-removedItems'>
+  <span class='signature'>::removedItems</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of child <a class='reference' href='../Item'>Item</a>s removed from the target. </p>
+  
+</dd>
+<dt class='property-def' id='instance-previousSibling'>
+  <span class='signature'>::previousSibling</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only previous sibling <a class='reference' href='../Item'>Item</a> of the added or removed Items,
+or null. </p>
+  
+</dd>
+<dt class='property-def' id='instance-nextSibling'>
+  <span class='signature'>::nextSibling</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only next sibling <a class='reference' href='../Item'>Item</a> of the added or removed Items, or
+null. </p>
+  
+</dd>
+  
+  
+</dl>

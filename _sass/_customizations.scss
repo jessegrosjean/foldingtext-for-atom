@@ -1,0 +1,37 @@
+dt.property-def, dt.method-def {
+}
+
+dt.property-def:hover, dt.method-def:hover {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+dd.property-def, dd.method-def {
+  display: none;
+  margin: 1rem;
+  .table>thead>tr>th {
+    border-bottom: none;
+  }
+}
+
+.post-header.home {
+  text-align: center;
+  .post-title {
+    margin-bottom: -0.1rem;
+  }
+}
+
+video.banner {
+  display: block;
+  margin: auto;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+}
+
+.post img {
+  display: block;
+  margin: auto;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+
+}

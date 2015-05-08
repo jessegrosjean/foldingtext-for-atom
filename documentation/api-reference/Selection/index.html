@@ -1,0 +1,124 @@
+---
+layout: class
+title: Selection
+breadcrumb: Selection
+---
+<p>The selection returned by <a class='reference' href='../OutlineEditor#instance-selection'>OutlineEditor::selection</a>.</p>
+<p>The anchor of a selection is the beginning point of the selection. When
+making a selection with a mouse, the anchor is where in the document the
+mouse button is initially pressed. As the user changes the selection using
+the mouse or the keyboard, the anchor does not move.</p>
+<p>The focus of a selection is the end point of the selection. When making a
+selection with a mouse, the focus is where in the document the mouse button
+is released. As the user changes the selection using the mouse or the
+keyboard, the focus is the end of the selection that moves.</p>
+<p>The start of a selection is the boundary closest to the beginning of the
+document. The end of a selection is the boundary closest to the end of the
+document. </p>
+
+<h2>Anchor and Focus</h2>
+<dl>
+  
+  
+  <dt class='property-def' id='instance-anchorItem'>
+  <span class='signature'>::anchorItem</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only <a class='reference' href='../Item'>Item</a> where the selection is anchored. </p>
+  
+</dd>
+<dt class='property-def' id='instance-anchorOffset'>
+  <span class='signature'>::anchorOffset</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only text offset in the anchor <a class='reference' href='../Item'>Item</a> where the selection is anchored. </p>
+  
+</dd>
+<dt class='property-def' id='instance-focusItem'>
+  <span class='signature'>::focusItem</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only <a class='reference' href='../Item'>Item</a> where the selection is focused. </p>
+  
+</dd>
+<dt class='property-def' id='instance-focusOffset'>
+  <span class='signature'>::focusOffset</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only text offset in the focus <a class='reference' href='../Item'>Item</a> where the selection is focused. </p>
+  
+</dd>
+  
+  
+</dl>
+<h2>Start and End</h2>
+<dl>
+  
+  
+  <dt class='property-def' id='instance-startItem'>
+  <span class='signature'>::startItem</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only first selected <a class='reference' href='../Item'>Item</a> in outline order. </p>
+  
+</dd>
+<dt class='property-def' id='instance-startOffset'>
+  <span class='signature'>::startOffset</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only text offset in the start <a class='reference' href='../Item'>Item</a> where selection starts. </p>
+  
+</dd>
+<dt class='property-def' id='instance-endItem'>
+  <span class='signature'>::endItem</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only last selected <a class='reference' href='../Item'>Item</a> in outline order. </p>
+  
+</dd>
+<dt class='property-def' id='instance-endOffset'>
+  <span class='signature'>::endOffset</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only text offset in the end <a class='reference' href='../Item'>Item</a> where selection end. </p>
+  
+</dd>
+  
+  
+</dl>
+<h2>Items</h2>
+<dl>
+  
+  
+  <dt class='property-def' id='instance-items'>
+  <span class='signature'>::items</span>
+</dt>
+<dd class='property-def'>
+  <p>Read only <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of selected <a class='reference' href='../Item'>Item</a>s. </p>
+  
+</dd>
+<dt class='property-def' id='instance-itemsCommonAncestors'>
+  <span class='signature'>::itemsCommonAncestors</span>
+</dt>
+<dd class='property-def'>
+  <p>Read only <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of common ancestors of selected <a class='reference' href='../Item'>Item</a>s. </p>
+  
+</dd>
+  
+  
+</dl>
+<h2>Selection State</h2>
+<dl>
+  
+  
+  <dt class='property-def' id='instance-isCollapsed'>
+  <span class='signature'>::isCollapsed</span>
+</dt>
+<dd class='property-def'>
+  <p>Read-only indicating whether the selection’s start and end points
+are at the same position. </p>
+  
+</dd>
+  
+  
+</dl>
