@@ -2,6 +2,16 @@
 layout: default
 ---
 <div class="api">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+
+  <script>
+    $( document ).ready(function() {
+      $('.api-content dd').hide();
+      $('.api-content dt').click(function(){
+        $(this).next('dd').slideToggle();
+      });
+    });
+  </script>
 
   <header class="api-header">
     <h1 class="api-title">{{ page.title }}</h1>

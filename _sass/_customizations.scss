@@ -1,16 +1,53 @@
-dt.property-def, dt.method-def {
+$monospace-fonts: 'Source Code Pro', Menlo, Monaco, Consolas, 'Courier New', monospace;
+
+code {
+  font-family: $monospace-fonts;
 }
 
-dt.property-def:hover, dt.method-def:hover {
-  cursor: pointer;
-  text-decoration: underline;
-}
+.api-content {
+  .signature {
+   font-family: $monospace-fonts;
+  }
 
-dd.property-def, dd.method-def {
-  display: none;
-  margin: 1rem;
-  .table>thead>tr>th {
-    border-bottom: none;
+  dt.property-def:hover, dt.method-def:hover {
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  dd.property-def, dd.method-def {
+    margin-top: 1rem;
+    .table>thead>tr>th {
+      border-bottom: 1px;
+    }
+  }
+
+  table {
+    width: 100%;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    border-collapse: collapse;
+    border: 1px solid #eee;
+  }
+
+  thead {
+    background: #eee;
+    th {
+      text-align: left;
+      font-size: 0.9rem;
+    }
+  }
+
+  tbody {
+    th {
+      text-align: left;
+      font-weight: normal;
+      font-family: $monospace-fonts;
+    }
+  }
+
+  th, td {
+    padding: 0.5rem;
+    vertical-align: top;
   }
 }
 
@@ -34,4 +71,126 @@ video.banner {
   border: 1px solid #ccc;
   border-radius: 0.25rem;
 
+}
+
+/*
+github.com style (c) Vasily Polovnyov <vast@whiteants.net>
+*/
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  color: #333;
+  background: #f8f8f8;
+  -webkit-text-size-adjust: none;
+}
+
+.hljs-comment,
+.diff .hljs-header {
+  color: #998;
+  font-style: italic;
+}
+
+.hljs-keyword,
+.css .rule .hljs-keyword,
+.hljs-winutils,
+.nginx .hljs-title,
+.hljs-subst,
+.hljs-request,
+.hljs-status {
+  color: #333;
+  font-weight: bold;
+}
+
+.hljs-number,
+.hljs-hexcolor,
+.ruby .hljs-constant {
+  color: #008080;
+}
+
+.hljs-string,
+.hljs-tag .hljs-value,
+.hljs-doctag,
+.tex .hljs-formula {
+  color: #d14;
+}
+
+.hljs-title,
+.hljs-id,
+.scss .hljs-preprocessor {
+  color: #900;
+  font-weight: bold;
+}
+
+.hljs-list .hljs-keyword,
+.hljs-subst {
+  font-weight: normal;
+}
+
+.hljs-class .hljs-title,
+.hljs-type,
+.vhdl .hljs-literal,
+.tex .hljs-command {
+  color: #458;
+  font-weight: bold;
+}
+
+.hljs-tag,
+.hljs-tag .hljs-title,
+.hljs-rule .hljs-property,
+.django .hljs-tag .hljs-keyword {
+  color: #000080;
+  font-weight: normal;
+}
+
+.hljs-attribute,
+.hljs-variable,
+.lisp .hljs-body,
+.hljs-name {
+  color: #008080;
+}
+
+.hljs-regexp {
+  color: #009926;
+}
+
+.hljs-symbol,
+.ruby .hljs-symbol .hljs-string,
+.lisp .hljs-keyword,
+.clojure .hljs-keyword,
+.scheme .hljs-keyword,
+.tex .hljs-special,
+.hljs-prompt {
+  color: #990073;
+}
+
+.hljs-built_in {
+  color: #0086b3;
+}
+
+.hljs-preprocessor,
+.hljs-pragma,
+.hljs-pi,
+.hljs-doctype,
+.hljs-shebang,
+.hljs-cdata {
+  color: #999;
+  font-weight: bold;
+}
+
+.hljs-deletion {
+  background: #fdd;
+}
+
+.hljs-addition {
+  background: #dfd;
+}
+
+.diff .hljs-change {
+  background: #0086b3;
+}
+
+.hljs-chunk {
+  color: #aaa;
 }
