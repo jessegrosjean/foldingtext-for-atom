@@ -7,8 +7,8 @@ Mutation = require './core/mutation'
 Outline = require './core/outline'
 Item = require './core/item'
 
-# Public: This is the object vended by the `ft-foldingtext-service` and the
-# entry point to FoldingText's API.
+# Public: This is the object vended by the `foldingtext-service` and the entry
+# point to FoldingText's API.
 #
 # ## Examples
 #
