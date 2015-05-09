@@ -55,9 +55,10 @@ describe 'Item', ->
 
     it 'should get/set date attributes', ->
       date = new Date('11/27/76')
+      dateString = date.toISOString()
       five.setAttribute('test', [date, date], Date)
-      five.getAttribute('test').should.equal('1976-11-27T05:00:00.000Z,1976-11-27T05:00:00.000Z')
-      five.getAttribute('test', true).should.eql(['1976-11-27T05:00:00.000Z', '1976-11-27T05:00:00.000Z'])
+      five.getAttribute('test').should.equal("#{dateString},#{dateString}")
+      five.getAttribute('test', true).should.eql([dateString, dateString])
       five.getAttribute('test', true, Date).should.eql([date, date])
 
   describe 'Body', ->
