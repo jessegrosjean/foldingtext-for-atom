@@ -82,8 +82,8 @@ class OutlineEditorElement extends HTMLElement
 
     @subscriptions = new CompositeDisposable
 
-    @disableAnimationOverride = atom.config.get 'ft-outline-editor.disableAnimation'
-    @subscriptions.add atom.config.observe 'ft-outline-editor.disableAnimation', (newValue) =>
+    @disableAnimationOverride = atom.config.get 'foldingtext-for-atom.disableAnimation'
+    @subscriptions.add atom.config.observe 'foldingtext-for-atom.disableAnimation', (newValue) =>
       @disableAnimationOverride = newValue
 
     if atom.styles
