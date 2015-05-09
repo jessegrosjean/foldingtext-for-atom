@@ -743,7 +743,6 @@ class Item
       range.setStartBefore(first._liOrRootUL)
       range.setEndAfter(last._liOrRootUL)
       range.deleteContents()
-      range.detach()
     else
       # Range method is better (in Chrome at least) because it generates a
       # single mutation. But range method fails in Safari when items are
