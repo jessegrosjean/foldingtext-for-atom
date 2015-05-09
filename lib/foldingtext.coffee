@@ -2,11 +2,13 @@
 
 LocationStatusBarItem = require './extensions/location-status-bar-item'
 SearchStatusBarItem = require './extensions/search-status-bar-item'
-foldingTextService = require './foldingtext-service'
 OutlineEditor = require './editor/outline-editor'
 {CompositeDisposable} = require 'atom'
 Outline = require './core/outline'
 path = require 'path'
+
+# Lazy load
+foldingTextService = null
 
 # Do this early because serlialization happens before package activation
 atom.views.addViewProvider OutlineEditor, (model) ->
@@ -21,6 +23,7 @@ module.exports =
       default: false
 
   provideFoldingTextService: ->
+    foldingTextService ?= require './foldingtext-service'
     foldingTextService
 
   activate: (state) ->
@@ -44,14 +47,6 @@ module.exports =
     require './extensions/priorities'
     require './extensions/status'
     require './extensions/tags'
-    ###
-    require '../packages/durations'
-    require '../packages/mentions'
-    require '../packages/tags'
-    ###
-
-    #@initializeGlobalOutlineEditorStyleSheet()
-    #@observeTextEditorFontConfig()
 
   consumeStatusBarService: (statusBar) ->
     disposable = new CompositeDisposable()
