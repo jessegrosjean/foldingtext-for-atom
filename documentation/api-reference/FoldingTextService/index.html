@@ -3,11 +3,31 @@ layout: class
 title: FoldingTextService
 breadcrumb: FoldingTextService
 ---
-<p>This is the Atom <a href="https://atom.io/docs/latest/creating-a-package#interacting-with-other-
-packages-via-services">services
-API</a> object vended for <code>ft-foldingtext-service</code>.
-Please see the <a href="README#customizing-ft">Customizing FoldingText</a> to get started
-in creating a package that uses this service. </p>
+<p>This is the object vended by the <code>ft-foldingtext-service</code> and the
+entry point to FoldingText’s API.</p>
+<h2>Examples</h2>
+To get an instance of {FoldingTextService} you subscribe to `foldingtext-
+service` using Atom's #[services
+API](https://atom.io/docs/latest/creating-a-package#interacting-with-other-
+packages-via-services).
+First subscibe to `foldingtext- service` in your package's `package.json`
+and then consume the service in your main module.
+<pre><code class="lang-cson"><span class="hljs-string">"consumedServices"</span>: {
+  <span class="hljs-string">"foldingtext-service"</span>: {
+    <span class="hljs-string">"versions"</span>: {
+      <span class="hljs-string">"1"</span>: <span class="hljs-string">"consumeFoldingTextService"</span>
+    }
+  }
+},
+</code></pre>
+<pre><code class="lang-coffeescript">{Disposable, CompositeDisposable} = <span class="hljs-built_in">require</span> <span class="hljs-string">'atom'</span>
+  ...
+  <span class="hljs-attribute">consumeFoldingTextService</span>: <span class="hljs-function"><span class="hljs-params">(foldingTextService)</span> -&gt;</span>
+    <span class="hljs-property">@foldingTextService</span> = foldingTextService
+    <span class="hljs-keyword">new</span> Disposable =&gt;
+      <span class="hljs-property">@foldingTextService</span> = <span class="hljs-literal">null</span>
+</code></pre>
+
 
 <h2>Classes</h2>
 <dl>
