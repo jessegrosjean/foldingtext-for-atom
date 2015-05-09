@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/FoldingText/foldingtext-for-atom.svg)](https://travis-ci.org/FoldingText/foldingtext-for-atom)
+# FoldingText for Atom
 
-# FoldingText for Atom package
+[![Build Status](https://travis-ci.org/FoldingText/foldingtext-for-atom.svg)](https://travis-ci.org/FoldingText/foldingtext-for-atom)
 
 For making lists in [Atom](https://atom.io). FoldingText is an outline editor with productivity features.
 
