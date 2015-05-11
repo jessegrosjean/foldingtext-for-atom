@@ -9,4 +9,4 @@ permalink: /documentation/
 
 - [API Reference](api-reference) – The classes and methods in FoldingText's public API.
 
-- [Support Forum](http://support.foldingtext.com/) – Ask questions and share your experiences and ideas.
+- [Support Forum](http://support.foldingtext.com/c/foldingtext-for-atom) – Ask questions and share your experiences and ideas.
