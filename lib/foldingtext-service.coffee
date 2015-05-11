@@ -10,15 +10,13 @@ Item = require './core/item'
 # Public: This is the object vended by the `foldingtext-service` and the entry
 # point to FoldingText's API.
 #
-# ## Examples
+# ## Example
 #
-# To get an instance of {FoldingTextService} you subscribe to `foldingtext-
-# service` using Atom's #[services
+# To get an instance of {FoldingTextService} you subscribe to FoldingText using
+# Atom's [services
 # API](https://atom.io/docs/latest/creating-a-package#interacting-with-other-
-# packages-via-services).
-#
-# First subscibe to `foldingtext- service` in your package's `package.json`
-# and then consume the service in your main module.
+# packages-via-services). First subscibe to `foldingtext-service` in your
+# package's `package.json` and then consume the service in your main module.
 #
 # ```cson
 # "consumedServices": {

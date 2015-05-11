@@ -17,7 +17,7 @@ Util = require './dom'
 # When you move an item all of its children are moved with it.
 #
 # Items have a single paragraph of body text. You can access it as plain text,
-# a HTML string, or an AttributedString. You can add formatting to make parts
+# a HTML string, or an {AttributedString}. You can add formatting to make parts
 # of the text bold, italic, etc.
 #
 # You can assign item level attributes to items. For example you might store a

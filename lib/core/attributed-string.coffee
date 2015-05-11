@@ -5,13 +5,17 @@ _ = require 'underscore-plus'
 assert = require 'assert'
 Util = require './dom'
 
-# Public: A text container holding both characters and formatting attributes.
+# Public: A container holding both characters and formatting attributes.
 #
-# AttributedStrings are opaque and immutable. They are only useful for moving
-# text and attributes from on {Item}s body text to another items body text.
-# See:
+# AttributedStrings have a limited public API. Right now they are mostly useful
+# as containers for moving text and attributes from one {Item}'s body text to
+# another item's body text. If you need to edit or list an item's text
+# attributes use the item attribute methods instead:
 #
 # - {Item::getAttributedBodyTextSubstring}
+# - {Item::getElementAtBodyTextIndex}
+# - {Item::addElementInBodyTextRange}
+# - {Item::removeElementInBodyTextRange}
 # - {Item::replaceBodyTextInRange}
 class AttributedString
 
