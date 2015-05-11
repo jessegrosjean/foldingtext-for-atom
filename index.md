@@ -13,5 +13,6 @@ title: FoldingText for Atom
 
 For Mac, Windows, and Linux users who think in outlines. FoldingText for [Atom](https://atom.io) is an outline editor with productivity features. It is clean, cross platform, and customizable.
 
+- [Install](http://jessegrosjean.gitbooks.io/foldingtext-for-atom-user-s-guide/content/installing_foldingtext.html)
 - [Documentation](documentation)
 - [Support](http://support.foldingtext.com/c/foldingtext-for-atom)
