@@ -15,4 +15,4 @@ I've zoomed back to 2007 and taken the simple text outline that I liked so much 
 
 For the last year I've been zooming forward again. Redoing the features that I added to TaskPaper over the years. But this time without the need that they work in a syntax highlighting plain text editor. It's been a wonderful simplifying process.
 
-There's still lots to do but the foundation is ready.
+FoldingText for Atom is working toward 1.0. It's ready to use for outlining, but doesn't yet replace TaskPaper or previous stand alone versions of FoldingText. There's still lots to do but the foundation is ready.
