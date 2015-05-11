@@ -24,7 +24,7 @@ Item = require './core/item'
 # "consumedServices": {
 #   "foldingtext-service": {
 #     "versions": {
-#       "1": "consumeFoldingTextService"
+#       "0": "consumeFoldingTextService"
 #     }
 #   }
 # },
