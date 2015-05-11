@@ -6,11 +6,25 @@
 #    { label: 'Underline', command: 'outline-editor:toggle-underline' }
 #    { type: 'separator' }
 #  ]
+
 'menu': [
   {
     label: 'File'
     submenu: [
       { label: 'New Outline', command: 'outline-editor:new-outline' }
+    ]
+  },
+  {
+    label: 'Packages'
+    submenu: [
+      label: 'FoldingText'
+      submenu: [
+        { label: 'New Outline', command: 'outline-editor:new-outline' },
+        { type: 'separator' },
+        { label: 'User\'s Guide', command: 'foldingtext:open-users-guide' },
+        { label: 'Support Forum', command: 'foldingtext:open-support-forum' },
+        { label: 'API Reference', command: 'foldingtext:open-api-reference' }
+      ]
     ]
   }
 ]

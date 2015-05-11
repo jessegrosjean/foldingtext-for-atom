@@ -6,8 +6,13 @@ OutlineEditor = require './editor/outline-editor'
 {CompositeDisposable} = require 'atom'
 Outline = require './core/outline'
 path = require 'path'
+lazy = []
+
+lazyRequire = (path) ->
+  lazy[path] = lazy[path] or require path
 
 # Lazy load
+shell = null
 foldingTextService = null
 
 # Do this early because serlialization happens before package activation
@@ -31,6 +36,12 @@ module.exports =
 
     @subscriptions.add atom.commands.add 'atom-workspace', 'outline-editor:new-outline': ->
       atom.workspace.open('outline-editor://new-outline')
+    @subscriptions.add atom.commands.add 'atom-workspace', 'foldingtext:open-users-guide': ->
+      lazyRequire('shell').openExternal('http://jessegrosjean.gitbooks.io/foldingtext-for-atom-user-s-guide/content/')
+    @subscriptions.add atom.commands.add 'atom-workspace', 'foldingtext:open-support-forum': ->
+      lazyRequire('shell').openExternal('http://support.foldingtext.com/c/foldingtext-for-atom')
+    @subscriptions.add atom.commands.add 'atom-workspace', 'foldingtext:open-api-reference': ->
+      lazyRequire('shell').openExternal('http://www.foldingtext.com/foldingtext-for-atom/documentation/api-reference/')
 
     @subscriptions.add atom.workspace.addOpener (filePath) ->
       if filePath is 'outline-editor://new-outline'
