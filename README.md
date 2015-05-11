@@ -11,5 +11,6 @@ This is commercial software. I will charge for it when it reaches 1.0. Source co
   </video>
 </p>
 
+- Install: Use the Atom package manager, which can be found in the Settings view or run `apm install foldingtext-for-atom` from the command line.
 - Use *File > New Outline* to start.
 - [Learn More](http://www.foldingtext.com/foldingtext-for-atom)
