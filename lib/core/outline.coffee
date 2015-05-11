@@ -19,7 +19,8 @@ Q = require 'q'
 # Internally a {HTMLDocument} is used to store the underlying outline data.
 # You should never modify the content of this HTMLDocument directly, but you
 # can query it using {::evaluateXPath}. The structure of this document is
-# described in [FoldingText Markup Language](README#ft-markup-language).
+# described in [FoldingText Markup Language](http://jessegrosjean.gitbooks.io
+# /foldingtext-for-atom-user-s-guide/content/appendix_b_file_format.html).
 #
 # ## Examples
 #
