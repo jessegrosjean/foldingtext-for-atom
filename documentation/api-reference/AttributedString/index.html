@@ -3,11 +3,15 @@ layout: class
 title: AttributedString
 breadcrumb: AttributedString
 ---
-<p>A text container holding both characters and formatting attributes.</p>
-<p>AttributedStrings are opaque and immutable. They are only useful for moving
-text and attributes from on <a class='reference' href='../Item'>Item</a>s body text to another items body text.
-See:</p>
+<p>A container holding both characters and formatting attributes.</p>
+<p>AttributedStrings have a limited public API. Right now they are mostly useful
+as containers for moving text and attributes from one <a class='reference' href='../Item'>Item</a>‘s body text to
+another item’s body text. If you need to edit or list an item’s text
+attributes use the item attribute methods instead:</p>
 <ul>
 <li><a class='reference' href='../Item#instance-getAttributedBodyTextSubstring'>Item::getAttributedBodyTextSubstring</a></li>
+<li><a class='reference' href='../Item#instance-getElementAtBodyTextIndex'>Item::getElementAtBodyTextIndex</a></li>
+<li><a class='reference' href='../Item#instance-addElementInBodyTextRange'>Item::addElementInBodyTextRange</a></li>
+<li><a class='reference' href='../Item#instance-removeElementInBodyTextRange'>Item::removeElementInBodyTextRange</a></li>
 <li><a class='reference' href='../Item#instance-replaceBodyTextInRange'>Item::replaceBodyTextInRange</a> </li>
 </ul>
