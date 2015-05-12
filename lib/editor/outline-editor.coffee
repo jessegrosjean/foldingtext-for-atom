@@ -35,10 +35,12 @@ module.exports =
 class OutlineEditor
 
   constructor: (outline, params) ->
-    id = shortid()
+    require('../foldingtext').creatingOutlineEditor()
 
+    id = shortid()
     @emitter = new Emitter()
     @subscriptions = new CompositeDisposable
+    @isOutlineEditor = true
     @outline = null
     @_overrideIsFocused = false
     @_selection = new Selection(this)
