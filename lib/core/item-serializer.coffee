@@ -2,7 +2,7 @@
 
 ItemBodyEncoder = require './item-body-encoder'
 Constants = require './constants'
-Util = require './dom'
+dom = require './dom'
 
 itemsToTXT = (items, editor) ->
   itemToTXT = (item, indent) ->
@@ -38,14 +38,14 @@ cleanHTMLDOM = (element) ->
   while each
     eachType = each.nodeType
     if eachType is Node.ELEMENT_NODE and each.tagName is 'P'
-      each = Util.nodeNextBranch each
+      each = dom.nodeNextBranch each
     else
       if eachType is Node.TEXT_NODE
         textNode = each
-        each = Util.nextNode each
+        each = dom.nextNode each
         textNode.parentNode.removeChild textNode
       else
-        each = Util.nextNode each
+        each = dom.nextNode each
 
 tidyHTMLDOM = (element, indent) ->
   if element.tagName is 'P'
