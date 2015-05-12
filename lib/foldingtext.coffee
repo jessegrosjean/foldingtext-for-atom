@@ -67,6 +67,7 @@ module.exports =
       @statusBarDisposables = null
       @statusBarAddedItems = false
     @addStatusBarItemsIfReady()
+    @subscriptions.add @statusBarDisposables
     @statusBarDisposables
 
   addStatusBarItemsIfReady: ->
