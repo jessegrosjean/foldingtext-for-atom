@@ -18,6 +18,12 @@ foldingTextService = null
 # Do this early because serlialization happens before package activation
 atom.views.addViewProvider OutlineEditor, (model) ->
   model.outlineEditorElement
+atom.deserializers.add
+  name: 'OutlineEditor'
+  deserialize: (data={}) ->
+    OutlineEditor ?= L('OutlineEditor')
+    outline = L('Outline').getOutlineForPathSync(data.filePath)
+    new OutlineEditor(outline, data)
 
 module.exports =
   subscriptions: null

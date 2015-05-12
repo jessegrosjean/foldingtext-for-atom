@@ -58,7 +58,6 @@ Q = require 'q'
 #   console.log each
 # ```
 class Outline
-  atom.deserializers.add(Outline)
 
   refcount: 0
   changeCount: 0
@@ -121,14 +120,6 @@ class Outline
       rootUL.id = Constants.RootID
       outlineStore.documentElement.lastChild.appendChild(rootUL)
     return outlineStore
-
-  serialize: ->
-    {} =
-      deserializer: 'Outline'
-      filePath: @getPath()
-
-  @deserialize: (data={}) ->
-    Outline.getOutlineForPathSync(data.filePath)
 
   ###
   Section: Finding Outlines
