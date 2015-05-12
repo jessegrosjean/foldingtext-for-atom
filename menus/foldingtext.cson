@@ -21,6 +21,13 @@
       submenu: [
         { label: 'New Outline', command: 'outline-editor:new-outline' },
         { type: 'separator' },
+        { label: 'Hoist Item', command: 'outline-editor:hoist' },
+        { label: 'Un-Hoist Item', command: 'outline-editor:unhoist' },
+        { type: 'separator' },
+        { label: 'Group Items', command: 'outline-editor:group-items' },
+        { label: 'Promote Child Items', command: 'outline-editor:promote-child-items' },
+        { label: 'Demote Trailing Items', command: 'outline-editor:demote-trailing-sibling-items' },
+        { type: 'separator' },
         { label: 'User\'s Guide', command: 'foldingtext:open-users-guide' },
         { label: 'Support Forum', command: 'foldingtext:open-support-forum' },
         { label: 'API Reference', command: 'foldingtext:open-api-reference' }
