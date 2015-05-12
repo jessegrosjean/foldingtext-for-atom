@@ -34,9 +34,10 @@ path = require 'path'
 module.exports =
 class OutlineEditor
 
-  constructor: (outline, params) ->
-    require('../foldingtext').creatingOutlineEditor()
+  atom.views.addViewProvider OutlineEditor, (editor) ->
+    editor.outlineEditorElement
 
+  constructor: (outline, params) ->
     id = shortid()
     @emitter = new Emitter()
     @subscriptions = new CompositeDisposable

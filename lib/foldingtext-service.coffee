@@ -39,22 +39,22 @@ class FoldingTextService
 
   # Public: {Item} Class
   Item: null # lazy
-  Object.defineProperty @, 'Item',
+  Object.defineProperty @::, 'Item',
     get: -> require './coreItem'
 
   # Public: {Outline} Class
   Outline: null # lazy
-  Object.defineProperty @, 'Outline',
+  Object.defineProperty @::, 'Outline',
     get: -> require './core/Outline'
 
   # Public: {Mutation} Class
   Mutation: null # lazy
-  Object.defineProperty @, 'Mutation',
+  Object.defineProperty @::, 'Mutation',
     get: -> require './core/Mutation'
 
   # Public: {OutlineEditor} Class
   OutlineEditor: null # lazy
-  Object.defineProperty @, 'OutlineEditor',
+  Object.defineProperty @::, 'OutlineEditor',
     get: -> require './editor/OutlineEditor'
 
   ###
@@ -91,7 +91,7 @@ class FoldingTextService
 
   # Public: {EventRegistery} instance.
   eventRegistery: null # lazy
-  Object.defineProperty @, 'eventRegistery',
+  Object.defineProperty @::, 'eventRegistery',
     get: -> require './editor/event-registery'
 
   # Public: Invoke the given callback when an outline editor is added to the
