@@ -143,6 +143,7 @@ describe 'Outline', ->
       branch.appendChildren(items)
       outline.root.appendChild(branch)
       console.timeEnd('Create Many Items')
+      outline.root.descendants.length.should.equal(10008)
       console.profileEnd()
 
       console.time('Copy Many')
@@ -156,10 +157,8 @@ describe 'Outline', ->
     it 'should load 100,000 items', ->
       console.profile('Load Many')
       console.time('Load Many')
-      parser = new DOMParser()
-      outlinePath = path.join(__dirname, '..', 'fixtures', 'big-outline.ftml')
-      outlineBML = fs.readFileSync(outlinePath, 'utf8')
-      outlineHTML = parser.parseFromString(outlineBML, 'text/html')
-      outline = new Outline({outlineStore: outlineHTML})
+      outline = new Outline()
+      outline.loadSync(path.join(__dirname, '..', 'fixtures', 'big-outline.ftml'))
       console.timeEnd('Load Many')
+      outline.root.descendants.length.should.equal(100007)
       console.profileEnd()

@@ -55,6 +55,6 @@ describe 'ItemSerializer', ->
       items.length.should.equal(0)
 
     it 'should throw when expecting html outline and not finding one', ->
-      expect(-> ItemSerializer.itemsFromHTML('one <dog>two</dog> three', outline, true)).toThrow(new Error("Expected HTML outline but did not find RootUL"))
+      expect(-> ItemSerializer.itemsFromHTML('one <dog>two</dog> three', outline, true)).toThrow(new Error('Could not find <ul id="FoldingText"> element.'))
 
 itemsFromHTML = (htmlString, outline, editor) ->

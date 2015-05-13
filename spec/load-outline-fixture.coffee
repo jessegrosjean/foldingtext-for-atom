@@ -11,17 +11,13 @@ fs = require 'fs'
 #     six
 
 module.exports = ->
-  unless @outlineRootTemplate
-    parser = new DOMParser()
-    outlinePath = path.join(__dirname, 'fixtures/outline.ftml')
-    outlineBML = fs.readFileSync(outlinePath, 'utf8')
-    outlineHTMLTemplate = parser.parseFromString(outlineBML, 'text/html')
-    @outlineRootTemplate = outlineHTMLTemplate.getElementById Constants.RootID
+  unless @outlineTemplate
+    @outlineTemplate = new Outline()
+    @outlineTemplate.loadSync(path.join(__dirname, 'fixtures/outline.ftml'))
 
-  outlineHTML = document.implementation.createHTMLDocument()
-  outlineRoot = outlineHTML.importNode @outlineRootTemplate, true
-  outlineHTML.documentElement.lastChild.appendChild(outlineRoot)
-  outline = new Outline({outlineStore: outlineHTML})
+  outline = new Outline()
+  for each in @outlineTemplate.root.children
+    outline.root.appendChild(outline.importItem(each))
 
   {} =
       outline: outline
