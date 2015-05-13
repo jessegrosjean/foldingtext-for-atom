@@ -4,7 +4,7 @@ AttributedString = require './attributed-string'
 Constants = require './constants'
 _ = require 'underscore-plus'
 assert = require 'assert'
-Util = require './dom'
+dom = require './dom'
 
 attributedStringToDocumentFragment = (attributedString, ownerDocument) ->
   attributedString._ensureClean()
@@ -226,7 +226,7 @@ nodeOffsetToBodyTextOffset = (node, offset, bodyP) ->
       if childAtOffset
         node = childAtOffset
       else
-        node = Util.lastDescendantNodeOrSelf(node.lastChild)
+        node = dom.lastDescendantNodeOrSelf(node.lastChild)
 
     # Walk backward to bodyP summing text characters and void elements
     # inbetween.
@@ -243,14 +243,14 @@ nodeOffsetToBodyTextOffset = (node, offset, bodyP) ->
         if tagName is 'BR' or tagName is 'IMG'
           # Count void tags as 1
           offset++
-      each = Util.previousNode(each)
+      each = dom.previousNode(each)
     offset
   else
     undefined
 
 bodyTextOffsetToNodeOffset = (bodyP, offset, downstreamAffinity) ->
   if bodyP
-    end = Util.nodeNextBranch(bodyP)
+    end = dom.nodeNextBranch(bodyP)
     each = bodyP
 
     while each isnt end
@@ -268,30 +268,30 @@ bodyTextOffsetToNodeOffset = (bodyP, offset, downstreamAffinity) ->
           if length is offset
             return {} =
               node: each.parentNode
-              offset: Util.childIndexOfNode(each) + 1
+              offset: dom.childIndexOfNode(each) + 1
 
       if length < offset
         offset -= length
       else
         if downstreamAffinity and length is offset
-          next = Util.nextNode(each)
+          next = dom.nextNode(each)
           if next
             if next.nodeType is Node.ELEMENT_NODE and not next.firstChild
               each = next.parentNode
-              offset = Util.childIndexOfNode(next)
+              offset = dom.childIndexOfNode(next)
             else
               each = next
               offset = 0
         return {} =
           node: each
           offset: offset
-      each = Util.nextNode(each)
+      each = dom.nextNode(each)
   else
     undefined
 
 bodyEncodedTextContent = (node) ->
   if node
-    end = Util.nodeNextBranch(node)
+    end = dom.nodeNextBranch(node)
     each = node
     text = []
 
@@ -307,7 +307,7 @@ bodyEncodedTextContent = (node) ->
           text.push(Constants.LineSeparatorCharacter)
         else if tagName is 'IMG'
           text.push(Constants.ObjectReplacementCharacter)
-      each = Util.nextNode(each)
+      each = dom.nextNode(each)
     text.join('')
   else
     ''
