@@ -7,7 +7,6 @@ Mutation = require './mutation'
 ItemPath = require './item-path'
 _ = require 'underscore-plus'
 assert = require 'assert'
-Util = require './dom'
 
 # Essential: A paragraph of text in an {Outline}.
 #
@@ -53,9 +52,27 @@ module.exports =
 class Item
 
   constructor: (outline, text, liOrRootUL, remappedIDCallback) ->
+    tagName = liOrRootUL.tagName
+    if tagName is 'LI'
+      p = liOrRootUL.firstChild
+      pOrUL = liOrRootUL.lastChild
+      pTagName = p?.tagName
+      pOrULTagName = pOrUL?.tagName
+      assert.ok(pTagName is 'P', "Expected 'P', but got #{pTagName}")
+      if pTagName is pOrULTagName
+        assert.ok(pOrUL is p, "Expect single 'P' child in 'LI'")
+      else
+        assert.ok(pOrULTagName is 'UL', "Expected 'UL', but got #{pOrULTagName}")
+        assert.ok(pOrUL.previousSibling is p, "Expected previous sibling of 'UL' to be 'P'")
+
+      ItemBodyEncoder.validateBodyTextHTML(p)
+    else if tagName is 'UL'
+      assert.ok(liOrRootUL.id is Constants.RootID)
+    else
+      assert.ok(false, "Expected 'LI' or 'UL', but got #{tagName}")
+
     originalID = liOrRootUL.id
     assignedID = outline.nextOutlineUniqueItemID(originalID)
-    ul = _childrenUL(liOrRootUL, false)
 
     if originalID isnt assignedID
       liOrRootUL.id = assignedID
@@ -67,8 +84,8 @@ class Item
     @_bodyAttributedString = null
     liOrRootUL._item = this
 
-    if ul
-      childLI = ul.firstElementChild
+    if ul = _childrenUL(liOrRootUL, false)
+      childLI = ul.firstChild
       while childLI
         outline.createItem(null, childLI, remappedIDCallback)
         childLI = childLI.nextSibling
@@ -450,22 +467,22 @@ class Item
   # Public: Read-only first child {Item}.
   firstChild: null
   Object.defineProperty @::, 'firstChild',
-    get: -> _childrenUL(@_liOrRootUL, false)?.firstElementChild?._item
+    get: -> _childrenUL(@_liOrRootUL, false)?.firstChild?._item
 
   # Public: Read-only last child {Item}.
   lastChild: null
   Object.defineProperty @::, 'lastChild',
-    get: -> _childrenUL(@_liOrRootUL, false)?.lastElementChild?._item
+    get: -> _childrenUL(@_liOrRootUL, false)?.lastChild?._item
 
   # Public: Read-only previous sibling {Item}.
   previousSibling: null
   Object.defineProperty @::, 'previousSibling',
-    get: -> @_liOrRootUL.previousElementSibling?._item
+    get: -> @_liOrRootUL.previousSibling?._item
 
   # Public: Read-only next sibling {Item}.
   nextSibling: null
   Object.defineProperty @::, 'nextSibling',
-    get: -> @_liOrRootUL.nextElementSibling?._item
+    get: -> @_liOrRootUL.nextSibling?._item
 
   # Public: Read-only previous branch {Item}.
   previousBranch: null
@@ -811,17 +828,21 @@ _bodyP = (liOrRootUL) ->
     assert.ok(liOrRootUL.id is Constants.RootID)
     liOrRootUL.ownerDocument.createElement('p')
   else
-    liOrRootUL.firstElementChild
+    liOrRootUL.firstChild
 
 _childrenUL = (liOrRootUL, createIfNeeded) ->
   if liOrRootUL.tagName is 'UL'
     assert.ok(liOrRootUL.id is Constants.RootID)
     liOrRootUL
   else
-    ul = liOrRootUL.lastElementChild
-    if ul?.tagName is 'UL'
+    ul = liOrRootUL.lastChild
+    tagName = ul?.tagName
+    if tagName is 'UL'
       ul
-    else if createIfNeeded
-      ul = liOrRootUL.ownerDocument.createElement('UL')
-      liOrRootUL.appendChild(ul)
-      ul
+    else if tagName is 'P'
+      if createIfNeeded
+        ul = liOrRootUL.ownerDocument.createElement('UL')
+        liOrRootUL.appendChild(ul)
+        ul
+    else if tagName
+      assert.ok(false, "Invalid HTML, expected #{tagName} to be 'P' or 'UL'")
