@@ -79,7 +79,7 @@ class Outline
 
   # Public: Create a new outline.
   constructor: (params) ->
-    @outlineStore = @createOutlineStoreIfNeeded params?.outlineStore
+    @outlineStore = @createOutlineStore()
 
     rootElement = @outlineStore.getElementById Constants.RootID
     @loadingLIUsedIDs = {}
@@ -113,13 +113,12 @@ class Outline
     @setPath(params.filePath) if params?.filePath
     @load() if params?.load
 
-  createOutlineStoreIfNeeded: (outlineStore) ->
-    if not outlineStore
-      outlineStore = document.implementation.createHTMLDocument()
-      rootUL = outlineStore.createElement('ul')
-      rootUL.id = Constants.RootID
-      outlineStore.documentElement.lastChild.appendChild(rootUL)
-    return outlineStore
+  createOutlineStore: (outlineStore) ->
+    outlineStore = document.implementation.createHTMLDocument()
+    rootUL = outlineStore.createElement('ul')
+    rootUL.id = Constants.RootID
+    outlineStore.documentElement.lastChild.appendChild(rootUL)
+    outlineStore
 
   ###
   Section: Finding Outlines
