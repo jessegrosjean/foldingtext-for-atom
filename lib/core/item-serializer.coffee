@@ -106,7 +106,7 @@ itemsToHTML = (items, editor) ->
   serializer = new XMLSerializer()
   serializer.serializeToString(htmlDocument)
 
-itemsFromHTML = (htmlString, outline, editor) ->
+itemsFromHTML = (htmlString, outline, throwIfNotOutline) ->
   parser = new DOMParser()
   htmlDocument = parser.parseFromString(htmlString, 'text/html')
   rootUL = htmlDocument.getElementById(Constants.RootID)
@@ -142,6 +142,8 @@ itemsFromHTML = (htmlString, outline, editor) ->
 
       eachLI = eachLI.nextElementSibling
   else
+    if throwIfNotOutline
+      throw new Error('Could not find <ul id="FoldingText"> element.')
     body = htmlDocument.body
     firstChild = body.firstElementChild
 
@@ -266,12 +268,12 @@ readItems = (editor, dataTransfer) ->
   items = null
 
   if htmlString
-    items = itemsFromHTML htmlString, editor.outline, editor
+    items = itemsFromHTML htmlString, editor.outline
 
   unless items
     txtString = dataTransfer.getData 'text/plain'
     if txtString
-      items = itemsFromHTML txtString, editor.outline, editor
+      items = itemsFromHTML txtString, editor.outline
 
   unless items
     items = []
