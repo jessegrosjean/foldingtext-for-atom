@@ -153,6 +153,6 @@ schedulePositionPopovers = ->
 
 positionPopovers = ->
   positionPopoversFrameID = null
-  for panel in atom.workspace?.getPopoverPanels()
+  for panel in atom.workspace?.getPopoverPanels?() or []
     if panel.isVisible()
       atom.views.getView(panel).positionPopover()
