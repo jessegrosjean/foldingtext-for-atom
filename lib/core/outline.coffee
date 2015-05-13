@@ -175,7 +175,11 @@ class Outline
     @addOutline(outline)
     outline.load()
       .then((outline) -> outline)
-      .catch(=> @removeOutline(outline))
+      .catch (error) ->
+        atom.confirm
+          message: "Could not open '#{outline.getBaseName()}'"
+          detailedMessage: "While trying to load encountered the following problem: #{error.name} – #{error.message}"
+        outline.destroy()
 
   @buildOutlineSync: (absoluteFilePath) ->
     outline = new Outline({filePath: absoluteFilePath})
