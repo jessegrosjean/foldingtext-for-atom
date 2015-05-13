@@ -667,18 +667,14 @@ class Outline
   # Sets the outline's content to the cached disk contents.
   reload: ->
     @emitter.emit 'will-reload'
-
-    try
-      @beginUpdates()
-      @root.removeChildren(@root.children)
-      items = ItemSerializer.itemsFromHTML(@cachedDiskContents, this)
+    @beginUpdates()
+    @root.removeChildren(@root.children)
+    if @cachedDiskContents
+      items = ItemSerializer.itemsFromHTML(@cachedDiskContents, this, true)
       @serializedState = items.metaState
       for each in items
         @root.appendChild(each)
-      @endUpdates()
-    catch error
-      console.log error
-
+    @endUpdates()
     @changeCount = 0
     @emitModifiedStatusChanged(false)
     @emitter.emit 'did-reload'
