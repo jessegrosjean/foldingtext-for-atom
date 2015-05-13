@@ -312,7 +312,16 @@ bodyEncodedTextContent = (node) ->
   else
     ''
 
+validateBodyTextHTML = (element) ->
+  end = dom.nodeNextBranch element
+  each = dom.nextNode element
+  while each isnt end
+    if tagName = each.tagName
+      assert.ok(allowedTags[tagName], "Unexpected tagName '#{tagName}' in 'P'")
+    each = dom.nextNode each
+
 module.exports =
+  validateBodyTextHTML: validateBodyTextHTML
   attributedStringToDocumentFragment: attributedStringToDocumentFragment
   elementToAttributedString: elementToAttributedString
   nodeOffsetToBodyTextOffset: nodeOffsetToBodyTextOffset
