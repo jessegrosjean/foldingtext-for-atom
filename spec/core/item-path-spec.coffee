@@ -7,7 +7,6 @@ describe 'ItemPath', ->
   [outline, root, one, two, three, four, five, six] = []
 
   beforeEach ->
-
     {outline, root, one, two, three, four, five, six} = loadOutlineFixture()
 
   describe 'Unions', ->
@@ -103,7 +102,7 @@ describe 'ItemPath', ->
       one.evaluateItemPath('//frog').should.eql []
       options =
         types:
-          'frog' : true
+          'frog': true
       one.evaluateItemPath('//frog', options).should.eql [two]
       one.evaluateItemPath('//frog two', options).should.eql [two]
 
