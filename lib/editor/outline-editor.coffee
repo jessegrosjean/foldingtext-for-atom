@@ -33,16 +33,15 @@ path = require 'path'
 # callback with `::observeOutlineEditors` through the {FoldingTextService}.
 module.exports =
 class OutlineEditor
-  atom.deserializers.add(this)
 
-  @deserialize: (data) ->
-    new OutlineEditor(Outline.deserialize(data.outline), data)
+  atom.views.addViewProvider OutlineEditor, (editor) ->
+    editor.outlineEditorElement
 
   constructor: (outline, params) ->
     id = shortid()
-
     @emitter = new Emitter()
     @subscriptions = new CompositeDisposable
+    @isOutlineEditor = true
     @outline = null
     @_overrideIsFocused = false
     @_selection = new Selection(this)
@@ -87,7 +86,7 @@ class OutlineEditor
       deserializer: 'OutlineEditor'
       hoistedItemIDs: (each.id for each in @_hoistStack)
       expandedItemIDs: (each.id for each in @outline.getItems() when @isExpanded each)
-      outline: @outline.serialize()
+      filePath: @getPath()
 
   loadSerializedState: ->
     hoistedItemIDs = @serializedState.hoistedItemIDs

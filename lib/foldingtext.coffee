@@ -1,26 +1,22 @@
 # Copyright (c) 2015 Jesse Grosjean. All rights reserved.
 
-LocationStatusBarItem = require './extensions/location-status-bar-item'
-SearchStatusBarItem = require './extensions/search-status-bar-item'
-OutlineEditor = require './editor/outline-editor'
-{CompositeDisposable} = require 'atom'
-Outline = require './core/outline'
-path = require 'path'
-lazy = []
+{Disposable, CompositeDisposable} = require 'atom'
+foldingTextService = require './foldingtext-service'
+OutlineEditor = null
 
-lazyRequire = (path) ->
-  lazy[path] = lazy[path] or require path
-
-# Lazy load
-shell = null
-foldingTextService = null
-
-# Do this early because serlialization happens before package activation
-atom.views.addViewProvider OutlineEditor, (model) ->
-  model.outlineEditorElement
+atom.deserializers.add
+  name: 'OutlineEditor'
+  deserialize: (data={}) ->
+    OutlineEditor ?= require('./editor/outline-editor')
+    outline = require('./core/outline').getOutlineForPathSync(data.filePath)
+    new OutlineEditor(outline, data)
 
 module.exports =
   subscriptions: null
+  statusBar: null
+  statusBarDisposables: null
+  statusBarAddedItems: false
+  workspaceDisplayedEditor: false
 
   config:
     disableAnimation:
@@ -28,7 +24,6 @@ module.exports =
       default: false
 
   provideFoldingTextService: ->
-    foldingTextService ?= require './foldingtext-service'
     foldingTextService
 
   activate: (state) ->
@@ -37,33 +32,53 @@ module.exports =
     @subscriptions.add atom.commands.add 'atom-workspace', 'outline-editor:new-outline': ->
       atom.workspace.open('outline-editor://new-outline')
     @subscriptions.add atom.commands.add 'atom-workspace', 'foldingtext:open-users-guide': ->
-      lazyRequire('shell').openExternal('http://jessegrosjean.gitbooks.io/foldingtext-for-atom-user-s-guide/content/')
+      require('shell').openExternal('http://jessegrosjean.gitbooks.io/foldingtext-for-atom-user-s-guide/content/')
     @subscriptions.add atom.commands.add 'atom-workspace', 'foldingtext:open-support-forum': ->
-      lazyRequire('shell').openExternal('http://support.foldingtext.com/c/foldingtext-for-atom')
+      require('shell').openExternal('http://support.foldingtext.com/c/foldingtext-for-atom')
     @subscriptions.add atom.commands.add 'atom-workspace', 'foldingtext:open-api-reference': ->
-      lazyRequire('shell').openExternal('http://www.foldingtext.com/foldingtext-for-atom/documentation/api-reference/')
+      require('shell').openExternal('http://www.foldingtext.com/foldingtext-for-atom/documentation/api-reference/')
+
+    @subscriptions.add foldingTextService.observeOutlineEditors =>
+      unless @workspaceDisplayedEditor
+        require './extensions/ui/popovers'
+        require './extensions/text-formatting-popover'
+        require './extensions/priorities'
+        require './extensions/status'
+        require './extensions/tags'
+        @addStatusBarItemsIfReady()
+        @workspaceDisplayedEditor = true
 
     @subscriptions.add atom.workspace.addOpener (filePath) ->
       if filePath is 'outline-editor://new-outline'
-        new OutlineEditor
+        OutlineEditor ?= require('./editor/outline-editor')
+        new OutlineEditor()
       else
-        extension = path.extname(filePath).toLowerCase()
+        extension = require('path').extname(filePath).toLowerCase()
         if extension is '.ftml'
-          Outline.getOutlineForPath(filePath).then (outline) ->
+          require('./core/outline').getOutlineForPath(filePath).then (outline) ->
+            OutlineEditor ?= require('./editor/outline-editor')
             new OutlineEditor(outline)
 
-    require './extensions/ui/popovers'
-    require './extensions/edit-link-popover'
-    require './extensions/text-formatting-popover'
-    require './extensions/priorities'
-    require './extensions/status'
-    require './extensions/tags'
-
   consumeStatusBarService: (statusBar) ->
-    disposable = new CompositeDisposable()
-    disposable.add LocationStatusBarItem.consumeStatusBarService(statusBar)
-    disposable.add SearchStatusBarItem.consumeStatusBarService(statusBar)
-    disposable
+    @statusBar = statusBar
+    @statusBarDisposables = new CompositeDisposable()
+    @statusBarDisposables.add new Disposable =>
+      @statusBar = null
+      @statusBarDisposables = null
+      @statusBarAddedItems = false
+    @addStatusBarItemsIfReady()
+    @subscriptions.add @statusBarDisposables
+    @statusBarDisposables
+
+  addStatusBarItemsIfReady: ->
+    if @statusBar and not @statusBarAddedItems
+      LocationStatusBarItem = require './extensions/location-status-bar-item'
+      SearchStatusBarItem = require './extensions/search-status-bar-item'
+      @statusBarDisposables.add LocationStatusBarItem.consumeStatusBarService(@statusBar)
+      @statusBarDisposables.add SearchStatusBarItem.consumeStatusBarService(@statusBar)      
+      @statusBarAddedItems = true
 
   deactivate: ->
     @subscriptions.dispose()
+    @statusBarAddedItems = false
+    @workspaceDisplayedEditor = false

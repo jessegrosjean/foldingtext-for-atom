@@ -2,6 +2,7 @@
 
 ## 0.0.3
 
+- Faster loading and activation #7
 - Added documentation links to Packages > FoldingText #3
 - Make 'should' a dependency so specs run when installing from Atom.io
 

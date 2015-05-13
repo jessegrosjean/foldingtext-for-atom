@@ -1,11 +1,6 @@
 # Copyright (c) 2015 Jesse Grosjean. All rights reserved.
 
 {Disposable, CompositeDisposable} = require 'atom'
-eventRegistery = require './editor/event-registery'
-OutlineEditor = require './editor/outline-editor'
-Mutation = require './core/mutation'
-Outline = require './core/outline'
-Item = require './core/item'
 
 # Public: This is the object vended by the `foldingtext-service` and the entry
 # point to FoldingText's API.
@@ -43,16 +38,24 @@ class FoldingTextService
   ###
 
   # Public: {Item} Class
-  Item: Item
+  Item: null # lazy
+  Object.defineProperty @::, 'Item',
+    get: -> require './coreItem'
 
   # Public: {Outline} Class
-  Outline: Outline
+  Outline: null # lazy
+  Object.defineProperty @::, 'Outline',
+    get: -> require './core/Outline'
 
   # Public: {Mutation} Class
-  Mutation: Mutation
+  Mutation: null # lazy
+  Object.defineProperty @::, 'Mutation',
+    get: -> require './core/Mutation'
 
   # Public: {OutlineEditor} Class
-  OutlineEditor: OutlineEditor
+  OutlineEditor: null # lazy
+  Object.defineProperty @::, 'OutlineEditor',
+    get: -> require './editor/OutlineEditor'
 
   ###
   Section: Workspace Outline Editors
@@ -62,7 +65,8 @@ class FoldingTextService
   #
   # Returns an {Array} of {OutlineEditor}s.
   getOutlineEditors: ->
-    atom.workspace.getPaneItems().filter (item) -> item instanceof OutlineEditor
+    atom.workspace.getPaneItems().filter (item) ->
+      item.isOutlineEditor
 
   # Public: Get the active item if it is an {OutlineEditor}.
   #
@@ -70,7 +74,7 @@ class FoldingTextService
   # not an {OutlineEditor}.
   getActiveOutlineEditor: ->
     activeItem = atom.workspace.getActivePaneItem()
-    activeItem if activeItem instanceof OutlineEditor
+    activeItem if activeItem?.isOutlineEditor
 
   # Public: Get all outline editors for a given outine the workspace.
   #
@@ -79,14 +83,16 @@ class FoldingTextService
   # Returns an {Array} of {OutlineEditor}s.
   getOutlineEditorsForOutline: (outline) ->
     atom.workspace.getPaneItems().filter (item) ->
-      item instanceof OutlineEditor and item.outline is outline
+      item.isOutlineEditor and item.outline is outline
 
   ###
   Section: Event Subscription
   ###
 
   # Public: {EventRegistery} instance.
-  eventRegistery: eventRegistery
+  eventRegistery: null # lazy
+  Object.defineProperty @::, 'eventRegistery',
+    get: -> require './editor/event-registery'
 
   # Public: Invoke the given callback when an outline editor is added to the
   # workspace.
@@ -101,7 +107,7 @@ class FoldingTextService
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidAddOutlineEditor: (callback) ->
     atom.workspace.onDidAddPaneItem ({item, pane, index}) ->
-      if item instanceof OutlineEditor
+      if item.isOutlineEditor
         callback({outlineEditor: item, pane, index})
 
   # Public: Invoke the given callback with all current and future outline
@@ -126,7 +132,7 @@ class FoldingTextService
   onDidChangeActiveOutlineEditor: (callback) ->
     prev = null
     atom.workspace.onDidChangeActivePaneItem (item) ->
-      unless item instanceof OutlineEditor
+      unless item?.isOutlineEditor
         item = null
       unless prev is item
         callback item
@@ -142,7 +148,7 @@ class FoldingTextService
   observeActiveOutlineEditor: (callback) ->
     prev = {}
     atom.workspace.observeActivePaneItem (item) ->
-      unless item instanceof OutlineEditor
+      unless item?.isOutlineEditor
         item = null
       unless prev is item
         callback item
