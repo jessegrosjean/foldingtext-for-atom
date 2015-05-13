@@ -683,8 +683,11 @@ class Outline
     @emitModifiedStatusChanged(false)
     @emitter.emit 'did-reload'
 
-  updateCachedDiskContentsSync: ->
-    @cachedDiskContents = @file?.readSync() ? ""
+  updateCachedDiskContentsSync: (pathOverride) ->
+    if pathOverride
+      @cachedDiskContents = fs.readFileSync(pathOverride, 'utf8')
+    else
+      @cachedDiskContents = @file?.readSync() ? ""
 
   updateCachedDiskContents: (flushCache=false, callback) ->
     Q(@file?.read(flushCache) ? "").then (contents) =>
@@ -719,8 +722,8 @@ class Outline
     else
       @cachedText = ItemSerializer.itemsToHTML(@root.children, editor)
 
-  loadSync: ->
-    @updateCachedDiskContentsSync()
+  loadSync: (pathOverride) ->
+    @updateCachedDiskContentsSync(pathOverride)
     @finishLoading()
 
   load: ->
