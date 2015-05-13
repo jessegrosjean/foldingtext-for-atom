@@ -61,11 +61,12 @@ exports.consumeStatusBarService = (statusBar) ->
     else
       searchElement.style.display = 'none'
 
-    commandsSubscriptions = atom.commands.add 'ft-outline-editor',
+    commandsSubscriptions = new CompositeDisposable
+    commandsSubscriptions.add atom.commands.add 'ft-outline-editor.outlineMode',
       'core:cancel': (e) ->
-        unless @editor.isTextMode()
-          searchElement.focusTextEditor()
-          e.stopPropagation()
+        searchElement.focusTextEditor()
+        e.stopPropagation()
+    commandsSubscriptions.add atom.commands.add 'ft-outline-editor.outlineMode',
       'find-and-replace:show': (e) ->
         searchElement.focusTextEditor()
         e.stopPropagation()
