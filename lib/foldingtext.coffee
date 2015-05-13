@@ -3,6 +3,7 @@
 {Disposable, CompositeDisposable} = require 'atom'
 foldingTextService = require './foldingtext-service'
 OutlineEditor = null
+Outline = null
 
 atom.deserializers.add
   name: 'OutlineEditor'
@@ -50,14 +51,20 @@ module.exports =
 
     @subscriptions.add atom.workspace.addOpener (filePath) ->
       if filePath is 'outline-editor://new-outline'
+        Outline ?= require('./core/outline')
         OutlineEditor ?= require('./editor/outline-editor')
-        new OutlineEditor()
+        Outline.getOutlineForPath(null, true).then (outline) ->
+          new OutlineEditor(outline)
       else
         extension = require('path').extname(filePath).toLowerCase()
         if extension is '.ftml'
-          require('./core/outline').getOutlineForPath(filePath).then (outline) ->
-            OutlineEditor ?= require('./editor/outline-editor')
-            new OutlineEditor(outline)
+          Outline ?= require('./core/outline')
+          OutlineEditor ?= require('./editor/outline-editor')
+          Outline.getOutlineForPath(filePath).then (outline) ->
+            if outline
+              new OutlineEditor(outline)
+            else
+              null
 
   consumeStatusBarService: (statusBar) ->
     @statusBar = statusBar
@@ -75,7 +82,7 @@ module.exports =
       LocationStatusBarItem = require './extensions/location-status-bar-item'
       SearchStatusBarItem = require './extensions/search-status-bar-item'
       @statusBarDisposables.add LocationStatusBarItem.consumeStatusBarService(@statusBar)
-      @statusBarDisposables.add SearchStatusBarItem.consumeStatusBarService(@statusBar)      
+      @statusBarDisposables.add SearchStatusBarItem.consumeStatusBarService(@statusBar)
       @statusBarAddedItems = true
 
   deactivate: ->
