@@ -177,7 +177,7 @@ class Outline
       .then((outline) -> outline)
       .catch (error) ->
         atom.confirm
-          message: "Could not open '#{outline.getBaseName()}'"
+          message: "Could not open '#{outline.getTitle()}'"
           detailedMessage: "While trying to load encountered the following problem: #{error.name} – #{error.message}"
         outline.destroy()
 
@@ -636,7 +636,22 @@ class Outline
     @getPath()
 
   getBaseName: ->
-    @file?.getBaseName()
+    @file?.getBaseName() or 'Untitled'
+
+  getTitle: ->
+    if sessionPath = @getPath()
+      path.basename(sessionPath)
+    else
+      'Untitled'
+
+  getLongTitle: ->
+    if sessionPath = @getPath()
+      fileName = path.basename(sessionPath)
+      directory = atom.project.relativize(path.dirname(sessionPath))
+      directory = if directory.length > 0 then directory else path.basename(path.dirname(sessionPath))
+      "#{fileName} - #{directory}"
+    else
+      'Untitled'
 
   ###
   Section: File Content Operations

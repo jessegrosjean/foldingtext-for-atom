@@ -1784,19 +1784,10 @@ class OutlineEditor
   ###
 
   getTitle: ->
-    if sessionPath = @getPath()
-      path.basename(sessionPath)
-    else
-      'Untitled'
+    @outline.getTitle()
 
   getLongTitle: ->
-    if sessionPath = @getPath()
-      fileName = path.basename(sessionPath)
-      directory = atom.project.relativize(path.dirname(sessionPath))
-      directory = if directory.length > 0 then directory else path.basename(path.dirname(sessionPath))
-      "#{fileName} - #{directory}"
-    else
-      'Untitled'
+    @outline.getLongTitle()
 
   getURI: ->
     @outline.getUri()
