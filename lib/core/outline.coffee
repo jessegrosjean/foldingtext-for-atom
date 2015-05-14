@@ -9,6 +9,8 @@ Mutation = require './mutation'
 shortid = require './shortid'
 assert = require 'assert'
 Item = require './item'
+path = require 'path'
+fs = require 'fs'
 Q = require 'q'
 
 # Essential: A mutable outline of {Item}s.

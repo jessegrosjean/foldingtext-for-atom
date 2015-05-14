@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.1.1
+
+- Fix crashes that started in Atom 0.199 release.
+
 ## 0.1.0
 
 - Faster loading and activation
