@@ -14,6 +14,7 @@ describe 'AttributedString', ->
     attributedString.toString().should.equal(copy.toString())
 
   describe 'Get Substrings', ->
+
     it 'should get string', ->
       attributedString.string().should.equal('Hello world!')
 
@@ -56,6 +57,7 @@ describe 'AttributedString', ->
       substring.toString().should.equal('(w/b, i)(orld!/i)')
 
   describe 'Delete Characters', ->
+
     it 'should delete from start', ->
       attributedString.deleteCharactersInRange(0, 6)
       attributedString.toString().should.equal('(world!/)')
@@ -104,6 +106,7 @@ describe 'AttributedString', ->
       attributedString.toString().should.equal('(Hello/)')
 
   describe 'Insert String', ->
+
     it 'should insert at start', ->
       attributedString.insertStringAtLocation('Boo!', 0)
       attributedString.toString().should.equal('(Boo!Hello world!/)')
@@ -144,6 +147,7 @@ describe 'AttributedString', ->
       attributedString.toString().should.equal('(B/i)(oo/b, i)(!/b)(Hello world!/)')
 
   describe 'Replace Substrings', ->
+
     it 'should update attribute runs when attributed string is modified', ->
       attributedString.addAttributeInRange('name', 'jesse', 0, 12)
       attributedString.replaceCharactersInRange('Hello', 0, 12)
@@ -183,6 +187,7 @@ describe 'AttributedString', ->
       attributedString.toString().should.equal('(Hello/i)(two/b)(world!/i)')
 
   describe 'Add/Remove/Find Attributes', ->
+
     it 'should add attribute run', ->
       effectiveRange = {}
       attributedString.addAttributeInRange('name', 'jesse', 0, 5)
@@ -272,3 +277,80 @@ describe 'AttributedString', ->
       expect(attributedString.attributesAtIndex(12, null) is null).toBe(true)
       attributedString.replaceCharactersInRange('', 0, 12)
       expect(attributedString.attributesAtIndex(0, null) is null).toBe(true)
+
+  describe 'Inline FTML', ->
+
+    describe 'To Inline FTML', ->
+
+      it 'should convert to Inline FTML', ->
+        attributedString.toInlineFTMLString().should.equal('Hello world!')
+
+      it 'should convert to Inline FTML with attributes', ->
+        attributedString.addAttributeInRange('B', 'data-my': 'test', 3, 5)
+        attributedString.toInlineFTMLString().should.equal('Hel<b data-my="test">lo wo</b>rld!')
+
+      it 'should convert empty to Inline FTML', ->
+        new AttributedString().toInlineFTMLString().should.equal('')
+
+    describe 'From Inline FTML', ->
+
+      it 'should convert from Inline FTML', ->
+        AttributedString.fromInlineFTMLString('Hello world!').toString().should.equal('(Hello world!/)')
+
+      it 'should convert from Inline FTML with attributes', ->
+        AttributedString.fromInlineFTMLString('Hel<b data-my="test">lo wo</b>rld!').toString(true).should.equal('(Hel/)(lo wo/B={"data-my":"test"})(rld!/)')
+
+      it 'should convert from empty Inline FTML', ->
+        AttributedString.fromInlineFTMLString('').toString().should.equal('(/)')
+
+    describe 'Offset Mapping', ->
+
+      it 'should map from string to Inline FTML offsets', ->
+        attributedString = AttributedString.fromInlineFTMLString('Hel<b data-my="test">lo wo</b>rld!')
+        inlineFTMLContainer = attributedString.toInlineFTMLFragment()
+
+        AttributedString.textOffsetToInlineFTMLOffset(0, inlineFTMLContainer).should.eql
+          node: inlineFTMLContainer.firstChild
+          offset: 0
+
+        AttributedString.textOffsetToInlineFTMLOffset(3, inlineFTMLContainer).should.eql
+          node: inlineFTMLContainer.firstChild
+          offset: 3
+
+        AttributedString.textOffsetToInlineFTMLOffset(4, inlineFTMLContainer).should.eql
+          node: inlineFTMLContainer.firstChild.nextSibling.firstChild
+          offset: 1
+
+        AttributedString.textOffsetToInlineFTMLOffset(12, inlineFTMLContainer).should.eql
+          node: inlineFTMLContainer.firstChild.nextSibling.nextSibling
+          offset: 4
+
+      it 'should map from string to empty Inline FTML offsets', ->
+        inlineFTMLContainer = document.createElement 'p'
+        AttributedString.textOffsetToInlineFTMLOffset(0, inlineFTMLContainer).should.eql
+          node: inlineFTMLContainer
+          offset: 0
+
+      it 'should map from Inline FTML offsets to string', ->
+        attributedString = AttributedString.fromInlineFTMLString('Hel<b data-my="test">lo wo</b>rld!')
+        inlineFTMLContainer = attributedString.toInlineFTMLFragment()
+
+        node = inlineFTMLContainer.firstChild
+        offset = 0
+        AttributedString.inlineFTMLOffsetToTextOffset(node, offset, inlineFTMLContainer).should.equal(0)
+
+        node = inlineFTMLContainer.firstChild.nextSibling.firstChild
+        offset = 0
+        AttributedString.inlineFTMLOffsetToTextOffset(node, offset, inlineFTMLContainer).should.equal(3)
+
+        node = inlineFTMLContainer.firstChild.nextSibling.firstChild
+        offset = 1
+        AttributedString.inlineFTMLOffsetToTextOffset(node, offset, inlineFTMLContainer).should.equal(4)
+
+        node = inlineFTMLContainer.firstChild.nextSibling.nextSibling
+        offset = 4
+        AttributedString.inlineFTMLOffsetToTextOffset(node, offset, inlineFTMLContainer).should.equal(12)
+
+      it 'should map from empty Inline FTML to string offsets', ->
+        inlineFTMLContainer = document.createElement 'p'
+        AttributedString.inlineFTMLOffsetToTextOffset(inlineFTMLContainer, 0, inlineFTMLContainer).should.equal(0)

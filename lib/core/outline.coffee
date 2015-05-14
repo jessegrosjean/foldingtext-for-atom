@@ -213,6 +213,7 @@ class Outline
         """,
         detail: error.message
         dismissable: true
+
   ###
   Section: Event Subscription
   ###

@@ -3,7 +3,6 @@
 OutlineEditorItemState = require './outline-editor-item-state'
 OutlineEditorElement = require './outline-editor-element'
 AttributedString = require '../core/attributed-string'
-ItemBodyEncoder = require '../core/item-body-encoder'
 ItemSerializer = require '../core/item-serializer'
 {Emitter, CompositeDisposable} = require 'atom'
 UndoManager = require '../core/undo-manager'
@@ -1547,7 +1546,7 @@ class OutlineEditor
         endOffset = selectionRange.endOffset
         selectedText = focusItem.getAttributedBodyTextSubstring(startOffset, endOffset - startOffset)
         p = document.createElement('P')
-        p.appendChild(ItemBodyEncoder.attributedStringToDocumentFragment(selectedText, document))
+        p.appendChild(selectedText.toInlineFTMLFragment(document))
         dataTransfer.setData('text/plain', selectedText.string())
         dataTransfer.setData('text/html', p.innerHTML)
 

@@ -1,7 +1,6 @@
 # Copyright (c) 2015 Jesse Grosjean. All rights reserved.
 
 AttributedString = require './attributed-string'
-ItemBodyEncoder = require './item-body-encoder'
 Constants = require './constants'
 Mutation = require './mutation'
 ItemPath = require './item-path'
@@ -65,7 +64,7 @@ class Item
         assert.ok(pOrULTagName is 'UL', "Expected 'UL', but got #{pOrULTagName}")
         assert.ok(pOrUL.previousSibling is p, "Expected previous sibling of 'UL' to be 'P'")
 
-      ItemBodyEncoder.validateBodyTextHTML(p)
+      AttributedString.validateInlineFTML(p)
     else if tagName is 'UL'
       assert.ok(liOrRootUL.id is Constants.RootID)
     else
@@ -241,7 +240,7 @@ class Item
       if @_bodyAttributedString
         @_bodyAttributedString.string()
       else
-        ItemBodyEncoder.bodyEncodedTextContent _bodyP(@_liOrRootUL)
+        AttributedString.inlineFTMLToText _bodyP(@_liOrRootUL)
     set: (text) ->
       @replaceBodyTextInRange text, 0, @bodyText.length
 
@@ -252,7 +251,7 @@ class Item
     set: (html) ->
       p = @_liOrRootUL.ownerDocument.createElement 'P'
       p.innerHTML = html
-      @attributedBodyText = ItemBodyEncoder.elementToAttributedString p, true
+      @attributedBodyText = AttributedString.fromInlineFTML(p)
 
   # Public: Body text as {AttributedString}.
   attributedBodyText: null
@@ -260,7 +259,7 @@ class Item
     get: ->
       if @isRoot
         return new AttributedString
-      @_bodyAttributedString ?= ItemBodyEncoder.elementToAttributedString _bodyP(@_liOrRootUL), true
+      @_bodyAttributedString ?= AttributedString.fromInlineFTML(_bodyP(@_liOrRootUL))
 
     set: (attributedText) ->
       @replaceBodyTextInRange attributedText, 0, @bodyText.length
@@ -398,10 +397,7 @@ class Item
     attributedBodyText = @attributedBodyText
     ownerDocument = li.ownerDocument
     attributedBodyText.replaceCharactersInRange(insertedText, location, length)
-    newBodyPContent = ItemBodyEncoder.attributedStringToDocumentFragment(
-      attributedBodyText,
-      ownerDocument
-    )
+    newBodyPContent = attributedBodyText.toInlineFTMLFragment(ownerDocument)
     newBodyP = ownerDocument.createElement('P')
     newBodyP.appendChild(newBodyPContent)
     li.replaceChild(newBodyP, bodyP)

@@ -158,7 +158,7 @@ describe 'OutlineEditorElement', ->
       p = editorElement._itemViewBodyP(viewLI)
 
       editorElement.itemOffsetToNodeOffset(one, 0).should.eql
-        node: p
+        node: p.firstChild
         offset: 0
 
       editorElement.itemOffsetToNodeOffset(one, 2).should.eql

@@ -2,7 +2,6 @@
 
 OutlineEditorFocusElement = require './outline-editor-focus-element'
 AttributedString = require '../core/attributed-string'
-ItemBodyEncoder = require '../core/item-body-encoder'
 ItemSerializer = require '../core/item-serializer'
 EventRegistery = require './event-registery'
 ItemRenderer = require './item-renderer'
@@ -819,10 +818,10 @@ class OutlineEditorElement extends HTMLElement
     @_itemViewBodyP(@renderedLIForItem(item))
 
   nodeOffsetToItemOffset: (node, offset) ->
-    ItemBodyEncoder.nodeOffsetToBodyTextOffset(node, offset, @_itemViewBodyP(@renderedLIForItem(@itemForViewNode(node))))
+    AttributedString.inlineFTMLOffsetToTextOffset(node, offset, @_itemViewBodyP(@renderedLIForItem(@itemForViewNode(node))))
 
   itemOffsetToNodeOffset: (item, offset) ->
-    ItemBodyEncoder.bodyTextOffsetToNodeOffset(@_itemViewBodyP(@renderedLIForItem(item)), offset)
+    AttributedString.textOffsetToInlineFTMLOffset(offset, @_itemViewBodyP(@renderedLIForItem(item)))
 
   _itemViewBodyP: (itemViewLI) ->
     ItemRenderer.renderedBodyTextSPANForRenderedLI itemViewLI
@@ -886,7 +885,7 @@ EventRegistery.listen '.ft-item-content',
     item = editorElement.itemForViewNode e.target
     itemViewLI = editorElement.renderedLIForItem item
     itemViewP = editorElement._itemViewBodyP itemViewLI
-    newBodyText = ItemBodyEncoder.bodyEncodedTextContent itemViewP
+    newBodyText = AttributedString.inlineFTMLToText itemViewP
     oldBodyText = item.bodyText
     outline = item.outline
     location = 0

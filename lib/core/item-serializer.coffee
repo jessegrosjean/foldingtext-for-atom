@@ -1,6 +1,6 @@
 # Copyright (c) 2015 Jesse Grosjean. All rights reserved.
 
-ItemBodyEncoder = require './item-body-encoder'
+AttributedString = require './attributed-string'
 Constants = require './constants'
 dom = require './dom'
 
@@ -150,7 +150,7 @@ itemsFromHTML = (htmlString, outline, throwIfNotOutline) ->
     if firstChild and firstChild.tagName is 'UL'
       # special handling
     else
-      items.itemFragmentString = ItemBodyEncoder.elementToAttributedString body
+      items.itemFragmentString = AttributedString.fromInlineFTML body
 
   metaState['expandedItemIDs'] = Object.keys(expandedItemIDs)
 

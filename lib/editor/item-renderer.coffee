@@ -3,8 +3,8 @@
 ChildrenAnimation = require './animations/children-animation'
 InsertAnimation = require './animations/insert-animation'
 RemoveAnimation = require './animations/remove-animation'
+AttributedString = require '../core/attributed-string'
 MoveAnimation = require './animations/move-animation'
-ItemBodyEncoder = require '../core/item-body-encoder'
 {Disposable, CompositeDisposable} = require 'atom'
 Mutation = require '../core/mutation'
 Velocity = require 'velocity-animate'
@@ -152,7 +152,7 @@ class ItemRenderer
           renderedText.addAttributeInRange tagName, attributes, location, length
       if renderedText
         p = document.createElement 'p'
-        p.appendChild ItemBodyEncoder.attributedStringToDocumentFragment renderedText, document
+        p.appendChild renderedText.toInlineFTMLFragment(document)
         p.innerHTML
       else
         item.bodyHTML
@@ -697,12 +697,12 @@ class ItemRenderer
     item = @itemForRenderedNode node
     renderedLI = @renderedLIForItem item
     renderedBodyTextSPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI renderedLI
-    ItemBodyEncoder.nodeOffsetToBodyTextOffset node, offset, renderedBodyTextSPAN
+    AttributedString.inlineFTMLOffsetToTextOffset node, offset, renderedBodyTextSPAN
 
   itemOffsetToNodeOffset: (item, offset) ->
     renderedLI = @renderedLIForItem item
     renderedBodyTextSPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI renderedLI
-    ItemBodyEncoder.bodyTextOffsetToNodeOffset renderedBodyTextSPAN, offset
+    AttributedString.textOffsetToInlineFTMLOffset offset, renderedBodyTextSPAN
 
   ###
   Section: Util
