@@ -652,7 +652,11 @@ class ItemRenderer
       clientX = Math.floor(bodyTextRect.right) - 1
 
     nodeCaretPosition = @caretPositionFromPoint(clientX, clientY)
-    offset = if nodeCaretPosition then @nodeOffsetToItemOffset(nodeCaretPosition.offsetItem, nodeCaretPosition.offset) else 0
+    if nodeCaretPosition
+      offset = AttributedString.inlineFTMLOffsetToTextOffset(nodeCaretPosition.offsetItem, nodeCaretPosition.offset)
+    else
+      offset = 0
+
     if offset is undefined
       offset = item.bodyText.length
 
@@ -692,12 +696,6 @@ class ItemRenderer
   ###
   Section: Offset Mapping
   ###
-
-  nodeOffsetToItemOffset: (node, offset) ->
-    item = @itemForRenderedNode node
-    renderedLI = @renderedLIForItem item
-    renderedBodyTextSPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI renderedLI
-    AttributedString.inlineFTMLOffsetToTextOffset node, offset, renderedBodyTextSPAN
 
   itemOffsetToNodeOffset: (item, offset) ->
     renderedLI = @renderedLIForItem item

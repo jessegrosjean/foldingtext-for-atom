@@ -1,5 +1,6 @@
 loadOutlineFixture = require '../load-outline-fixture'
 OutlineEditor = require '../../lib/editor/outline-editor'
+AttributedString = require '../../lib/core/attributed-string'
 Outline = require '../../lib/core/outline'
 
 describe 'OutlineEditorElement', ->
@@ -62,8 +63,8 @@ describe 'OutlineEditorElement', ->
 
         item = editor.insertItem('Boo!')
         item.nextSibling.should.equal(five)
-        renderedItemLI = editorElement.renderedLIForItem(item)
-        renderedItemLI.nextSibling.should.equal(editorElement.renderedLIForItem(item.nextSibling))
+        renderedItemLI = editorElement.itemRenderer.renderedLIForItem(item)
+        renderedItemLI.nextSibling.should.equal(editorElement.itemRenderer.renderedLIForItem(item.nextSibling))
 
       it 'should update correctly when child is inserted before filtered sibling', ->
         editor.hoistItem(one)
@@ -71,20 +72,20 @@ describe 'OutlineEditorElement', ->
 
         item = editor.outline.createItem('Boo!')
         one.insertChildBefore(item, one.firstChild)
-        renderedItemLI = editorElement.renderedLIForItem(item)
-        nextRenderedItemLI = editorElement.renderedLIForItem(editor.getNextVisibleSibling(item))
+        renderedItemLI = editorElement.itemRenderer.renderedLIForItem(item)
+        nextRenderedItemLI = editorElement.itemRenderer.renderedLIForItem(editor.getNextVisibleSibling(item))
         renderedItemLI.nextSibling.should.equal(nextRenderedItemLI)
 
     describe 'Editor State', ->
       it 'should render selection state', ->
-        li = editorElement.renderedLIForItem(one)
+        li = editorElement.itemRenderer.renderedLIForItem(one)
         editor.moveSelectionRange(one)
         li.classList.contains('ft-itemselected').should.be.true
         editor.moveSelectionRange(two)
         li.classList.contains('ft-itemselected').should.be.false
 
       it 'should render expanded state', ->
-        li = editorElement.renderedLIForItem(one)
+        li = editorElement.itemRenderer.renderedLIForItem(one)
         li.classList.contains('ft-expanded').should.be.true
         editor.setCollapsed(one)
         li.classList.contains('ft-expanded').should.be.false
@@ -119,7 +120,7 @@ describe 'OutlineEditorElement', ->
       pick = editorElement.pick(0, 0)
 
     it 'should pick at line wrap boundaries', ->
-      LI = editorElement.renderedLIForItem(one)
+      LI = editorElement.itemRenderer.renderedLIForItem(one)
       P = editorElement._itemViewBodyP(LI)
       bounds = P.getBoundingClientRect()
       appendText = ' makethislinewrap'
@@ -155,44 +156,46 @@ describe 'OutlineEditorElement', ->
   describe 'Offset Encoding', ->
     it 'should translate from outline to DOM offsets', ->
       viewLI = document.getElementById(one.id)
+      itemRenderer = editorElement.itemRenderer
       p = editorElement._itemViewBodyP(viewLI)
 
-      editorElement.itemOffsetToNodeOffset(one, 0).should.eql
+      itemRenderer.itemOffsetToNodeOffset(one, 0).should.eql
         node: p.firstChild
         offset: 0
 
-      editorElement.itemOffsetToNodeOffset(one, 2).should.eql
+      itemRenderer.itemOffsetToNodeOffset(one, 2).should.eql
         node: p.firstChild
         offset: 2
 
       one.bodyHTML = 'one <b>two</b> three'
 
       p = editorElement._itemViewBodyP(viewLI)
-      editorElement.itemOffsetToNodeOffset(one, 4).should.eql
+      itemRenderer.itemOffsetToNodeOffset(one, 4).should.eql
         node: p.firstChild
         offset: 4
 
-      editorElement.itemOffsetToNodeOffset(one, 5).offset.should.equal(1)
-      editorElement.itemOffsetToNodeOffset(one, 7).offset.should.equal(3)
-      editorElement.itemOffsetToNodeOffset(one, 8).offset.should.equal(1)
+      itemRenderer.itemOffsetToNodeOffset(one, 5).offset.should.equal(1)
+      itemRenderer.itemOffsetToNodeOffset(one, 7).offset.should.equal(3)
+      itemRenderer.itemOffsetToNodeOffset(one, 8).offset.should.equal(1)
 
     it 'should translate from DOM to outline', ->
       viewLI = document.getElementById(one.id)
       p = editorElement._itemViewBodyP(viewLI)
 
-      editorElement.nodeOffsetToItemOffset(p, 0).should.equal(0)
-      editorElement.nodeOffsetToItemOffset(p.firstChild, 0).should.equal(0)
+      AttributedString.inlineFTMLOffsetToTextOffset(p, 0).should.equal(0)
+      AttributedString.inlineFTMLOffsetToTextOffset(p.firstChild, 0).should.equal(0)
 
       one.bodyHTML = 'one <b>two</b> three'
       p = editorElement._itemViewBodyP(viewLI)
 
-      editorElement.nodeOffsetToItemOffset(p, 0).should.equal(0)
-      editorElement.nodeOffsetToItemOffset(p, 1).should.equal(4)
-      editorElement.nodeOffsetToItemOffset(p, 2).should.equal(7)
+      AttributedString.inlineFTMLOffsetToTextOffset(p, 0).should.equal(0)
+      AttributedString.inlineFTMLOffsetToTextOffset(p, 1).should.equal(4)
+      AttributedString.inlineFTMLOffsetToTextOffset(p, 2).should.equal(7)
 
       b = p.firstChild.nextSibling
-      editorElement.nodeOffsetToItemOffset(b, 0).should.equal(4)
-      editorElement.nodeOffsetToItemOffset(b.firstChild, 2).should.equal(6)
 
-      editorElement.nodeOffsetToItemOffset(p.lastChild, 0).should.equal(7)
-      editorElement.nodeOffsetToItemOffset(p.lastChild, 3).should.equal(10)
+      AttributedString.inlineFTMLOffsetToTextOffset(b, 0).should.equal(4)
+      AttributedString.inlineFTMLOffsetToTextOffset(b.firstChild, 2).should.equal(6)
+
+      AttributedString.inlineFTMLOffsetToTextOffset(p.lastChild, 0).should.equal(7)
+      AttributedString.inlineFTMLOffsetToTextOffset(p.lastChild, 3).should.equal(10)

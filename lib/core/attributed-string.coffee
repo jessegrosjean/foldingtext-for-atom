@@ -753,6 +753,17 @@ class AttributedString
       undefined
 
   @inlineFTMLOffsetToTextOffset: (node, offset, inlineFTMLContainer) ->
+    unless inlineFTMLContainer
+      # If inlineFTMLContainer is not provided then search up from node for
+      # it. Search for 'P' tagname for model layer or 'contenteditable'
+      # attribute for view layer.
+      inlineFTMLContainer = node
+      while inlineFTMLContainer and
+            (inlineFTMLContainer.nodeType is Node.TEXT_NODE or
+            not (inlineFTMLContainer.tagName is 'P' or
+                 inlineFTMLContainer.hasAttribute?('contenteditable')))
+        inlineFTMLContainer = inlineFTMLContainer.parentNode
+
     if node and inlineFTMLContainer and inlineFTMLContainer.contains(node)
       # If offset is > 0 and node is an element then map to child node
       # possition such that a backward walk from that node will cross over

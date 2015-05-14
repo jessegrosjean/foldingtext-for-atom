@@ -1775,9 +1775,6 @@ class OutlineEditor
   getClientRectForItemRange: (startItem, startOffset, endItem, endOffset) ->
     @outlineEditorElement.getClientRectForItemRange startItem, startOffset, endItem, endOffset
 
-  renderedLIForItem: (item) ->
-    @outlineEditorElement.renderedLIForItem(item)
-
   ###
   Section: File Details
   ###

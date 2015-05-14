@@ -241,12 +241,12 @@ class OutlineEditorElement extends HTMLElement
         endDOMNodeOffset
 
         if offset < bodyText.length
-          startDOMNodeOffset = @itemOffsetToNodeOffset(item, offset)
-          endDOMNodeOffset = @itemOffsetToNodeOffset(item, offset + 1)
+          startDOMNodeOffset = @itemRenderer.itemOffsetToNodeOffset(item, offset)
+          endDOMNodeOffset = @itemRenderer.itemOffsetToNodeOffset(item, offset + 1)
           side = 'left'
         else
-          startDOMNodeOffset = @itemOffsetToNodeOffset(item, offset - 1)
-          endDOMNodeOffset = @itemOffsetToNodeOffset(item, offset)
+          startDOMNodeOffset = @itemRenderer.itemOffsetToNodeOffset(item, offset - 1)
+          endDOMNodeOffset = @itemRenderer.itemOffsetToNodeOffset(item, offset)
           side = 'right'
 
         domRange.setStart(startDOMNodeOffset.node, startDOMNodeOffset.offset)
@@ -477,8 +477,8 @@ class OutlineEditorElement extends HTMLElement
       if currentSelection.isValid
         if not currentSelection.equals(renderedSelection)
           if currentSelection.isTextMode
-            nodeFocusOffset = @itemOffsetToNodeOffset(currentSelection.focusItem, currentSelection.focusOffset)
-            nodeAnchorOffset = @itemOffsetToNodeOffset(currentSelection.anchorItem, currentSelection.anchorOffset)
+            nodeFocusOffset = @itemRenderer.itemOffsetToNodeOffset(currentSelection.focusItem, currentSelection.focusOffset)
+            nodeAnchorOffset = @itemRenderer.itemOffsetToNodeOffset(currentSelection.anchorItem, currentSelection.anchorOffset)
             viewP = @itemViewPForItem(currentSelection.focusItem)
             range = document.createRange()
 
@@ -500,15 +500,15 @@ class OutlineEditorElement extends HTMLElement
     selection = @editor.DOMGetSelection()
 
     if selection.focusNode
-      focusItem = @itemForViewNode(selection.focusNode)
+      focusItem = @itemRenderer.itemForRenderedNode(selection.focusNode)
       if focusItem
-        focusOffset = @nodeOffsetToItemOffset(selection.focusNode, selection.focusOffset)
-        anchorOffset = @nodeOffsetToItemOffset(selection.anchorNode, selection.anchorOffset)
+        focusOffset = AttributedString.inlineFTMLOffsetToTextOffset(selection.focusNode, selection.focusOffset)
+        anchorOffset = AttributedString.inlineFTMLOffsetToTextOffset(selection.anchorNode, selection.anchorOffset)
         return new Selection(
           @editor,
           focusItem,
           focusOffset,
-          @itemForViewNode(selection.anchorNode),
+          @itemRenderer.itemForRenderedNode(selection.anchorNode),
           anchorOffset
         )
 
@@ -613,8 +613,8 @@ class OutlineEditorElement extends HTMLElement
   ###
 
   onDragStart: (e) ->
-    item = @itemForViewNode e.target
-    li = @renderedLIForItem item
+    item = @itemRenderer.itemForRenderedNode e.target
+    li = @itemRenderer.renderedLIForItem item
     liRect = li.getBoundingClientRect()
     x = e.clientX - liRect.left
     y = e.clientY - liRect.top
@@ -635,7 +635,7 @@ class OutlineEditorElement extends HTMLElement
 
   onDrag: (e) ->
     e.stopPropagation()
-    item = @itemForViewNode e.target
+    item = @itemRenderer.itemForRenderedNode e.target
     draggedItem = @editor.draggedItem()
     if item isnt draggedItem
       e.preventDefault()
@@ -707,12 +707,12 @@ class OutlineEditorElement extends HTMLElement
             compareTo = dropParentItem
 
           if insertItem.comparePosition(compareTo) & Node.DOCUMENT_POSITION_FOLLOWING
-            @scrollBy(-@renderedLIForItem(insertItem).clientHeight)
+            @scrollBy(-@itemRenderer.renderedLIForItem(insertItem).clientHeight)
 
         moveStartOffset
 
         if droppedItem is insertItem
-          renderedLI = @renderedLIForItem(droppedItem)
+          renderedLI = @itemRenderer.renderedLIForItem(droppedItem)
           if renderedLI
             editorElementRect = @getBoundingClientRect()
             renderedLIRect = renderedLI.getBoundingClientRect()
@@ -808,20 +808,8 @@ class OutlineEditorElement extends HTMLElement
       element = element.parentNode
     element
 
-  itemForViewNode: (viewNode) ->
-    @itemRenderer.itemForRenderedNode viewNode
-
-  renderedLIForItem: (item) ->
-    @itemRenderer.renderedLIForItem item
-
   itemViewPForItem: (item) ->
-    @_itemViewBodyP(@renderedLIForItem(item))
-
-  nodeOffsetToItemOffset: (node, offset) ->
-    AttributedString.inlineFTMLOffsetToTextOffset(node, offset, @_itemViewBodyP(@renderedLIForItem(@itemForViewNode(node))))
-
-  itemOffsetToNodeOffset: (item, offset) ->
-    AttributedString.textOffsetToInlineFTMLOffset(offset, @_itemViewBodyP(@renderedLIForItem(item)))
+    @_itemViewBodyP(@itemRenderer.renderedLIForItem(item))
 
   _itemViewBodyP: (itemViewLI) ->
     ItemRenderer.renderedBodyTextSPANForRenderedLI itemViewLI
@@ -880,10 +868,11 @@ EventRegistery.listen '.ft-item-content',
   compositionend: (e) ->
   input: (e) ->
     editorElement = OutlineEditorElement.findOutlineEditorElement e.target
+    itemRenderer = editorElement.itemRenderer
     editor = editorElement.editor
     typingFormattingTags = editor.getTypingFormattingTags()
-    item = editorElement.itemForViewNode e.target
-    itemViewLI = editorElement.renderedLIForItem item
+    item = itemRenderer.itemForRenderedNode e.target
+    itemViewLI = itemRenderer.renderedLIForItem item
     itemViewP = editorElement._itemViewBodyP itemViewLI
     newBodyText = AttributedString.inlineFTMLToText itemViewP
     oldBodyText = item.bodyText
@@ -961,7 +950,7 @@ EventRegistery.listen '.ft-handle',
 
   click: (e) ->
     editorElement = OutlineEditorElement.findOutlineEditorElement e.target
-    item = editorElement.itemForViewNode e.target
+    item = editorElement.itemRenderer.itemForRenderedNode e.target
     editor = editorElement.editor
     if item
       if e.metaKey
