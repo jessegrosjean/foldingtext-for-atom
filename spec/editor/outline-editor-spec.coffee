@@ -293,7 +293,7 @@ describe 'OutlineEditor', ->
     it 'should focus item text when selecting item text', ->
       editor.focus()
       editor.moveSelectionRange(one, 1)
-      document.getSelection().focusNode.should.equal(editor.outlineEditorElement.itemViewPForItem(one).firstChild)
+      document.getSelection().focusNode.should.equal(editor.outlineEditorElement.renderedBodyTextSPANForItem(one).firstChild)
       document.getSelection().focusOffset.should.equal(1)
       document.activeElement.textContent.should.equal(one.bodyText)
 
@@ -301,7 +301,7 @@ describe 'OutlineEditor', ->
       editor.focus()
       editor.moveSelectionRange(one, 1)
       editor.extendSelectionRange(one, 3)
-      document.getSelection().focusNode.should.equal(editor.outlineEditorElement.itemViewPForItem(one).firstChild)
+      document.getSelection().focusNode.should.equal(editor.outlineEditorElement.renderedBodyTextSPANForItem(one).firstChild)
       document.getSelection().focusOffset.should.equal(3)
       document.getSelection().anchorOffset.should.equal(1)
 

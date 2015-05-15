@@ -4,6 +4,8 @@ shallowEquals = require 'shallow-equals'
 Item = require '../core/item'
 assert = require 'assert'
 
+ItemRenderer = null
+
 # Public: The selection returned by {OutlineEditor::selection}.
 #
 # The anchor of a selection is the beginning point of the selection. When
@@ -419,12 +421,12 @@ class Selection
     editor = @editor
     outlineEditorElement = editor.outlineEditorElement
     upstream = Selection.isUpstreamDirection(direction)
-    focusViewP = outlineEditorElement.itemViewPForItem(focusItem)
-    focusViewPRect = focusViewP.getBoundingClientRect()
-    focusViewPStyle = window.getComputedStyle(focusViewP)
-    viewLineHeight = parseInt(focusViewPStyle.lineHeight, 10)
-    viewPaddingTop = parseInt(focusViewPStyle.paddingTop, 10)
-    viewPaddingBottom = parseInt(focusViewPStyle.paddingBottom, 10)
+    renderedBodyText = outlineEditorElement.renderedBodyTextSPANForItem focusItem
+    renderedBodyTextRect = renderedBodyText.getBoundingClientRect()
+    renderedBodyTextStyle = window.getComputedStyle(renderedBodyText)
+    viewLineHeight = parseInt(renderedBodyTextStyle.lineHeight, 10)
+    viewPaddingTop = parseInt(renderedBodyTextStyle.paddingTop, 10)
+    viewPaddingBottom = parseInt(renderedBodyTextStyle.paddingBottom, 10)
     focusCaretRect = editor.getClientRectForItemOffset(focusItem, focusOffset)
     x = editor.selectionVerticalAnchor()
     picked
@@ -435,7 +437,7 @@ class Selection
     else
       y = focusCaretRect.bottom + (viewLineHeight / 2.0)
 
-    if y >= (focusViewPRect.top + viewPaddingTop) and y <= (focusViewPRect.bottom - viewPaddingBottom)
+    if y >= (renderedBodyTextRect.top + viewPaddingTop) and y <= (renderedBodyTextRect.bottom - viewPaddingBottom)
       picked = outlineEditorElement.pick(x, y).itemCaretPosition
     else
       nextItem
@@ -447,7 +449,7 @@ class Selection
 
       if nextItem
         editor.scrollToItemIfNeeded(nextItem) # pick breaks for offscreen items
-        nextItemTextRect = outlineEditorElement.itemViewPForItem(nextItem).getBoundingClientRect()
+        nextItemTextRect = outlineEditorElement.renderedBodyTextSPANForItem(nextItem).getBoundingClientRect()
         if upstream
           y = nextItemTextRect.bottom - 1
         else

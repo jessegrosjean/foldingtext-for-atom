@@ -232,6 +232,9 @@ class ItemRenderer
     # but that brings lots of bagage and some performance issues with it.
     @idsToLIs[item?.id]
 
+  renderedBodyTextSPANForItem: (item) ->
+    ItemRenderer.renderedBodyTextSPANForRenderedLI(@renderedLIForItem(item))
+
   @renderedBranchDIVForRenderedLI: (LI) ->
     LI?.firstChild.nextSibling
 

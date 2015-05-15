@@ -218,12 +218,12 @@ class OutlineEditorElement extends HTMLElement
 
   getClientRectForItemOffset: (item, offset) ->
     return undefined unless item
-    viewP = @itemViewPForItem item
-    return undefined unless viewP
-    return undefined unless document.body.contains viewP
+    renderedBodyTextSPAN = @renderedBodyTextSPANForItem item
+    return undefined unless renderedBodyTextSPAN
+    return undefined unless document.body.contains renderedBodyTextSPAN
 
     if offset is undefined
-      return viewP.getBoundingClientRect()
+      return renderedBodyTextSPAN.getBoundingClientRect()
 
     bodyText = item.bodyText
     paddingBottom = 0
@@ -277,10 +277,10 @@ class OutlineEditorElement extends HTMLElement
           else
             baseRect = alternateRect
       else
-        computedStyle = window.getComputedStyle(viewP)
+        computedStyle = window.getComputedStyle(renderedBodyTextSPAN)
         paddingTop = parseInt(computedStyle.paddingTop, 10)
         paddingBottom = parseInt(computedStyle.paddingBottom, 10)
-        baseRect = viewP.getBoundingClientRect()
+        baseRect = renderedBodyTextSPAN.getBoundingClientRect()
         side = 'left'
 
       return {} =
@@ -292,7 +292,7 @@ class OutlineEditorElement extends HTMLElement
         top: baseRect.top + paddingTop
         width: 0 # trim
     else
-      viewP.getBoundingClientRect()
+      renderedBodyTextSPAN.getBoundingClientRect()
 
   ###
   Section: Scrolling
@@ -479,14 +479,14 @@ class OutlineEditorElement extends HTMLElement
           if currentSelection.isTextMode
             nodeFocusOffset = @itemRenderer.itemOffsetToNodeOffset(currentSelection.focusItem, currentSelection.focusOffset)
             nodeAnchorOffset = @itemRenderer.itemOffsetToNodeOffset(currentSelection.anchorItem, currentSelection.anchorOffset)
-            viewP = @itemViewPForItem(currentSelection.focusItem)
+            focusedRenderedBodyTextSPAN = @renderedBodyTextSPANForItem currentSelection.focusItem
             range = document.createRange()
 
             selection.removeAllRanges()
             range.setStart(nodeAnchorOffset.node, nodeAnchorOffset.offset)
             selection.addRange(range)
 
-            viewP.focus()
+            focusedRenderedBodyTextSPAN.focus()
 
             if currentSelection.isCollapsed
               rect = currentSelection.focusClientRect
@@ -797,7 +797,7 @@ class OutlineEditorElement extends HTMLElement
         true
 
   ###
-  Section: Util
+  Section: DOM Access
   ###
 
   @findOutlineEditor: (element) ->
@@ -808,8 +808,11 @@ class OutlineEditorElement extends HTMLElement
       element = element.parentNode
     element
 
-  itemViewPForItem: (item) ->
-    ItemRenderer.renderedBodyTextSPANForRenderedLI @itemRenderer.renderedLIForItem(item)
+  renderedItemLIForItem: (item) ->
+    @itemRenderer.renderedLIForItem item
+
+  renderedBodyTextSPANForItem: (item) ->
+    @itemRenderer.renderedBodyTextSPANForItem item
 
 ###
 Util Functions
@@ -868,8 +871,7 @@ EventRegistery.listen '.ft-item-content',
     itemRenderer = editorElement.itemRenderer
     editor = editorElement.editor
     item = itemRenderer.itemForRenderedNode e.target
-    itemRenderedLI = itemRenderer.renderedLIForItem item
-    itemRenderedBodyTextSPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI itemRenderedLI
+    itemRenderedBodyTextSPAN = itemRenderer.renderedBodyTextSPANForItem item
     newBodyText = AttributedString.inlineFTMLToText itemRenderedBodyTextSPAN
     oldBodyText = item.bodyText
     outline = item.outline

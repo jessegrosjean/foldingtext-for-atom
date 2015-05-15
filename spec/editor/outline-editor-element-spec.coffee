@@ -122,8 +122,8 @@ describe 'OutlineEditorElement', ->
 
     it 'should pick at line wrap boundaries', ->
       LI = editorElement.itemRenderer.renderedLIForItem(one)
-      P = ItemRenderer.renderedBodyTextSPANForRenderedLI(LI)
-      bounds = P.getBoundingClientRect()
+      SPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI(LI)
+      bounds = SPAN.getBoundingClientRect()
       appendText = ' makethislinewrap'
       newBounds = bounds
 
@@ -131,8 +131,8 @@ describe 'OutlineEditorElement', ->
       # will pass no matter what browser window width/font/etc is.
       while bounds.height is newBounds.height
         one.appendBodyText(appendText)
-        P = ItemRenderer.renderedBodyTextSPANForRenderedLI(LI)
-        newBounds = P.getBoundingClientRect()
+        SPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI(LI)
+        newBounds = SPAN.getBoundingClientRect()
 
       pickRightTop = editorElement.pick(newBounds.right - 1, newBounds.top + 1).itemCaretPosition
       pickLeftBottom = editorElement.pick(newBounds.left + 1, newBounds.bottom - 1).itemCaretPosition
@@ -145,9 +145,9 @@ describe 'OutlineEditorElement', ->
       length = appendText.length - 1
       start = one.bodyText.length - length
       one.addElementInBodyTextRange('I', null, start, length)
-      P = ItemRenderer.renderedBodyTextSPANForRenderedLI(LI)
+      SPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI(LI)
 
-      newBounds = P.getBoundingClientRect()
+      newBounds = SPAN.getBoundingClientRect()
       pickRightTop = editorElement.pick(newBounds.right - 1, newBounds.top + 1).itemCaretPosition
       pickLeftBottom = editorElement.pick(newBounds.left + 1, newBounds.bottom - 1).itemCaretPosition
 
@@ -158,21 +158,21 @@ describe 'OutlineEditorElement', ->
     it 'should translate from outline to DOM offsets', ->
       viewLI = document.getElementById(one.id)
       itemRenderer = editorElement.itemRenderer
-      p = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
+      SPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
 
       itemRenderer.itemOffsetToNodeOffset(one, 0).should.eql
-        node: p.firstChild
+        node: SPAN.firstChild
         offset: 0
 
       itemRenderer.itemOffsetToNodeOffset(one, 2).should.eql
-        node: p.firstChild
+        node: SPAN.firstChild
         offset: 2
 
       one.bodyHTML = 'one <b>two</b> three'
 
-      p = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
+      SPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
       itemRenderer.itemOffsetToNodeOffset(one, 4).should.eql
-        node: p.firstChild
+        node: SPAN.firstChild
         offset: 4
 
       itemRenderer.itemOffsetToNodeOffset(one, 5).offset.should.equal(1)
@@ -181,22 +181,22 @@ describe 'OutlineEditorElement', ->
 
     it 'should translate from DOM to outline', ->
       viewLI = document.getElementById(one.id)
-      p = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
+      SPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
 
-      AttributedString.inlineFTMLOffsetToTextOffset(p, 0).should.equal(0)
-      AttributedString.inlineFTMLOffsetToTextOffset(p.firstChild, 0).should.equal(0)
+      AttributedString.inlineFTMLOffsetToTextOffset(SPAN, 0).should.equal(0)
+      AttributedString.inlineFTMLOffsetToTextOffset(SPAN.firstChild, 0).should.equal(0)
 
       one.bodyHTML = 'one <b>two</b> three'
-      p = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
+      SPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
 
-      AttributedString.inlineFTMLOffsetToTextOffset(p, 0).should.equal(0)
-      AttributedString.inlineFTMLOffsetToTextOffset(p, 1).should.equal(4)
-      AttributedString.inlineFTMLOffsetToTextOffset(p, 2).should.equal(7)
+      AttributedString.inlineFTMLOffsetToTextOffset(SPAN, 0).should.equal(0)
+      AttributedString.inlineFTMLOffsetToTextOffset(SPAN, 1).should.equal(4)
+      AttributedString.inlineFTMLOffsetToTextOffset(SPAN, 2).should.equal(7)
 
-      b = p.firstChild.nextSibling
+      b = SPAN.firstChild.nextSibling
 
       AttributedString.inlineFTMLOffsetToTextOffset(b, 0).should.equal(4)
       AttributedString.inlineFTMLOffsetToTextOffset(b.firstChild, 2).should.equal(6)
 
-      AttributedString.inlineFTMLOffsetToTextOffset(p.lastChild, 0).should.equal(7)
-      AttributedString.inlineFTMLOffsetToTextOffset(p.lastChild, 3).should.equal(10)
+      AttributedString.inlineFTMLOffsetToTextOffset(SPAN.lastChild, 0).should.equal(7)
+      AttributedString.inlineFTMLOffsetToTextOffset(SPAN.lastChild, 3).should.equal(10)
