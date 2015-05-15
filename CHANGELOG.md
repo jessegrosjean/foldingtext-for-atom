@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.1.2
+
+- Fix "edit link" popover panel.
+
 ## 0.1.1
 
 - Fix crashes that started in Atom 0.199 release.
