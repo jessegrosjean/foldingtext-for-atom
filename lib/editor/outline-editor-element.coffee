@@ -809,10 +809,7 @@ class OutlineEditorElement extends HTMLElement
     element
 
   itemViewPForItem: (item) ->
-    @_itemViewBodyP(@itemRenderer.renderedLIForItem(item))
-
-  _itemViewBodyP: (itemViewLI) ->
-    ItemRenderer.renderedBodyTextSPANForRenderedLI itemViewLI
+    ItemRenderer.renderedBodyTextSPANForRenderedLI @itemRenderer.renderedLIForItem(item)
 
 ###
 Util Functions
@@ -870,11 +867,10 @@ EventRegistery.listen '.ft-item-content',
     editorElement = OutlineEditorElement.findOutlineEditorElement e.target
     itemRenderer = editorElement.itemRenderer
     editor = editorElement.editor
-    typingFormattingTags = editor.getTypingFormattingTags()
     item = itemRenderer.itemForRenderedNode e.target
-    itemViewLI = itemRenderer.renderedLIForItem item
-    itemViewP = editorElement._itemViewBodyP itemViewLI
-    newBodyText = AttributedString.inlineFTMLToText itemViewP
+    itemRenderedLI = itemRenderer.renderedLIForItem item
+    itemRenderedBodyTextSPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI itemRenderedLI
+    newBodyText = AttributedString.inlineFTMLToText itemRenderedBodyTextSPAN
     oldBodyText = item.bodyText
     outline = item.outline
     location = 0
@@ -893,6 +889,7 @@ EventRegistery.listen '.ft-item-content',
     markerRegex = new RegExp marker, 'g'
     startOffset = editor.selection.startOffset
     markedOldBodyText = oldBodyText.slice(0, startOffset) + marker + oldBodyText.slice(startOffset)
+    typingFormattingTags = editor.getTypingFormattingTags()
 
     for each in diff markedOldBodyText, newBodyText
       type = each[0]

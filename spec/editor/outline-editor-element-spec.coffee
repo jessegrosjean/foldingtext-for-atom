@@ -1,6 +1,7 @@
 loadOutlineFixture = require '../load-outline-fixture'
 OutlineEditor = require '../../lib/editor/outline-editor'
 AttributedString = require '../../lib/core/attributed-string'
+ItemRenderer = require '../../lib/editor/item-renderer'
 Outline = require '../../lib/core/outline'
 
 describe 'OutlineEditorElement', ->
@@ -47,7 +48,7 @@ describe 'OutlineEditorElement', ->
         viewLI = document.getElementById(one.id)
         one.bodyText = 'one two three'
         one.addElementInBodyTextRange('B', null, 4, 3)
-        editorElement._itemViewBodyP(viewLI).innerHTML.should.equal('one <b>two</b> three')
+        ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI).innerHTML.should.equal('one <b>two</b> three')
 
       it 'should not crash when offscreen item is changed', ->
         editor.setCollapsed(one)
@@ -121,7 +122,7 @@ describe 'OutlineEditorElement', ->
 
     it 'should pick at line wrap boundaries', ->
       LI = editorElement.itemRenderer.renderedLIForItem(one)
-      P = editorElement._itemViewBodyP(LI)
+      P = ItemRenderer.renderedBodyTextSPANForRenderedLI(LI)
       bounds = P.getBoundingClientRect()
       appendText = ' makethislinewrap'
       newBounds = bounds
@@ -130,7 +131,7 @@ describe 'OutlineEditorElement', ->
       # will pass no matter what browser window width/font/etc is.
       while bounds.height is newBounds.height
         one.appendBodyText(appendText)
-        P = editorElement._itemViewBodyP(LI)
+        P = ItemRenderer.renderedBodyTextSPANForRenderedLI(LI)
         newBounds = P.getBoundingClientRect()
 
       pickRightTop = editorElement.pick(newBounds.right - 1, newBounds.top + 1).itemCaretPosition
@@ -144,7 +145,7 @@ describe 'OutlineEditorElement', ->
       length = appendText.length - 1
       start = one.bodyText.length - length
       one.addElementInBodyTextRange('I', null, start, length)
-      P = editorElement._itemViewBodyP(LI)
+      P = ItemRenderer.renderedBodyTextSPANForRenderedLI(LI)
 
       newBounds = P.getBoundingClientRect()
       pickRightTop = editorElement.pick(newBounds.right - 1, newBounds.top + 1).itemCaretPosition
@@ -157,7 +158,7 @@ describe 'OutlineEditorElement', ->
     it 'should translate from outline to DOM offsets', ->
       viewLI = document.getElementById(one.id)
       itemRenderer = editorElement.itemRenderer
-      p = editorElement._itemViewBodyP(viewLI)
+      p = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
 
       itemRenderer.itemOffsetToNodeOffset(one, 0).should.eql
         node: p.firstChild
@@ -169,7 +170,7 @@ describe 'OutlineEditorElement', ->
 
       one.bodyHTML = 'one <b>two</b> three'
 
-      p = editorElement._itemViewBodyP(viewLI)
+      p = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
       itemRenderer.itemOffsetToNodeOffset(one, 4).should.eql
         node: p.firstChild
         offset: 4
@@ -180,13 +181,13 @@ describe 'OutlineEditorElement', ->
 
     it 'should translate from DOM to outline', ->
       viewLI = document.getElementById(one.id)
-      p = editorElement._itemViewBodyP(viewLI)
+      p = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
 
       AttributedString.inlineFTMLOffsetToTextOffset(p, 0).should.equal(0)
       AttributedString.inlineFTMLOffsetToTextOffset(p.firstChild, 0).should.equal(0)
 
       one.bodyHTML = 'one <b>two</b> three'
-      p = editorElement._itemViewBodyP(viewLI)
+      p = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
 
       AttributedString.inlineFTMLOffsetToTextOffset(p, 0).should.equal(0)
       AttributedString.inlineFTMLOffsetToTextOffset(p, 1).should.equal(4)
