@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.1.4
+
+- Fix error when clicking on item badge to filter.
+
 ## 0.1.2
 
 - Fix "edit link" popover panel.

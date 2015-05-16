@@ -40,22 +40,22 @@ class FoldingTextService
   # Public: {Item} Class
   Item: null # lazy
   Object.defineProperty @::, 'Item',
-    get: -> require './coreItem'
+    get: -> require './core/item'
 
   # Public: {Outline} Class
   Outline: null # lazy
   Object.defineProperty @::, 'Outline',
-    get: -> require './core/Outline'
+    get: -> require './core/outline'
 
   # Public: {Mutation} Class
   Mutation: null # lazy
   Object.defineProperty @::, 'Mutation',
-    get: -> require './core/Mutation'
+    get: -> require './core/mutation'
 
   # Public: {OutlineEditor} Class
   OutlineEditor: null # lazy
   Object.defineProperty @::, 'OutlineEditor',
-    get: -> require './editor/OutlineEditor'
+    get: -> require './editor/outline-editor'
 
   ###
   Section: Workspace Outline Editors
