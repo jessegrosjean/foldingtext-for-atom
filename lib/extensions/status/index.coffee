@@ -28,7 +28,6 @@ FoldingTextService.eventRegistery.listen '.bstatus',
     e.preventDefault()
 
 FoldingTextService.observeOutlineEditors (editor) ->
-  editor.addSearchAttributeShortcut 'status', 'data-status'
   editor.addItemBadgeRenderer (item, addBadgeElement) ->
     if status = item.getAttribute 'data-status'
       a = document.createElement 'A'

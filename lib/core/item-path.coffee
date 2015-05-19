@@ -300,12 +300,11 @@ class ItemPath
   valueForAttributePath: (attributePath, item) ->
     attributeName = attributePath[0]
     attributeName = @options.attributeShortcuts?[attributeName] or attributeName
-
     switch attributeName
       when 'text'
         item.bodyText
       else
-        item.getAttribute attributeName
+        item.getAttribute 'data-' + attributeName
 
   convertValueForModifier: (value, modifier) ->
     if modifier is 'i'
@@ -324,22 +323,22 @@ class ItemPath
       when '!='
         left isnt right
       when '<'
-        if left
+        if left?
           left < right
         else
           false
       when '>'
-        if left
+        if left?
           left > right
         else
           false
       when '<='
-        if left
+        if left?
           left <= right
         else
           false
       when '>='
-        if left
+        if left?
           left >= right
         else
           false
@@ -359,7 +358,7 @@ class ItemPath
         else
           false
       when 'matches'
-        if left
+        if left?
           joinedValueRegexCache = predicate.joinedValueRegexCache
           if joinedValueRegexCache is undefined
             try

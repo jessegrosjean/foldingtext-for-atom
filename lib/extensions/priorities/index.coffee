@@ -20,7 +20,6 @@ togglePriority = (editor, priority) ->
     outline.endUpdates()
 
 FoldingTextService.observeOutlineEditors (editor) ->
-  editor.addSearchAttributeShortcut 'priority', 'data-priority'
   editor.addItemBadgeRenderer (item, addBadgeElement) ->
     if value = item.getAttribute 'data-priority'
       span = document.createElement 'A'

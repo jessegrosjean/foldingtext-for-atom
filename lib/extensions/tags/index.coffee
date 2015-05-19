@@ -6,7 +6,6 @@ ListInputElement = require '../ui/list-input-element'
 {CompositeDisposable} = require 'atom'
 
 FoldingTextService.observeOutlineEditors (editor) ->
-  editor.addSearchAttributeShortcut 'tags', 'data-tags'
   editor.addItemBadgeRenderer (item, addBadgeElement) ->
     if tags = item.getAttribute 'data-tags', true
       for each in tags
