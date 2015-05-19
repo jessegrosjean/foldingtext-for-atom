@@ -6,6 +6,7 @@ AttributedString = require '../core/attributed-string'
 ItemSerializer = require '../core/item-serializer'
 {Emitter, CompositeDisposable} = require 'atom'
 UndoManager = require '../core/undo-manager'
+Constants = require '../core/constants'
 rafdebounce = require './raf-debounce'
 ItemPath = require '../core/item-path'
 Velocity = require 'velocity-animate'
@@ -50,7 +51,6 @@ class OutlineEditor
     @_disableSyncDOMSelectionToEditor = false
     @_search = {}
     @_searchCollapsed = {}
-    @_searchAttributeShortcuts = {}
     @_searchResults = []
 
     @_hoistStack = []
@@ -66,7 +66,6 @@ class OutlineEditor
 
     outlineEditorElement = document.createElement('ft-outline-editor').initialize(this)
     outlineEditorElement.id = id
-    outlineEditorElement.classList.add('beditor')
     @outlineEditorElement = outlineEditorElement
     if params?.hostElement
       params.hostElement.appendChild(outlineEditorElement)
@@ -92,7 +91,7 @@ class OutlineEditor
     expandedItemIDs = @serializedState.expandedItemIDs
     unless expandedItemIDs
       expandedItemIDs = @outline.serializedState.expandedItemIDs or []
-    @setExpanded (@outline.getItemsForIDs expandedItemIDs)
+    @setExpanded(@outline.getItemsForIDs expandedItemIDs)
     hoistedItems = @outline.getItemsForIDs hoistedItemIDs
     if hoistedItems.length
       @setHoistedItemsStack hoistedItems
@@ -516,19 +515,6 @@ class OutlineEditor
   # Public: Search type used for xpath search syntax.
   @X_PATH_SEARCH: 'xpath'
 
-  # Public: Add a shortcut for an attribute name in the
-  # {OutlineEditor.ITEM_PATH_SEARCH} search syntax. For example if you want
-  # the user to be able to type `@status` instead of having to type `@data-
-  # status` then you can add `status` as a shortcut for `data-status`.
-  #
-  # - `shortcutName` {String} Shortcut name, `status` for example.
-  # - `attributeName` {String} Attribute name, 'data-status' for example.
-  #
-  addSearchAttributeShortcut: (shortcutName, attributeName) ->
-    @_searchAttributeShortcuts[shortcutName] = attributeName
-    if @search
-      setSearch @search
-
   # Public: Returns search {Object} with keys:
   #
   # - `query` Search {String}
@@ -575,7 +561,6 @@ class OutlineEditor
           @_search.error = itemPath.pathExpressionError
           results = ItemPath.evaluate itemPath, hoisted,
             root: hoisted
-            attributeShortcuts: @_searchAttributeShortcuts
           for each in results
             @_addSearchResult(each)
 
@@ -1533,36 +1518,40 @@ class OutlineEditor
   Section: Pasteboard
   ###
 
-  copySelection: (dataTransfer) ->
+  copySelection: (dataTransfer, mimeType) ->
     selectionRange = @selection
 
     if not selectionRange.isCollapsed
       if selectionRange.isOutlineMode
+        mimeType ?= Constants.FTMLMimeType
         items = selectionRange.itemsCommonAncestors
-        ItemSerializer.writeItems(items, this, dataTransfer)
+        ItemSerializer.writeItemsToDataTransfer(items, this, dataTransfer, mimeType)
       else if selectionRange.isTextMode
+        mimeType ?= Constants.HTMLMimeType
         focusItem = selectionRange.focusItem
         startOffset = selectionRange.startOffset
         endOffset = selectionRange.endOffset
         selectedText = focusItem.getAttributedBodyTextSubstring(startOffset, endOffset - startOffset)
-        p = document.createElement('P')
-        p.appendChild(selectedText.toInlineFTMLFragment(document))
-        dataTransfer.setData('text/plain', selectedText.string())
-        dataTransfer.setData('text/html', p.innerHTML)
+        item = @outline.createItem selectedText
+        ItemSerializer.writeItemsToDataTransfer([item], this, dataTransfer, mimeType)
+    else
+      atom.beep()
 
-  cutSelection: (dataTransfer) ->
+  cutSelection: (dataTransfer, mimeType) ->
     selectionRange = @selection
     if selectionRange.isValid
       if not selectionRange.isCollapsed
-        @copySelection(dataTransfer)
+        @copySelection(dataTransfer, mimeType)
         @delete()
+    else
+      atom.beep()
 
-  pasteToSelection: (dataTransfer) ->
+  pasteToSelection: (dataTransfer, mimeType) ->
     selectionRange = @selection
-    items = ItemSerializer.readItems(this, dataTransfer)
+    items = ItemSerializer.readItemsFromDataTransfer(this, dataTransfer, mimeType)
 
-    if items.itemFragmentString
-      @insertText(items.itemFragmentString)
+    if items.length is 1 and not items[0].firstChild and items[0].attributeNames.length is 0
+      @insertText(items[0].attributedBodyText)
     else if items.length
       parent = @getHoistedItem()
       insertBefore = null
@@ -1576,7 +1565,11 @@ class OutlineEditor
           parent = endItem.parent
           insertBefore = endItem.nextSibling
 
+      @outline.beginUpdates()
       parent.insertChildrenBefore(items, insertBefore)
+      if items.metaState?.expandedItemIDs?
+        @setExpanded(@outline.getItemsForIDs items.metaState.expandedItemIDs)
+      @outline.endUpdates()
       @moveSelectionRange(items[0], undefined, items[items.length - 1], undefined)
 
   ###

@@ -7,6 +7,7 @@ Constants = require './constants'
 ItemPath = require './item-path'
 Mutation = require './mutation'
 shortid = require './shortid'
+_ = require 'underscore-plus'
 assert = require 'assert'
 Item = require './item'
 path = require 'path'
@@ -71,6 +72,7 @@ class Outline
   stoppedChangingDelay: 300
   stoppedChangingTimeout: null
   file: null
+  fileMimeType: null
   fileConflict: false
   fileSubscriptions: null
   serializedState: null
@@ -384,8 +386,12 @@ class Outline
   # not yet inserted into it so it won't be visible until you insert it.
   #
   # - `text` (optional) {String} or {AttributedString}.
-  createItem: (text, li, remapIDCallback) ->
-    new Item(@, text, li or @createStoreLI(), remapIDCallback)
+  createItem: (text, LIOrID, remapIDCallback) ->
+    if LIOrID and _.isString(LIOrID)
+      LI = @createStoreLI()
+      LI.id = LIOrID
+      LIOrID = LI
+    new Item(@, text, LIOrID or @createStoreLI(), remapIDCallback)
 
   cloneItem: (item) ->
     assert.ok(not item.isRoot, 'Can not clone root')
@@ -613,6 +619,15 @@ class Outline
   # Returns a {Boolean}.
   isInConflict: -> @conflict
 
+  getMimeType: ->
+    unless @fileMimeType
+      @fileMimeType = ItemSerializer.getMimeTypeForURI(@getPath()) or Constants.FTMLMimeType
+    @fileMimeType
+
+  setMimeType: (mimeType) ->
+    unless @getMimeType() is mimeType
+      @fileMimeType = mimeType
+
   # Public: Get the path of the associated file.
   #
   # Returns a {String}.
@@ -633,6 +648,7 @@ class Outline
       @file = null
 
     @emitter.emit 'did-change-path', @getPath()
+    @setMimeType(null)
 
   getUri: ->
     @getPath()
@@ -687,7 +703,7 @@ class Outline
     @beginUpdates()
     @root.removeChildren(@root.children)
     if @cachedDiskContents
-      items = ItemSerializer.itemsFromHTML(@cachedDiskContents, this, true)
+      items = ItemSerializer.deserializeItems(@cachedDiskContents, this, @getMimeType())
       @serializedState = items.metaState
       for each in items
         @root.appendChild(each)
@@ -733,7 +749,7 @@ class Outline
     if @cachedText?
       @cachedText
     else
-      @cachedText = ItemSerializer.itemsToHTML(@root.children, editor)
+      @cachedText = ItemSerializer.serializeItems(@root.children, editor, @getMimeType())
 
   loadSync: (pathOverride) ->
     @updateCachedDiskContentsSync(pathOverride)

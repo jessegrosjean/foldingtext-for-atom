@@ -5,6 +5,7 @@ AttributedString = require '../core/attributed-string'
 ItemSerializer = require '../core/item-serializer'
 EventRegistery = require './event-registery'
 ItemRenderer = require './item-renderer'
+Constants = require '../core/constants'
 {CompositeDisposable} = require 'atom'
 GlobalMouse = require './global-mouse'
 rafdebounce = require './raf-debounce'
@@ -526,7 +527,7 @@ class OutlineEditorElement extends HTMLElement
     if GlobalMouse.isGlobalLeftMouseDown()
       editor = @editor
       pick = @pick(e.clientX, e.clientY)
-      caretPosition = pick.itemCaretPosition
+      caretPosition = pick?.itemCaretPosition
 
       if caretPosition
         if e.shiftKey
@@ -545,7 +546,7 @@ class OutlineEditorElement extends HTMLElement
       @_extendingSelectionInteractionLastScrollTop = editor.outlineEditorElement.scrollTop
       @_extendSelectionDisposables = new CompositeDisposable(
         EventRegistery.listen(document, 'mouseup', @onDocumentMouseUp.bind(this)), # Listen to document otherwise will miss some mouse ups
-        EventRegistery.listen('.beditor', 'mousemove', rafdebounce(@onMouseMove.bind(this))),
+        EventRegistery.listen('ft-outline-editor', 'mousemove', rafdebounce(@onMouseMove.bind(this))),
         EventRegistery.listen(this, 'scroll', rafdebounce(@onScroll.bind(this))) # Listen directly to self since scroll doesn't bubble
       )
 
@@ -554,21 +555,21 @@ class OutlineEditorElement extends HTMLElement
     e.stopPropagation()
 
     pick = @pick(e.clientX, e.clientY)
-    caretPosition = pick.itemCaretPosition
-    selection = @editor.selection
+    caretPosition = pick?.itemCaretPosition
+    if caretPosition
+      selection = @editor.selection
 
-    if selection.isTextMode
-      unless selection.contains caretPosition.offsetItem, caretPosition.offset
-        @editor.moveSelectionRange caretPosition.offsetItem, caretPosition.offset
-        @editor.extendSelectionRangeToWordBoundaries()
-    else
-      @editor.moveSelectionRange caretPosition.offsetItem, undefined
-
+      if selection.isTextMode
+        unless selection.contains caretPosition.offsetItem, caretPosition.offset
+          @editor.moveSelectionRange caretPosition.offsetItem, caretPosition.offset
+          @editor.extendSelectionRangeToWordBoundaries()
+      else
+        @editor.moveSelectionRange caretPosition.offsetItem, undefined
     setTimeout (-> atom.contextMenu.showForEvent(e)), 100
 
   onMouseMove: (e) ->
     pick = @pick(e.clientX, e.clientY)
-    caretPosition = pick.itemCaretPosition
+    caretPosition = pick?.itemCaretPosition
 
     if caretPosition
       #if e.target.classList.contains('ft-body-text') and caretPosition.offsetItem isnt @editor.selection.anchorItem
@@ -625,7 +626,7 @@ class OutlineEditorElement extends HTMLElement
     e.dataTransfer.setData 'application/json', JSON.stringify
       outlineID: item.outline.id
       itemID: item.id
-    ItemSerializer.writeItems [item], @editor, e.dataTransfer
+    ItemSerializer.writeItemsToDataTransfer [item], @editor, e.dataTransfer, Constants.FTMLMimeType
 
     @editor._hackDragItemMouseOffset =
       xOffset: x
@@ -684,35 +685,39 @@ class OutlineEditorElement extends HTMLElement
     # For some reason "dropEffect is always set to 'none' on e. So track it in
     # store state instead. Not sure if I'm doing something wrong or what.
     dropEffect = @editor.dropEffect()
-    droppedItem = @_itemToInsertForEvent e
+    droppedItems = @_itemsToInsertForEvent e
     dropParentItem = @editor.dropParentItem()
     dropInsertBeforeItem = @editor.dropInsertBeforeItem()
 
-    if droppedItem and dropParentItem
-      insertItem
+    if droppedItems.length and dropParentItem
+      insertItems
       if dropEffect is 'all' or dropEffect is 'move'
-        insertItem = droppedItem
+        insertItems = droppedItems
       else if dropEffect is 'copy'
-        insertItem = droppedItem.cloneItem()
+        insertItems = []
+        for each in droppedItems
+          insertItems.push each.cloneItem()
       else if dropEffect is 'link'
-        console.log 'link'
+        console.log 'links unsupported right now'
+        atom.beep()
+        return
 
-      if insertItem and insertItem isnt dropInsertBeforeItem
+      if insertItems.length and insertItems[0] isnt dropInsertBeforeItem
         outline = dropParentItem.outline
         undoManager = outline.undoManager
 
-        if insertItem.parent
+        if insertItems[0].parent
           compareTo = if dropInsertBeforeItem then dropInsertBeforeItem else dropParentItem.lastChild
           unless compareTo
             compareTo = dropParentItem
 
-          if insertItem.comparePosition(compareTo) & Node.DOCUMENT_POSITION_FOLLOWING
-            @scrollBy(-@itemRenderer.renderedLIForItem(insertItem).clientHeight)
+          if insertItems[0].comparePosition(compareTo) & Node.DOCUMENT_POSITION_FOLLOWING
+            @scrollBy(-@itemRenderer.renderedLIForItem(insertItems[0]).clientHeight)
 
         moveStartOffset
 
-        if droppedItem is insertItem
-          renderedLI = @itemRenderer.renderedLIForItem(droppedItem)
+        if droppedItems[0] is insertItems[0]
+          renderedLI = @itemRenderer.renderedLIForItem(droppedItems[0])
           if renderedLI
             editorElementRect = @getBoundingClientRect()
             renderedLIRect = renderedLI.getBoundingClientRect()
@@ -729,14 +734,14 @@ class OutlineEditorElement extends HTMLElement
               xOffset: editorX - editorLILeft
               yOffset: editorY - editorLITop
 
-        @editor.moveItems([insertItem], dropParentItem, dropInsertBeforeItem, moveStartOffset)
+        @editor.moveItems(insertItems, dropParentItem, dropInsertBeforeItem, moveStartOffset)
         undoManager.setActionName('Drag and Drop')
 
     @editor.debouncedSetDragState({})
 
-  _itemToInsertForEvent: (e) ->
+  _itemsToInsertForEvent: (e) ->
     draggedItem = @editor.draggedItem()
-    return draggedItem if draggedItem
+    return [draggedItem] if draggedItem
 
     try
       # If item is from another outline must import it into this outline.
@@ -744,18 +749,14 @@ class OutlineEditorElement extends HTMLElement
       outline = Outline.getOutlineForID draggedItemIDs.outlineID
       draggedItem = outline.getItemForID draggedItemIDs.itemID
       draggedItem = @editor.outline.importItem draggedItem.cloneItem()
-      return draggedItem if draggedItem
+      return [draggedItem] if draggedItem
     catch error
 
-    items = ItemSerializer.readItems @editor, e.dataTransfer
-    if items.itemFragmentString
-      @editor.outline.createItem items.itemFragmentString
-    else
-      items[0]
+    ItemSerializer.readItemsFromDataTransfer @editor, e.dataTransfer
 
   _dropTargetForEvent: (e) ->
     picked = @pick(e.clientX, e.clientY)
-    itemCaretPosition = picked.itemCaretPosition
+    itemCaretPosition = picked?.itemCaretPosition
 
     unless itemCaretPosition
       return {}

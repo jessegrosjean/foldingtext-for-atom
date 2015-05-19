@@ -71,7 +71,7 @@ class ItemRenderer
     classes = ['ft-item']
 
     unless item.hasBodyText
-      classes.push 'bempy'
+      classes.push 'ft-no-body-text'
 
     if item.hasChildren
       classes.push 'ft-has-children'
@@ -89,7 +89,7 @@ class ItemRenderer
       classes.push 'ft-hoistedItem'
 
     if @editor.dropParentItem() is item
-      classes.push 'bdropParentItem'
+      classes.push 'ft-drop-parent-item'
 
     if @editor.dropInsertBeforeItem() is item
       classes.push 'ft-drop-before'
@@ -587,9 +587,7 @@ class ItemRenderer
         length = children.length
 
         if length is 0
-          return {} =
-            nodeCaretPosition: {}
-            itemCaretPosition: {}
+          return null
 
         high = length - 1
         low = 0

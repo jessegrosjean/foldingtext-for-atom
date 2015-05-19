@@ -57,8 +57,7 @@ module.exports =
         Outline.getOutlineForPath(null, true).then (outline) ->
           new OutlineEditor(outline)
       else
-        extension = require('path').extname(filePath).toLowerCase()
-        if extension is '.ftml'
+        if mimeType = require('./core/item-serializer').getMimeTypeForURI(filePath)
           Outline ?= require('./core/outline')
           OutlineEditor ?= require('./editor/outline-editor')
           Outline.getOutlineForPath(filePath).then (outline) ->

@@ -30,8 +30,14 @@ describe 'FoldingText', ->
           foldingTextService = pack.mainModule.provideFoldingTextService()
           atom.workspace.open(outlinePath)
 
-    it 'should provide foldingtext-service', ->
+    it 'should provide service', ->
       foldingTextService.should.be.ok
+
+    it 'should expose classes', ->
+      foldingTextService.Item.should.be.ok
+      foldingTextService.Outline.should.be.ok
+      foldingTextService.Mutation.should.be.ok
+      foldingTextService.OutlineEditor.should.be.ok
 
     it 'should get outline editors', ->
       foldingTextService.getOutlineEditors().length.should.equal(1)

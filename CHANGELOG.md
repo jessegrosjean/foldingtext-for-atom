@@ -1,5 +1,16 @@
 # ChangeLog
 
+## 0.2.0
+
+TODO:
+  - Load/Save OPML metadata, dates, etc
+
+- Added open/edit/save for .opml
+- Added cut/copy/paste as OPML or TEXT
+- Changed search syntax to always expand attribute names from @name to @data-name
+- Fixed expanded state is preserved on copy/paste
+- Fixed dropping file onto empty outline creates link
+
 ## 0.1.4
 
 - Fix error when clicking on item badge to filter.
