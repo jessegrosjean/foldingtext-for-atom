@@ -815,28 +815,6 @@ class OutlineEditorElement extends HTMLElement
     @itemRenderer.renderedBodyTextSPANForItem item
 
 ###
-Util Functions
-###
-
-stopEventPropagation = (commandListeners) ->
-  newCommandListeners = {}
-  for commandName, commandListener of commandListeners
-    do (commandListener) ->
-      newCommandListeners[commandName] = (event) ->
-        event.stopPropagation()
-        commandListener.call(this, event)
-  newCommandListeners
-
-stopEventPropagationAndGroupUndo = (commandListeners) ->
-  newCommandListeners = {}
-  for commandName, commandListener of commandListeners
-    do (commandListener) ->
-      newCommandListeners[commandName] = (event) ->
-        event.stopPropagation()
-        commandListener.call(this, event)
-  newCommandListeners
-
-###
 Event and Command registration
 ###
 
@@ -979,23 +957,23 @@ EventRegistery.listen '.ft-body-text a',
 # Handle Cut/Copy/Paste
 #
 
-EventRegistery.listen 'input[is="outline-editor-focus"]', stopEventPropagation(
-  'cut': (e) -> @parentElement.editor.cutSelection(e.clipboardData)
-  'copy': (e) -> @parentElement.editor.copySelection(e.clipboardData)
-  'paste': (e) -> @parentElement.editor.pasteToSelection(e.clipboardData)
-)
-
 clipboardAsDatatransfer =
+  items: []
   getData: (type) -> atom.clipboard.read()
   setData: (type, data) -> atom.clipboard.write(data)
 
-atom.commands.add 'ft-outline-editor', stopEventPropagationAndGroupUndo(
-  'core:cut': (e) ->
-    @editor.cutSelection clipboardAsDatatransfer
-  'core:copy': (e) ->
-    @editor.copySelection clipboardAsDatatransfer
-  'core:paste': (e) ->
-    @editor.pasteToSelection clipboardAsDatatransfer
+atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagationAndGroupUndo(
+  'core:cut': (e) -> @editor.cutSelection clipboardAsDatatransfer
+  'core:copy': (e) -> @editor.copySelection clipboardAsDatatransfer
+  'core:paste': (e) -> @editor.pasteToSelection clipboardAsDatatransfer
+
+  'outline-editor:cut-opml': (e) -> @editor.cutSelection(clipboardAsDatatransfer, Constants.OPMLMimeType)
+  'outline-editor:copy-opml': (e) -> @editor.copySelection(clipboardAsDatatransfer, Constants.OPMLMimeType)
+  'outline-editor:paste-opml': (e) -> @editor.pasteToSelection(clipboardAsDatatransfer, Constants.OPMLMimeType)
+
+  'outline-editor:cut-text': (e) -> @editor.cutSelection(clipboardAsDatatransfer, Constants.TEXTMimeType)
+  'outline-editor:copy-text': (e) -> @editor.copySelection(clipboardAsDatatransfer, Constants.TEXTMimeType)
+  'outline-editor:paste-text': (e) -> @editor.pasteToSelection(clipboardAsDatatransfer, Constants.TEXTMimeType)
 )
 
 #
@@ -1009,7 +987,7 @@ EventRegistery.listen 'ft-outline-editor',
 # Handle Commands
 #
 
-atom.commands.add 'ft-outline-editor', stopEventPropagationAndGroupUndo(
+atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagationAndGroupUndo(
   'core:undo': -> @editor.undo()
   'core:redo': -> @editor.redo()
   'editor:newline': -> @editor.insertNewline()
@@ -1058,7 +1036,7 @@ atom.commands.add 'ft-outline-editor', stopEventPropagationAndGroupUndo(
   'editor:lower-case': -> @editor.lowerCase()
 )
 
-atom.commands.add 'ft-outline-editor', stopEventPropagation(
+atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagation(
   'core:cancel': ->
     if @editor.isTextMode()
       @editor.extendSelectionRangeToItemBoundaries()

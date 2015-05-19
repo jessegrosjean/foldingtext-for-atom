@@ -126,6 +126,24 @@ class EventRegistery
       listeners.needsSort = false
     listeners or []
 
+  stopEventPropagation: (commandListeners) ->
+    newCommandListeners = {}
+    for commandName, commandListener of commandListeners
+      do (commandListener) ->
+        newCommandListeners[commandName] = (event) ->
+          event.stopPropagation()
+          commandListener.call(this, event)
+    newCommandListeners
+
+  stopEventPropagationAndGroupUndo: (commandListeners) ->
+    newCommandListeners = {}
+    for commandName, commandListener of commandListeners
+      do (commandListener) ->
+        newCommandListeners[commandName] = (event) ->
+          event.stopPropagation()
+          commandListener.call(this, event)
+    newCommandListeners
+
 class SelectorBasedListener
   constructor: (@selector, @callback) ->
     @specificity = (SpecificityCache[@selector] ?= calculateSpecificity(@selector))
