@@ -186,16 +186,16 @@ describe 'ItemPath', ->
         outline.evaluateItemPath('//@t != 23').should.eql [one, two, three, four, five]
 
       it 'should support <', ->
-        outline.evaluateItemPath('//@t < 23').should.eql [three]
+        outline.evaluateItemPath('//@t < 23').should.eql [three, four]
 
       it 'should support <=', ->
-        outline.evaluateItemPath('//@t <= 23').should.eql [three, six]
+        outline.evaluateItemPath('//@t <= 23').should.eql [three, four, six]
 
       it 'should support >', ->
         outline.evaluateItemPath('//@t > 09').should.eql [six]
 
       it 'should support >=', ->
-        outline.evaluateItemPath('//@t >= 09').should.eql [three, six]
+        outline.evaluateItemPath('//@t >= 09').should.eql [six]
 
       it 'should support beginswith', ->
         outline.evaluateItemPath('//beginswith o').should.eql [one]
@@ -280,7 +280,7 @@ describe 'ItemPath', ->
         outline.evaluateItemPath('0one').should.eql([one])
 
       it 'should support tags and values ending with numbers', ->
-        one.setAttribute('t1', 'v1')
+        one.setAttribute('data-t1', 'v1')
         outline.evaluateItemPath('//@t1 = v1').should.eql [one]
 
       it 'should accept quoted unicode strings', ->
