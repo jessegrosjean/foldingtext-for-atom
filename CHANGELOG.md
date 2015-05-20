@@ -2,7 +2,7 @@
 
 ## 0.2.1
 
-- Fixed `path` variable overwrite which later caused error
+- Fixed problem where outlines couldn't load/save after you dragged and dropped another file on it to create a link.
 
 ## 0.2.0
 
