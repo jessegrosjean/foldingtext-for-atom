@@ -473,15 +473,15 @@ class AttributedString
 
   toInlineFTMLFragment: (ownerDocument=document) ->
     @_ensureClean()
-    nodeRanges = _calculateInitialNodeRanges @, ownerDocument
+    nodeRanges = AttributedString._calculateInitialNodeRanges @, ownerDocument
     nodeRangeStack = [
       start: 0
       end: @length
       node: ownerDocument.createDocumentFragment()
     ]
-    _buildFragmentFromNodeRanges nodeRanges, nodeRangeStack
+    AttributedString._buildFragmentFromNodeRanges nodeRanges, nodeRangeStack
 
-  _calculateInitialNodeRanges = (attributedString, ownerDocument) ->
+  @_calculateInitialNodeRanges: (attributedString, ownerDocument) ->
     # For each attribute run create element nodes for each attribute and text node
     # for the text content. Store node along with range over which is should be
     # applied. Return sorted node ranages.
@@ -504,7 +504,7 @@ class AttributedString
           nodeRange =
             node: element
             start: run.location
-            end: _seekTagRangeEnd tag, tagAttributes, runIndex, attributedString
+            end: @_seekTagRangeEnd tag, tagAttributes, runIndex, attributedString
 
           tagsToRanges[tag] = nodeRange
           nodeRanges.push nodeRange
@@ -518,10 +518,10 @@ class AttributedString
 
       runIndex++
 
-    nodeRanges.sort _compareNodeRanges
+    nodeRanges.sort @_compareNodeRanges
     nodeRanges
 
-  _seekTagRangeEnd = (tagName, seekTagAttributes, runIndex, attributedString) ->
+  @_seekTagRangeEnd: (tagName, seekTagAttributes, runIndex, attributedString) ->
     attributeRuns = attributedString.attributeRuns()
     end = attributeRuns.length
     while true
@@ -533,7 +533,7 @@ class AttributedString
       else if runIndex is end
         return run.location + run.length
 
-  _compareNodeRanges = (a, b) ->
+  @_compareNodeRanges: (a, b) ->
     if a.start < b.start
       -1
     else if a.start > b.start
@@ -560,7 +560,7 @@ class AttributedString
       else
         0
 
-  _buildFragmentFromNodeRanges = (nodeRanges, nodeRangeStack) ->
+  @_buildFragmentFromNodeRanges: (nodeRanges, nodeRangeStack) ->
     i = 0
     while i < nodeRanges.length
       range = nodeRanges[i++]
@@ -581,7 +581,7 @@ class AttributedString
         splitStart.end = parentRange.end
         # Insert splitEnd after current parent in correct location.
         j = nodeRanges.indexOf parentRange
-        while _compareNodeRanges(nodeRanges[j], splitEnd) < 0
+        while @_compareNodeRanges(nodeRanges[j], splitEnd) < 0
           j++
         nodeRanges.splice(j, 0, splitEnd)
 
@@ -632,7 +632,7 @@ class AttributedString
     'DEL': true
     'INS': true
 
-  _addDOMNodeToAttributedString = (node, attributedString) ->
+  @_addDOMNodeToAttributedString: (node, attributedString) ->
     nodeType = node.nodeType
 
     if nodeType is Node.TEXT_NODE
@@ -643,21 +643,21 @@ class AttributedString
 
       if each
         while each
-          _addDOMNodeToAttributedString(each, attributedString)
+          @_addDOMNodeToAttributedString(each, attributedString)
           each = each.nextSibling
         if InlineFTMLTags[node.tagName]
-          attributedString.addAttributeInRange(node.tagName, _getElementAttributes(node), tagStart, attributedString.length - tagStart)
+          attributedString.addAttributeInRange(node.tagName, @_getElementAttributes(node), tagStart, attributedString.length - tagStart)
       else if InlineFTMLTags[node.tagName]
         if node.tagName is 'BR'
           lineBreak = new AttributedString(Constants.LineSeparatorCharacter)
-          lineBreak.addAttributeInRange('BR', _getElementAttributes(node), 0, 1)
+          lineBreak.addAttributeInRange('BR', @_getElementAttributes(node), 0, 1)
           attributedString.appendString(lineBreak)
         else if node.tagName is 'IMG'
           image = new AttributedString(Constants.ObjectReplacementCharacter)
-          image.addAttributeInRange('IMG', _getElementAttributes(node), 0, 1)
+          image.addAttributeInRange('IMG', @_getElementAttributes(node), 0, 1)
           attributedString.appendString(image)
 
-  _getElementAttributes = (element) ->
+  @_getElementAttributes: (element) ->
     if element.hasAttributes()
       result = {}
       for each in element.attributes
@@ -675,7 +675,7 @@ class AttributedString
     attributedString = new AttributedString()
     each = inlineFTMLContainer.firstChild
     while each
-      _addDOMNodeToAttributedString(each, attributedString)
+      @_addDOMNodeToAttributedString(each, attributedString)
       each = each.nextSibling
     attributedString
 
