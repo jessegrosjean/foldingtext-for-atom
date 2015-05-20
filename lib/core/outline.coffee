@@ -68,7 +68,6 @@ class Outline
   updateCount: 0
   updateMutations: null
   coalescingMutation: null
-  cachedText: null
   stoppedChangingDelay: 300
   stoppedChangingTimeout: null
   file: null
@@ -575,7 +574,6 @@ class Outline
       updateMutations = @updateMutations
       @updateMutations = null
       if updateMutations.length > 0
-        @cachedText = null
         @conflict = false if @conflict and not @isModified()
         @emitter.emit('did-change', updateMutations)
         @scheduleModifiedEvents()
@@ -687,7 +685,7 @@ class Outline
 
     @emitter.emit 'will-save', {path: filePath}
     @setPath(filePath)
-    text = @getText(editor)
+    text = ItemSerializer.serializeItems(@root.children, editor, @getMimeType())
     @file.writeSync text
     @cachedDiskContents = text
     @conflict = false
@@ -744,12 +742,6 @@ class Outline
         return id
       else
         candidateID = null
-
-  getText: (editor) ->
-    if @cachedText?
-      @cachedText
-    else
-      @cachedText = ItemSerializer.serializeItems(@root.children, editor, @getMimeType())
 
   loadSync: (pathOverride) ->
     @updateCachedDiskContentsSync(pathOverride)
