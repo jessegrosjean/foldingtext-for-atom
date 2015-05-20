@@ -32,7 +32,7 @@ serializeItems = (items, editor) ->
         expandedLines.push(lastVisibleLineNumber)
         lastVisibleLineNumber = calculateExpandedLines(item.firstChild, end)
       calculateExpandedLines(item.nextSibling, end)
-       
+
     for each in items
       lastVisibleLineNumber = calculateExpandedLines(each, each.nextBranch)
     expansionStateElement = opmlDocumentument.createElement('expansionState')
@@ -88,7 +88,6 @@ deserializeItems = (opml, outline) ->
     expansionState = headElement.getElementsByTagName('expansionState')[0]
     if expansionState
       expandedLines = (parseInt(each) for each in expansionState.textContent.trim().split(','))
-      expandedLines.sort()
 
   lastVisibleLineNumber = 0
   expandItemIfNeeded = (item) ->
