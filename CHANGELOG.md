@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.2.2
+
+- Fixed reading expansion state from OPML files
+
 ## 0.2.1
 
 - Fixed problem where outlines couldn't load/save after you dragged and dropped another file on it to create a link.
