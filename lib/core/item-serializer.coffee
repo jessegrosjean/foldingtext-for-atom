@@ -53,8 +53,7 @@ readItemsFromDataTransfer = (editor, dataTransfer, mimeType) ->
   items = []
   for eachItem in dataTransfer.items
     file = eachItem.getAsFile()
-    path = file.path
-    if path and path.length > 0
+    if file.path and file.path.length > 0
       item = editor.outline.createItem file.name
       item.addElementInBodyTextRange 'A', { href: 'file://' + file.path }, 0, file.name.length
       items.push item

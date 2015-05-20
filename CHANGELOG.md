@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.2.1
+
+- Fixed `path` variable overwrite which later caused error
+
 ## 0.2.0
 
 - Added support for opening and editing `.opml` files
