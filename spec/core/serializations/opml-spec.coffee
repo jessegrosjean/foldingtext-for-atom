@@ -12,7 +12,7 @@ fixtureAsOPMLString = '''
           <outline id="3" text="three" t=""/>
           <outline id="4" text="fo&lt;b&gt;u&lt;/b&gt;r" t=""/>
         </outline>
-        <outline id="5" text="five">
+        <outline id="5" text="five" created="Wed, 20 May 2015 14:04:27 GMT">
           <outline id="6" text="six" t="23"/>
         </outline>
       </outline>
@@ -25,6 +25,7 @@ describe 'OPML Serialization', ->
 
   beforeEach ->
     {outline, root, one, two, three, four, five, six} = loadOutlineFixture()
+    five.setAttribute('data-created', new Date('2015-05-20T14:04:27.000Z'))
 
   it 'should serialize items to OPML string', ->
     ItemSerializer.serializeItems(outline.root.children, null, Constants.OPMLMimeType).should.equal(fixtureAsOPMLString)
