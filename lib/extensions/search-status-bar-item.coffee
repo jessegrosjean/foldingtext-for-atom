@@ -62,6 +62,9 @@ exports.consumeStatusBarService = (statusBar) ->
       searchElement.style.display = 'none'
 
     commandsSubscriptions = new CompositeDisposable
+    commandsSubscriptions.add atom.commands.add searchElement,
+      'editor:copy-path': ->
+        foldingTextService.getActiveOutlineEditor()?.copyPathToClipboard()
     commandsSubscriptions.add atom.commands.add 'ft-outline-editor.outlineMode',
       'core:cancel': (e) ->
         searchElement.focusTextEditor()
