@@ -1,5 +1,8 @@
 # ChangeLog
 
+## 0.3.0
+
+- Fixed fully expand/collapse keyboard shortcut.
 ## 0.2.2
 
 - Fixed reading expansion state from OPML files
