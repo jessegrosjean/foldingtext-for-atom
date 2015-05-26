@@ -4,6 +4,8 @@
 
 - Fixed fully expand/collapse keyboard shortcut.
 - Fix error loading on case sensitive filesystems.
+- Fixed Command-F to focus search field in both outline and text modes
+
 ## 0.2.2
 
 - Fixed reading expansion state from OPML files

@@ -66,7 +66,7 @@ exports.consumeStatusBarService = (statusBar) ->
       'core:cancel': (e) ->
         searchElement.focusTextEditor()
         e.stopPropagation()
-    commandsSubscriptions.add atom.commands.add 'ft-outline-editor.outlineMode',
+    commandsSubscriptions.add atom.commands.add 'ft-outline-editor',
       'find-and-replace:show': (e) ->
         searchElement.focusTextEditor()
         e.stopPropagation()
