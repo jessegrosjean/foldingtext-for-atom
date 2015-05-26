@@ -2,6 +2,12 @@
 
 ## 0.3.0
 
+- Changed to `em` sizing in outline. You can now adjust entire outline size with:
+
+        ft-outline-editor {
+          font-size: 16px;
+        }
+
 - Fixed fully expand/collapse keyboard shortcut.
 - Fix error loading on case sensitive filesystems.
 - Fixed Command-F to focus search field in both outline and text modes

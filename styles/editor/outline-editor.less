@@ -10,7 +10,7 @@ ft-outline-editor {
   background-color: @syntax-background-color;
   font-family: @ft-font-family;
   font-size: @ft-font-size;
-  line-height: @ft-line-height-mult;
+  line-height: @ft-line-height;
   overflow-y: auto;
   overflow-x: hidden;
   .user-select(none);
@@ -69,7 +69,7 @@ input[is="ft-outline-editor-focus"] {
   display:flex;
   flex-direction: row;
   &.ft-hoistedItem {
-    margin: round(@ft-line-height-pixels / 2);
+    margin: (1em * @ft-line-height) / 2.0;
     > .ft-branch-controls {
       display: none;
     }
@@ -97,15 +97,13 @@ input[is="ft-outline-editor-focus"] {
 .ft-handle {
   cursor: pointer;
   pointer-events: all;
-  line-height: @ft-line-height-mult;
-  font-size: @ft-font-size;
   text-decoration:none;
   flex-grow: 0;
   padding: @ft-item-vertical-spacing 0;
   color: @syntax-text-color;
   &:before {
     display: inline-block;
-    width: @ft-item-indent-spacing;
+    width: 1em * @ft-line-height;
     font-weight: normal;
     color: @syntax-invisible-character-color;
     content: '▸︎';
@@ -121,7 +119,7 @@ input[is="ft-outline-editor-focus"] {
 }
 
 .ft-item-content {
-  line-height: @ft-line-height-mult;
+  line-height: @ft-line-height;
   margin: 0;
   padding: @ft-item-vertical-spacing 0;
 }
@@ -164,7 +162,7 @@ input[is="ft-outline-editor-focus"] {
 .ft-badges {
   display: inline-block;
   vertical-align: baseline;
-  font-size: round(@ft-font-size * 0.7);
+  font-size: 0.7em;
 }
 
 .ft-badge {
@@ -246,8 +244,8 @@ input[is="ft-outline-editor-focus"] {
   position: relative;
 }
 
-@drop-ball-radius: round(@ft-font-size / 4);
-@drop-ball-diameter: round(@drop-ball-radius * 2.0);
+@drop-ball-radius: 0.25em;
+@drop-ball-diameter: @drop-ball-radius * 2.0;
 
 .ft-drop-before > .ft-branch > .ft-item-content::before,
 .ft-drop-after > .ft-branch > .ft-item-content::after {
@@ -257,12 +255,15 @@ input[is="ft-outline-editor-focus"] {
   left: 0;
   right: 0;
   height: @drop-ball-diameter;
-  margin: -(@drop-ball-radius + @ft-item-vertical-spacing) 0 0 -@drop-ball-diameter;
+  margin-left: -@drop-ball-diameter;
+  margin-top: -(@drop-ball-radius + @ft-item-vertical-spacing);
   content: "";
-  background-image: url('data:image/svg+xml;utf8,<svg width="10000rem" height="0.5rem" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg"><g id="dropIndicator"><circle fill="none" stroke="@{syntax-cursor-color}" stroke-width="2" cx="4" cy="4" r="3.0" /><line fill="none" stroke="@{syntax-cursor-color}" stroke-width="2" x1="7" y1="4" x2="10000" y2="4" /></g></svg>');
-  background-repeat: no-repeat;
+  font-size: 1em;
+  background-image: url('data:image/svg+xml;utf8,<svg width="100%" height="100%" viewBox="0 0 8 8" preserveAspectRatio="xMinYMid meet" xmlns="http://www.w3.org/2000/svg"><circle fill="none" stroke="@{syntax-cursor-color}" stroke-width="2" cx="4" cy="4" r="3.0" /><line fill="none" stroke="@{syntax-cursor-color}" stroke-width="2" x1="7" y1="4" x2="10000" y2="4" /></svg>');
+  background-size: 100% 100%;
+  background-position: left center;
 }
 
 .ft-drop-after > .ft-branch > .ft-item-content::after {
-  margin: -@drop-ball-radius + @ft-item-vertical-spacing 0 0 -@drop-ball-diameter;
+  margin-top: -@drop-ball-radius + @ft-item-vertical-spacing;
 }
