@@ -1,7 +1,7 @@
 # Copyright (c) 2015 Jesse Grosjean. All rights reserved.
 
 AttributeRun = require './attribute-run'
-Constants = require './Constants'
+Constants = require './constants'
 _ = require 'underscore-plus'
 assert = require 'assert'
 dom = require './dom'

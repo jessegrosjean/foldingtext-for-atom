@@ -1,4 +1,4 @@
-Constants = require '../Constants'
+Constants = require '../constants'
 dom = require '../dom'
 
 serializeItems = (items, editor) ->

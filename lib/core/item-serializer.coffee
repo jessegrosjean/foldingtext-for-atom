@@ -1,5 +1,5 @@
 # Copyright (c) 2015 Jesse Grosjean. All rights reserved.
-Constants = require './Constants'
+Constants = require './constants'
 path = require 'path'
 
 serializations = []

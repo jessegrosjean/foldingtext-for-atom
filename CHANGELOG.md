@@ -3,6 +3,7 @@
 ## 0.3.0
 
 - Fixed fully expand/collapse keyboard shortcut.
+- Fix error loading on case sensitive filesystems.
 ## 0.2.2
 
 - Fixed reading expansion state from OPML files
