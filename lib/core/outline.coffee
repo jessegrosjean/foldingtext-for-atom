@@ -62,6 +62,7 @@ Q = require 'q'
 # ```
 class Outline
 
+  root: null
   refcount: 0
   changeCount: 0
   undoSubscriptions: null
@@ -74,14 +75,14 @@ class Outline
   fileMimeType: null
   fileConflict: false
   fileSubscriptions: null
-  serializedState: null
+  loadOptions: null
 
   ###
   Section: Construction
   ###
 
   # Public: Create a new outline.
-  constructor: (params) ->
+  constructor: (options) ->
     @outlineStore = @createOutlineStore()
 
     rootElement = @outlineStore.getElementById Constants.RootID
@@ -93,7 +94,7 @@ class Outline
     @emitter = new Emitter
 
     @loaded = false
-    @serializedState = {}
+    @loadOptions = {}
 
     @undoSubscriptions = new CompositeDisposable
     @undoSubscriptions.add undoManager.onDidCloseUndoGroup =>
@@ -113,8 +114,8 @@ class Outline
       @breakUndoCoalescing()
       @scheduleModifiedEvents()
 
-    @setPath(params.filePath) if params?.filePath
-    @load() if params?.load
+    @setPath(options.filePath) if options?.filePath
+    @load() if options?.load
 
   createOutlineStore: (outlineStore) ->
     outlineStore = document.implementation.createHTMLDocument()
@@ -702,7 +703,7 @@ class Outline
     @root.removeChildren(@root.children)
     if @cachedDiskContents
       items = ItemSerializer.deserializeItems(@cachedDiskContents, this, @getMimeType())
-      @serializedState = items.metaState
+      @loadOptions = items.loadOptions
       for each in items
         @root.appendChild(each)
     @endUpdates()

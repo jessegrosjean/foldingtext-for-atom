@@ -2,11 +2,14 @@
 
 {Disposable, CompositeDisposable} = require 'atom'
 foldingTextService = require './foldingtext-service'
+ItemSerializer = null
 OutlineEditor = null
 Outline = null
+url = null
+Q = null
 
 atom.deserializers.add
-  name: 'OutlineEditor'
+  name: 'OutlineEditorDeserializer'
   deserialize: (data={}) ->
     OutlineEditor ?= require('./editor/outline-editor')
     outline = require('./core/outline').getOutlineForPathSync(data.filePath)
@@ -50,19 +53,41 @@ module.exports =
         @addStatusBarItemsIfReady()
         @workspaceDisplayedEditor = true
 
-    @subscriptions.add atom.workspace.addOpener (filePath) ->
+    @subscriptions.add atom.workspace.addOpener (filePath, options) ->
       if filePath is 'outline-editor://new-outline'
         Outline ?= require('./core/outline')
         OutlineEditor ?= require('./editor/outline-editor')
         Outline.getOutlineForPath(null, true).then (outline) ->
           new OutlineEditor(outline)
-      else
-        if mimeType = require('./core/item-serializer').getMimeTypeForURI(filePath)
+
+    @subscriptions.add atom.workspace.addOpener (filePath, options) ->
+      url ?= require('url')
+      parsedURL = url.parse(filePath, true)
+
+      if parsedURL.protocol is 'file:' or not parsedURL.protocol
+        ItemSerializer ?= require('./core/item-serializer')
+        decodedURLPath = decodeURI(parsedURL.pathname)
+
+        unless decodedURLPath
+          decodedURLPath = atom.workspace.getActivePaneItem()?.getPath?()
+
+        unless mimeType = ItemSerializer.getMimeTypeForURI(decodedURLPath)
+          return
+
+        if filePath isnt decodedURLPath
+          options.hash ?= (parsedURL.hash or '#').substr(1)
+          options[key] ?= value for key, value of parsedURL.query
+          Q ?= require('q')
+          Q().then ->
+            atom.workspace.open(decodedURLPath, options).then (editor) ->
+              editor.updateOptions?(options)
+            null
+        else
           Outline ?= require('./core/outline')
           OutlineEditor ?= require('./editor/outline-editor')
           Outline.getOutlineForPath(filePath).then (outline) ->
             if outline
-              new OutlineEditor(outline)
+              new OutlineEditor(outline, options)
             else
               null
 

@@ -129,6 +129,9 @@ class Selection
       @anchorItem = @focusItem
       @anchorOffset = @focusOffset
 
+    editor.makeVisible(anchorItem)
+    editor.makeVisible(focusItem)
+
     unless @isValid
       @focusItem = null
       @focusOffset = undefined

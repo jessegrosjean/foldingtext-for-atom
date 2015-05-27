@@ -93,7 +93,7 @@ deserializeItems = (text, outline) ->
   items = root.children
   for each in items
     each.removeFromParent()
-  items.metaState = {}
+  items.loadOptions = {}
   items
 
 module.exports =

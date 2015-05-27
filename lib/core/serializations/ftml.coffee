@@ -65,10 +65,10 @@ deserializeItems = (ftmlString, outline) ->
     if rootUL
       rootUL.id = Constants.RootID
   expandedItemIDs = {}
-  metaState = {}
+  loadOptions = {}
   items = []
 
-  items.metaState = metaState
+  items.loadOptions = loadOptions
 
   if rootUL
     cleanFTMLDOM htmlDocument.body
@@ -93,7 +93,7 @@ deserializeItems = (ftmlString, outline) ->
   else
     throw new Error('Could not find <ul id="FoldingText"> element.')
 
-  metaState['expandedItemIDs'] = Object.keys(expandedItemIDs)
+  loadOptions.expanded = Object.keys(expandedItemIDs)
 
   items
 

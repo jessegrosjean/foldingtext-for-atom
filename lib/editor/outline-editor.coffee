@@ -37,7 +37,11 @@ class OutlineEditor
   atom.views.addViewProvider OutlineEditor, (editor) ->
     editor.outlineEditorElement
 
-  constructor: (outline, params) ->
+  ###
+  Section: Lifecycle
+  ###
+
+  constructor: (outline, options={}) ->
     id = shortid()
     @emitter = new Emitter()
     @subscriptions = new CompositeDisposable
@@ -67,36 +71,54 @@ class OutlineEditor
     outlineEditorElement = document.createElement('ft-outline-editor').initialize(this)
     outlineEditorElement.id = id
     @outlineEditorElement = outlineEditorElement
-    if params?.hostElement
-      params.hostElement.appendChild(outlineEditorElement)
+    if options.hostElement
+      options.hostElement.appendChild(outlineEditorElement)
+      delete options.hostElement
 
-    @serializedState =
-      hoistedItemIDs: params?.hoistedItemIDs
-      expandedItemIDs: params?.expandedItemIDs
-
-    @loadSerializedState()
+    @updateOptions(options)
 
   copy: ->
     new OutlineEditor(@outline)
 
   serialize: ->
     {} =
-      deserializer: 'OutlineEditor'
-      hoistedItemIDs: (each.id for each in @_hoistStack)
-      expandedItemIDs: (each.id for each in @outline.getItems() when @isExpanded each)
+      deserializer: 'OutlineEditorDeserializer'
       filePath: @getPath()
+      hoisted: (each.id for each in @_hoistStack)
+      expanded: (each.id for each in @outline.getItems() when @isExpanded each)
+      query: @getSearch().query
+      selection: "#{@selection.focusItem?.id},#{@selection.focusOffset},#{@selection.anchorItem?.id},#{@selection.anchorOffset}"
 
-  loadSerializedState: ->
-    hoistedItemIDs = @serializedState.hoistedItemIDs
-    expandedItemIDs = @serializedState.expandedItemIDs
-    unless expandedItemIDs
-      expandedItemIDs = @outline.serializedState.expandedItemIDs or []
-    @setExpanded(@outline.getItemsForIDs expandedItemIDs)
-    hoistedItems = @outline.getItemsForIDs hoistedItemIDs
+  updateOptions: (options) ->
+    if options.hash
+      options.hoisted ?= options.hash.split(',')
+
+    unless options.selection
+      if options.initialLine?
+        if options.selection = @outline.getItems()[options.initialLine]?.id
+          if options.initialColumn?
+            options.selection += ',' + options.initialColumn
+
+    expandedItems = @outline.getItemsForIDs(options.expanded or @outline.loadOptions.expanded)
+    if expandedItems.length
+      @setExpanded expandedItems
+
+    hoistedItems = @outline.getItemsForIDs(options.hoisted)
     if hoistedItems.length
-      @setHoistedItemsStack hoistedItems
-    else
-      @hoistItem @outline.root
+      @setHoistedItemsStack(hoistedItems)
+    else if not @getHoistedItem()
+      @hoistItem(@outline.root)
+
+    if query = options.query
+      @setSearch(query)
+
+    if selection = options.selection
+      parts = selection.split(',')
+      focusItem = @outline.getItemForID parts[0]
+      focusOffset = parseInt(parts[1]) or undefined
+      anchorItem = @outline.getItemForID parts[2]
+      anchorOffset = parseInt(parts[3]) or undefined
+      @moveSelectionRange(focusItem, focusOffset, anchorItem, anchorOffset)
 
   subscribeToOutline: ->
     outline = @outline
@@ -113,9 +135,10 @@ class OutlineEditor
 
     @subscriptions.add outline.onWillReload =>
       @outlineEditorElement.disableAnimation()
+      @options = @serialize()
 
     @subscriptions.add outline.onDidReload =>
-      @loadSerializedState()
+      @updateOptions(@options)
       @outlineEditorElement.enableAnimation()
 
     @subscriptions.add outline.onDidDestroy => @destroy()
@@ -339,6 +362,10 @@ class OutlineEditor
     outline = @outline
     next
 
+    # Validate that root is first hoisted item.
+    unless newHoistedItems[0] is outline.root
+      newHoistedItems.unshift(outline.root)
+
     # Validate that hoisted items each contain the next.
     for each in newHoistedItems by -1
       unless each.isInOutline and each.outline is outline
@@ -351,10 +378,6 @@ class OutlineEditor
             next = each
         else
           next = each
-
-    # Validate that root is first hoisted item.
-    unless newHoistedItems[0] is outline.root
-      newHoistedItems = [outline.root]
 
     newHoistedItem = newHoistedItems[newHoistedItems.length - 1]
 
@@ -675,10 +698,10 @@ class OutlineEditor
   #
   # - `item` {Item} to make visible.
   makeVisible: (item) ->
-    assert.ok(
-      item.isInOutline and (item.outline is @outline),
-      'Item must be in this outline'
-    )
+    return unless item
+
+    unless item.isInOutline and (item.outline is @outline)
+      return
 
     return if @isVisible item
 
@@ -1171,6 +1194,9 @@ class OutlineEditor
 
       @setSelectionVerticalAnchor(undefined)
 
+    @makeVisible(newSelection.anchorItem)
+    @makeVisible(newSelection.focusItem)
+
     if currentSelection.isTextMode
       focusItem = currentSelection.focusItem
       formattingOffset = currentSelection.anchorOffset
@@ -1567,9 +1593,10 @@ class OutlineEditor
 
       @outline.beginUpdates()
       parent.insertChildrenBefore(items, insertBefore)
-      if items.metaState?.expandedItemIDs?
-        @setExpanded(@outline.getItemsForIDs items.metaState.expandedItemIDs)
+      if items.loadOptions?.expanded?
+        @setExpanded(@outline.getItemsForIDs(items.loadOptions.expanded))
       @outline.endUpdates()
+
       @moveSelectionRange(items[0], undefined, items[items.length - 1], undefined)
 
   ###
@@ -1792,7 +1819,17 @@ class OutlineEditor
 
   copyPathToClipboard: ->
     if filePath = @getPath()
-      atom.clipboard.write(filePath)
+      url =
+        pathname: encodeURI(filePath)
+        query: {}
+
+      if query = @getSearch().query
+        url.query.query = query
+
+      unless @getHoistedItem().isRoot
+        url.hash = @getHoistedItem().id
+
+      atom.clipboard.write(require('url').format(url))
 
   save: ->
     @outline.save(this)
@@ -1825,14 +1862,6 @@ class OutlineEditor
         editorItemState = new OutlineEditorItemState
         item.setUserData editorItemStateKey, editorItemState
       editorItemState
-
-  #OutlineEditor::DOMGetElementById(id) {
-  #  let shadowRoot = this._shadowRoot;
-  #  if (shadowRoot) {
-  #    return shadowRoot.getElementById(id);
-  #  }
-  #  return document.getElementById(id);
-  #};
 
   DOMGetSelection: (id) ->
     #let shadowRoot = this._shadowRoot;

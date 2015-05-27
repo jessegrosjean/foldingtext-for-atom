@@ -13,6 +13,7 @@ Velocity = require 'velocity-animate'
 Outline = require '../core/outline'
 Selection = require './selection'
 diff = require 'fast-diff'
+path = require 'path'
 
 module.exports =
 class OutlineEditorElement extends HTMLElement
@@ -948,11 +949,33 @@ EventRegistery.listen '.ft-handle',
 EventRegistery.listen '.ft-body-text a',
   click: (e) ->
     if href = e.target.href
-      if href.indexOf('file://') is 0
-        e.preventDefault()
+      urlParse = require('url').parse
+      url = urlParse(href, true)
+      if url.protocol is 'file:'
+        baseURL = urlParse(e.target.ownerDocument.baseURI)
+        basePath = baseURL.pathname
+        baseDir = path.dirname(basePath)
+        editorElement = OutlineEditorElement.findOutlineEditorElement e.target
+        editor = editorElement.editor
+        resolvedPath = null
+
+        if url.pathname is basePath
+          # Link to self case
+          resolvedPath = editor.getPath()
+        else if url.pathname.indexOf(baseDir) is 0
+          # Link to file relative to self
+          resolvedPath = url.pathname.substr(baseDir.length)
+          if selfPath = editor.getPath() or atom.project.getPaths()[0]
+            resolvedPath = path.join(path.dirname(selfPath), resolvedPath)
+
+        if resolvedPath
+          url.href = null
+          url.path = null
+          url.pathname = resolvedPath
+
+        atom.workspace.open(require('url').format(url))
         e.stopPropagation()
-        atom.workspace.open unescape(href.substring(7)),
-          searchAllPanes: true
+        e.preventDefault()
 
 #
 # Handle Cut/Copy/Paste

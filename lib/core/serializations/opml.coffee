@@ -1,7 +1,7 @@
 assert = require 'assert'
 
 serializeItems = (items, editor) ->
-  metaState = items[0].outline.serializedState or {}
+  loadOptions = items[0].outline.serializedState or {}
   opmlDocumentument = document.implementation.createDocument(null, 'opml', null)
   headElement = opmlDocumentument.createElement('head')
   bodyElement = opmlDocumentument.createElement('body')
@@ -10,14 +10,14 @@ serializeItems = (items, editor) ->
   documentElement.setAttribute('version', '2.0')
   documentElement.appendChild(headElement)
 
-  if metaState?.title
+  if loadOptions?.title
     titleElement = opmlDocumentument.createElement 'title'
-    titleElement.textContent = metaState.title
+    titleElement.textContent = loadOptions.title
     headElement.appendChild(titleElement)
 
-  if metaState?.ownerName
+  if loadOptions?.ownerName
     ownerNameElement = opmlDocumentument.createElement 'ownerName'
-    ownerNameElement.textContent = metaState.ownerName
+    ownerNameElement.textContent = loadOptions.ownerName
     headElement.appendChild(ownerNameElement)
 
   if editor
@@ -131,10 +131,10 @@ deserializeItems = (opml, outline) ->
     expandItemIfNeeded(item)
     items.push item
 
-  items.metaState =
+  items.loadOptions =
     title: title
     ownerName: ownerName
-    expandedItemIDs: Object.keys(expandedItemIDs)
+    expanded: Object.keys(expandedItemIDs)
   items
 
 module.exports =
