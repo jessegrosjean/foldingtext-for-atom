@@ -2,9 +2,9 @@
 
 ## 0.3.0
 
-- You can now encode search, hoisted, expansion, and selection state in URL query parameters appended to the end of paths that you open in Atom.
+- You can now encode search, hoisted, expansion, and selection state in URL query parameters appended to the end of the paths that you open in Atom.
 
-- *Edit > Copy Path* now encodes search and hoist state as URL style query parameters. You can then use these paths in hyper-links in the outline or passed into `atom` on the command line to open the outline and restore that state.
+- *Edit > Copy Path* now encodes search and hoist state as URL query parameters appended to the end of the path.
 
 - Changed to `em` sizing. You can now size the entire outline with:
 
@@ -13,7 +13,9 @@
         }
 
 - Fixed Command-F to focus search field in both outline and text modes
+
 - Fix error loading on case sensitive file systems.
+
 - Fixed fully expand/collapse keyboard shortcut.
 
 ## 0.2.2
