@@ -316,3 +316,12 @@ describe 'OutlineEditor', ->
       editor.focus()
       editor.moveSelectionRange(one, 4)
       document.activeElement.should.equal(editor.outlineEditorElement.focusElement)
+
+  describe 'Copy Path to Clipboard', ->
+    it 'should copy path query parameters even when outline has no path', ->
+      editor.copyPathToClipboard()
+      atom.clipboard.read().should.equal('')
+
+      editor.setSearch('one two')
+      editor.copyPathToClipboard()
+      atom.clipboard.read().should.equal('?query=one%2two')

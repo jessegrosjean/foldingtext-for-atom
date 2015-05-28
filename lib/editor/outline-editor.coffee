@@ -1818,18 +1818,17 @@ class OutlineEditor
     @outline.isEmpty()
 
   copyPathToClipboard: ->
-    if filePath = @getPath()
-      url =
-        pathname: encodeURI(filePath)
-        query: {}
+    url =
+      pathname: encodeURI(@getPath() or '')
+      query: {}
 
-      if query = @getSearch().query
-        url.query.query = query
+    if query = @getSearch().query
+      url.query.query = query
 
-      unless @getHoistedItem().isRoot
-        url.hash = @getHoistedItem().id
+    unless @getHoistedItem().isRoot
+      url.hash = @getHoistedItem().id
 
-      atom.clipboard.write(require('url').format(url))
+    atom.clipboard.write(require('url').format(url))
 
   save: ->
     @outline.save(this)

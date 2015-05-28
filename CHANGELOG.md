@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.4.0
+
+- Fixed copy path to clipboard works when file isn't yet saved
+
 ## 0.3.1
 
 - Fixed crash started in Atom 0.202.0 by temporarily disabling syntax highlighting of FoldingText's search field.
