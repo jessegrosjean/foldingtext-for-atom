@@ -77,11 +77,10 @@ module.exports =
         if filePath isnt decodedURLPath
           options.hash ?= (parsedURL.hash or '#').substr(1)
           options[key] ?= value for key, value of parsedURL.query
-          Q ?= require('q')
-          Q().then ->
-            atom.workspace.open(decodedURLPath, options).then (editor) ->
-              editor.updateOptions?(options)
-            null
+          openPromise = atom.workspace.open(decodedURLPath, options)
+          openPromise.then (editor) ->
+            editor.updateOptions?(options)
+          openPromise
         else
           Outline ?= require('./core/outline')
           OutlineEditor ?= require('./editor/outline-editor')
