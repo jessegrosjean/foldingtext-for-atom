@@ -2,6 +2,7 @@
 
 ## 0.4.0
 
+- Selection is now included in Copy Path to Clipboard command.
 - Fixed copy path to clipboard works when file isn't yet saved
 
 ## 0.3.1

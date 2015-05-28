@@ -1828,6 +1828,9 @@ class OutlineEditor
     unless @getHoistedItem().isRoot
       url.hash = @getHoistedItem().id
 
+    if @selection.isValid
+      url.query.selection = "#{@selection.focusItem?.id},#{@selection.focusOffset},#{@selection.anchorItem?.id},#{@selection.anchorOffset}"
+
     atom.clipboard.write(require('url').format(url))
 
   save: ->
