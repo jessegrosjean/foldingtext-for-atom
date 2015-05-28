@@ -21,6 +21,19 @@ describe 'FoldingText', ->
       outlineEditor.getPath().should.equal(outlinePath)
       outlineEditor.outline.root.firstChild.bodyText.should.equal('one')
 
+  it 'should apply search to editor based on query parameter', ->
+    waitsForPromise ->
+      activationPromise.then ->
+        atom.workspace.open(outlinePath + '?query=one')
+
+    runs ->
+      outlineEditor = atom.workspace.getActivePaneItem()
+      outlineEditor.getPath().should.equal(outlinePath)
+      outlineEditor.getSearch().query.should.equal('one')
+      waitsForPromise ->
+        atom.workspace.open(outlinePath + '?query=two').then ->
+          outlineEditor.getSearch().query.should.equal('two')
+
   describe 'FoldingText Service', ->
     [foldingTextService] = []
 
