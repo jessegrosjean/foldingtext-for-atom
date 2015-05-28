@@ -730,10 +730,9 @@ class OutlineEditor
   makeVisible: (item) ->
     return unless item
 
-    unless item.isInOutline and (item.outline is @outline)
-      return
-
+    return if item.isRoot
     return if @isVisible item
+    return unless item.isInOutline and (item.outline is @outline)
 
     hoistedItem = @getHoistedItem()
     while not hoistedItem.contains item
