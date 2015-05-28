@@ -317,7 +317,7 @@ describe 'OutlineEditor', ->
       editor.moveSelectionRange(one, 4)
       document.activeElement.should.equal(editor.outlineEditorElement.focusElement)
 
-  fdescribe 'Copy Path to Clipboard', ->
+  describe 'Copy Path to Clipboard', ->
     it 'should copy path query parameters even when outline has no path', ->
       editor.copyPathToClipboard()
       atom.clipboard.read().should.equal('?selection=1%2C0%2C1%2C0')
