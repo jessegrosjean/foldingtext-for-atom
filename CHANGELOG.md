@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.3.1
+
+- Fixed crash started in Atom 0.202.0 by temporarily disabling syntax highlighting of FoldingText's search field.
+
 ## 0.3.0
 
 - You can now encode search, hoisted, expansion, and selection state in URL query parameters appended to the end of the paths that you open in Atom.

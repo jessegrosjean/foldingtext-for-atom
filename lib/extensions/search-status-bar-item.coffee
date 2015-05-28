@@ -3,7 +3,7 @@
 foldingTextService = require '../foldingtext-service'
 {Disposable, CompositeDisposable} = require 'atom'
 TextInputElement = require './ui/text-input-element'
-ItemPathGrammar = require './item-path-grammar'
+#ItemPathGrammar = require './item-path-grammar'
 
 exports.consumeStatusBarService = (statusBar) ->
   searchElement = document.createElement 'ft-text-input'
@@ -11,7 +11,7 @@ exports.consumeStatusBarService = (statusBar) ->
   searchElement.classList.add 'ft-search-status-bar-item'
   searchElement.cancelOnBlur = false
   searchElement.setPlaceholderText 'Search'
-  searchElement.setGrammar new ItemPathGrammar(atom.grammars)
+  #searchElement.setGrammar new ItemPathGrammar(atom.grammars)
 
   clearAddon = document.createElement 'span'
   clearAddon.className = 'icon-remove-close'
