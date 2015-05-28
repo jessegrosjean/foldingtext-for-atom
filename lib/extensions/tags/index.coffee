@@ -69,7 +69,9 @@ editTags = (editor) ->
         tokenInput.tokenizeText()
       else
         if selectedItems.length is 1
-          selectedItems[0].setAttribute('data-tags', tokenInput.getTokens())
+          tokens = tokenInput.getTokens()
+          tokens = null unless tokens.length > 0
+          selectedItems[0].setAttribute('data-tags', tokens)
         else if selectedItems.length > 1
           editor.outline.beginUpdates()
           for each in selectedItems
@@ -84,6 +86,7 @@ editTags = (editor) ->
                 eachTags.push eachAdded
                 changed = true
             if changed
+              eachTags = null unless eachTags.length > 0
               each.setAttribute('data-tags', eachTags)
 
           editor.outline.endUpdates()
@@ -125,6 +128,7 @@ atom.commands.add 'ft-outline-editor .btag',
     tags = item.getAttribute 'data-tags', true
     if tag in tags
       tags.splice(tags.indexOf(tag), 1)
+      tags = null unless tags.length > 0
       item.setAttribute 'data-tags', tags
     e.stopPropagation()
     e.preventDefault()

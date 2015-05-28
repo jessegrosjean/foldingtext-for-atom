@@ -4,6 +4,7 @@
 
 - Selection is now included in Copy Path to Clipboard command.
 - Fixed copy path to clipboard works when file isn't yet saved
+- Fixed remove `data-tags` attribute when last tag is removed
 
 ## 0.3.1
 
