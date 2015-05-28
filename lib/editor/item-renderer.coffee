@@ -53,8 +53,11 @@ class ItemRenderer
   Section: Rendering
   ###
 
-  renderItemLI: (item) ->
+  renderItemLI: (item, level) ->
     li = document.createElement 'LI'
+
+    level ?= @levelForItem(item)
+    li.setAttribute 'data-level', level
 
     for name in item.attributeNames
       if value = item.getAttribute name
@@ -63,7 +66,7 @@ class ItemRenderer
     li.id = item.id
     li.className = @renderItemLIClasses item
     li.appendChild @renderBranchControlsDIV item
-    li.appendChild @renderBranchDIV item
+    li.appendChild @renderBranchDIV item, level
     @idsToLIs[item.id] = li
     li
 
@@ -118,11 +121,11 @@ class ItemRenderer
     border.className = 'ft-border'
     border
 
-  renderBranchDIV: (item) ->
+  renderBranchDIV: (item, level) ->
     branch = document.createElement 'DIV'
     branch.className = 'ft-branch'
     branch.appendChild @renderItemContentP item
-    if childrenUL = @renderChildrenUL item
+    if childrenUL = @renderChildrenUL item, level
       branch.appendChild childrenUL
     branch
 
@@ -171,15 +174,16 @@ class ItemRenderer
           badges.appendChild badgeElement
       badges
 
-  renderChildrenUL: (item) ->
+  renderChildrenUL: (item, level) ->
     if @editor.isExpanded(item) or @editor.getHoistedItem() is item
+      level ?= @levelForItem(item)
       each = item.firstChild
       if each
         children = document.createElement 'UL'
         children.className = 'ft-children'
         while each
           if @editor.isVisible each
-            children.appendChild @renderItemLI each
+            children.appendChild @renderItemLI each, level + 1
           each = each.nextSibling
         children
 
@@ -220,6 +224,13 @@ class ItemRenderer
         if item = outline.getItemForID id
           return item
       renderedNode = renderedNode.parentNode
+
+  levelForItem: (item) ->
+    level = -1
+    while item
+      level++
+      item = item.parent
+    level
 
   ###
   Section: Rendered Node Lookup
@@ -370,6 +381,7 @@ class ItemRenderer
             renderedChildrenUL.removeChild eachChildRenderedLI
 
       if addedChildren.length
+        childrenLevel = @levelForItem(item) + 1
         nextVisibleSibling = nextSibling
         unless editor.isVisible nextSibling
           nextVisibleSibling = editor.getNextVisibleSibling nextSibling
@@ -380,7 +392,7 @@ class ItemRenderer
 
         for eachChild in addedChildren
           if editor.isVisible eachChild
-            eachChildRenderedLI = @renderItemLI eachChild
+            eachChildRenderedLI = @renderItemLI eachChild, childrenLevel
             addedChildrenLIs.push eachChildRenderedLI
             documentFragment.appendChild eachChildRenderedLI
 
