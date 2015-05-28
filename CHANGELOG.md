@@ -4,6 +4,7 @@
 
 - Added support for Atom's standard Edit > Fold menu commands.
 - Selection is now included in Copy Path to Clipboard command.
+- Fixed syntax highlighting in the item path search field.
 - Fixed copy path to clipboard works when file isn't yet saved.
 - Fixed remove `data-tags` attribute when last tag is removed.
 

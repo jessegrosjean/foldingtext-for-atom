@@ -13,7 +13,7 @@
   "repository": "https://github.com/FoldingText/foldingtext-for-atom",
   "license": "Commercial Shared Source",
   "engines": {
-    "atom": ">=0.192.0 <2.0.0"
+    "atom": ">=0.202.0 <2.0.0"
   },
   "consumedServices": {
     "status-bar": {

@@ -12,27 +12,32 @@ class ItemPathGrammar extends Grammar
       name: 'ItemPath'
       scopeName: "source.itempath"
 
-  tokenizeLine: (line, ruleStack, firstLine=false) ->
-    tokens = []
-    location = 0
+  getScore: -> 0
+
+  tokenizeLine: (line, ruleStack, firstLine=false, compatibilityMode=true) ->
+    tags = [@startIdForScope('source.itempath')]
     parsed = ItemPath.parse(line)
+    ruleStack = []
+    location = 0
 
     if parsed.error
       offset = parsed.error.offset
       location = line.length
-      tokens.push @createToken(line.substring(0, offset), ['source.itempath', 'invalid.illegal'])
-      tokens.push @createToken(line.substring(offset, line.length), ['source.itempath', 'invalid.illegal.error'])
+      tags.push(@startIdForScope('invalid.illegal'))
+      tags.push(offset)
+      tags.push(@startIdForScope('invalid.illegal.error'))
+      tags.push(line.length - offset)
     else
       for each in parsed.keywords
         if each.offset > location
-          tokens.push @createToken(line.substring(location, each.offset), ['source.itempath', 'none'])
-        tokens.push @createToken(each.text, ['source.itempath', each.label or 'none'])
+          tags.push(@startIdForScope('none'))
+          tags.push(each.offset - location)
+        tags.push(@startIdForScope(each.label or 'none'))
+        tags.push(each.text.length)
         location = each.offset + each.text.length
 
     if location < line.length
-      tokens.push @createToken(line.substring(location, line.length), ['source.itempath', 'none'])
+      tags.push(@startIdForScope('none'))
+      tags.push(line.length - location)
 
-    {} =
-      tokens: tokens
-      ruleStack: []
-
+    # {line, tags, ruleStack}
