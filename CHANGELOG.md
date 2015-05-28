@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.4.1
+
+- Fixed syntax highlighting in the item path search field (really!)
+
 ## 0.4.0
 
 - Added support for Atom's standard Edit > Fold menu commands.

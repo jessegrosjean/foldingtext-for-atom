@@ -40,4 +40,4 @@ class ItemPathGrammar extends Grammar
       tags.push(@startIdForScope('none'))
       tags.push(line.length - location)
 
-    # {line, tags, ruleStack}
+    {line, tags, ruleStack}
