@@ -484,15 +484,6 @@ class OutlineEditor
     @_revalidateSelectionRange()
     @outlineEditorElement.enableScrolling()
 
-  foldItems: (items, fully) ->
-    @_foldItems items, false, fully
-
-  unfoldItems: (items, fully) ->
-    @_foldItems items, true, fully
-
-  toggleFoldItems: (items, fully) ->
-    @_foldItems items, undefined, fully
-
   _foldItems: (items, expand, fully) ->
     items ?= @selection.itemsCommonAncestors
     unless _.isArray(items)
@@ -524,6 +515,45 @@ class OutlineEditor
 
     if foldItems.length
       @_setExpandedState foldItems, expand
+
+  foldItems: (items, fully) ->
+    @_foldItems items, false, fully
+
+  unfoldItems: (items, fully) ->
+    @_foldItems items, true, fully
+
+  toggleFoldItems: (items, fully) ->
+    @_foldItems items, undefined, fully
+
+  foldAll: ->
+    @setCollapsed(@getHoistedItem().descendants)
+
+  unfoldAll: ->
+    @setExpanded(@getHoistedItem().descendants)
+
+  foldCurrentRow: ->
+    @setCollapsed()
+
+  unfoldCurrentRow: ->
+    @setExpanded()
+
+  foldSelectedLines: ->
+    @setCollapsed()
+
+  foldAllAtIndentLevel: (level) ->
+    collapseItems = []
+    expandItems = []
+    gather = (item, level) ->
+      if level >= 0
+        expandItems.push(item)
+      else
+        collapseItems.push(item)
+      for each in item.children
+        gather(each, level - 1)
+    gather(@getHoistedItem(), level)
+
+    @setCollapsed(collapseItems)
+    @setExpanded(expandItems)
 
   toggleFullyFoldItems: (items) ->
     @toggleFoldItems items, true
