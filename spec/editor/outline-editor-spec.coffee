@@ -324,4 +324,4 @@ describe 'OutlineEditor', ->
 
       editor.setSearch('one two')
       editor.copyPathToClipboard()
-      atom.clipboard.read().should.equal('?query=one%2two')
+      atom.clipboard.read().should.equal('?query=one%20two')
