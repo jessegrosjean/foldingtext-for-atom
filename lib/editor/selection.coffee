@@ -507,7 +507,7 @@ class Selection
         throw new Error 'Unexpected'
 
   toString: ->
-    "anrchor: #{@anchorItem?.id}, #{@anchorOffset}, focus: #{@focusItem?.id}, #{@focusOffset}"
+    "anchor:#{@anchorItem?.id},#{@anchorOffset} focus:#{@focusItem?.id},#{@focusOffset}"
 
 _isValidSelectionOffset = (editor, item, itemOffset) ->
   if item and editor.isVisible(item)

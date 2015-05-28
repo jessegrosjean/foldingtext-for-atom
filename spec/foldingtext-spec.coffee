@@ -21,18 +21,49 @@ describe 'FoldingText', ->
       outlineEditor.getPath().should.equal(outlinePath)
       outlineEditor.outline.root.firstChild.bodyText.should.equal('one')
 
-  it 'should apply search to editor based on query parameter', ->
-    waitsForPromise ->
-      activationPromise.then ->
-        atom.workspace.open(outlinePath + '?query=one')
-
-    runs ->
-      outlineEditor = atom.workspace.getActivePaneItem()
-      outlineEditor.getPath().should.equal(outlinePath)
-      outlineEditor.getSearch().query.should.equal('one')
+  describe 'Path Query Parameters', ->
+    it 'should apply search to editor based on query parameter', ->
       waitsForPromise ->
-        atom.workspace.open(outlinePath + '?query=two').then ->
-          outlineEditor.getSearch().query.should.equal('two')
+        activationPromise.then ->
+          atom.workspace.open(outlinePath + '?query=one')
+
+      runs ->
+        outlineEditor = atom.workspace.getActivePaneItem()
+        outlineEditor.getPath().should.equal(outlinePath)
+        outlineEditor.getSearch().query.should.equal('one')
+        waitsForPromise ->
+          atom.workspace.open(outlinePath + '?query=two').then ->
+            outlineEditor.getSearch().query.should.equal('two')
+
+    it 'should hoisted item based on query parameter', ->
+      waitsForPromise ->
+        activationPromise.then ->
+          atom.workspace.open(outlinePath + '?hoisted=2')
+
+      runs ->
+        outlineEditor = atom.workspace.getActivePaneItem()
+        outlineEditor.getHoistedItem().bodyText.should.equal('two')
+
+    it 'should expand item based on query parameter', ->
+      waitsForPromise ->
+        activationPromise.then ->
+          atom.workspace.open(outlinePath + '?expanded=1,2')
+
+      runs ->
+        outlineEditor = atom.workspace.getActivePaneItem()
+        outline = outlineEditor.outline
+        outlineEditor.isExpanded(outline.getItemForID('1')).should.be.ok
+        outlineEditor.isExpanded(outline.getItemForID('2')).should.be.ok
+        outlineEditor.isExpanded(outline.getItemForID('5')).should.not.be.ok
+
+    it 'should apply selection to editor based on query parameter', ->
+      waitsForPromise ->
+        activationPromise.then ->
+          atom.workspace.open(outlinePath + '?selection=4,1')
+
+      runs ->
+        outlineEditor = atom.workspace.getActivePaneItem()
+        outlineEditor.selection.toString().should.equal('anchor:4,1 focus:4,1')
 
   describe 'FoldingText Service', ->
     [foldingTextService] = []
