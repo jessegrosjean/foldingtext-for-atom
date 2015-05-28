@@ -741,7 +741,7 @@ class OutlineEditor
 
     parentsToExpand = []
     eachParent = item.parent
-    while eachParent isnt hoistedItem
+    while eachParent and eachParent isnt hoistedItem
       if @isCollapsed eachParent
         parentsToExpand.push eachParent
       eachParent = eachParent.parent
