@@ -1148,22 +1148,9 @@ class OutlineEditor
 
   # Public: Select all children of the current {::hoistedItem} item.
   selectAll: ->
-    if @isOutlineMode()
-      @outlineEditorElement.disableScrolling()
-      @moveSelectionRange(@getFirstVisibleItem(), undefined, @getLastVisibleItem(), undefined)
-      @outlineEditorElement.enableScrolling()
-    else
-      selectionRange = @selection
-      item = selectionRange.anchorItem
-      startOffset = selectionRange.startOffset
-      endOffset = selectionRange.endOffset
-
-      if item
-        textLength = item.bodyText.length
-        if startOffset is 0 and endOffset is textLength
-          @moveSelectionRange(item, undefined, item, undefined)
-        else
-          @moveSelectionRange(item, 0, item, textLength)
+    @outlineEditorElement.disableScrolling()
+    @moveSelectionRange(@getFirstVisibleItem(), undefined, @getLastVisibleItem(), undefined)
+    @outlineEditorElement.enableScrolling()
 
   createSelection: (focusItem, focusOffset, anchorItem, anchorOffset, selectionAffinity) ->
     new Selection(this, focusItem, focusOffset, anchorItem, anchorOffset, selectionAffinity)

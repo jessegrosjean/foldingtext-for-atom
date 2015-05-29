@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.5.0
+
+- Select all now does the simple thing and ... selects all!
+
 ## 0.4.1
 
 - Fixed syntax highlighting in the item path search field (really!)
