@@ -3,6 +3,7 @@
 ## 0.5.0
 
 - Select all now does the simple thing and ... selects all!
+- Renamed `data-level` to `data-depth`.
 
 ## 0.4.1
 

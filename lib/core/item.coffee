@@ -455,6 +455,17 @@ class Item
           each = each.parent;
         each
 
+  # Public: Read-only depth of {Item} in outline.
+  depth: null
+  Object.defineProperty @::, 'depth',
+    get: ->
+      depth = 0
+      ancestor = @parent
+      while ancestor
+        ancestor = ancestor.parent
+        depth++
+      depth
+
   # Public: Read-only parent {Item}.
   parent: null
   Object.defineProperty @::, 'parent',
