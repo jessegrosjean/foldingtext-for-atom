@@ -410,6 +410,93 @@ class Outline
     assert.ok(item.outline isnt @, 'Item must not be owned by this outline')
     @createItem(null, @outlineStore.importNode(item._liOrRootUL, true))
 
+  ###
+  Section: Insert & Remove Items
+  ###
+
+  # Public: Insert the item before the given `referenceItem`. If the reference
+  # item isn't defined insert at the end of the outline.
+  #
+  # Unlike {Item::insertChildBefore} this method uses {Item::indent} to
+  # determine where in the outline structure to insert the item. Depending on
+  # the indent value this item may become referenceItem's parent, previous
+  # sibling, or unrelated.
+  #
+  # - `item` {Item} to insert.
+  # - `referenceItem` Reference {Item} to insert before.
+  insertItemBefore: (item, referenceItem) ->
+    @beginUpdates()
+
+    item.indent = item.totalIndent
+    item.removeFromParent()
+
+    while lastChild = item.lastChild
+      @insertItemAtLevelBefore(lastChild, referenceItem)
+      referenceItem = lastChild
+
+    # 1. Start values
+    itemParent = referenceItem?.previousItemOrRoot or @root.lastDescendantOrSelf
+    itemNextSibling = itemParent.firstChild
+    itemParentTotalIndent = itemParent.totalIndent
+    itemTotalIndent = item.totalIndent
+    nextBranch = referenceItem
+
+    # 2. Find parent for inserted item
+    while itemParentTotalIndent >= itemTotalIndent
+      itemNextSibling = itemParent.nextSibling
+      itemParent = itemParent.parent
+      itemParentTotalIndent = itemParent.totalIndent
+
+    # 3. Reparent trailing sub-branches to new item.
+    if nextBranch
+      while nextBranch and (nextBranch.totalIndent > itemTotalIndent)
+        if nextBranch is itemNextSibling
+          itemNextSibling = nextBranch.nextSibling;
+
+        nextNextBranch = nextBranch.nextBranch
+        item.appendChild(nextBranch, true)
+        nextBranch = nextNextBranch
+
+    # 4. Insert the item and update indent
+    itemParent.insertChildBefore(item, itemNextSibling, true)
+
+    @endUpdates()
+
+  # Public: Insert the items before the given `referenceItem`. See
+  # {Outline::insertItemBefore} for more implementation details. This method
+  # works differently then {Item::insertChildrenBefore}.
+  #
+  # - `items` {Array} of {Item}s to insert.
+  # - `referenceItem` Reference {Item} to insert before.
+  insertItemsBefore: (items, referenceItem) ->
+    @beginUpdates()
+    for each in items
+      @insertItemBefore(each, referenceItem)
+    @endUpdates()
+
+  # Public: Remove the item but leave it's child items in the outline.
+  #
+  # - `item` {Item} to remove.
+  removeItem: (item) ->
+    @beginUpdates()
+    totalIndent = item.totalIndent
+    previousItem = item.previousItem
+    nextBranch = item.nextBranch
+    item.removeFromParent()
+    item.indent = totalIndent
+    while each = item.firstChild
+      @insertItemBefore(each, nextBranch)
+    @endUpdates()
+
+  # Public: Remove the items but leave there child items in the outline.
+  #
+  # - `items` {Item}s to remove.
+  removeItems: (items) ->
+    @beginUpdates()
+    for each in items
+      @removeItem(each)
+    @endUpdates()
+
   removeItemsFromParents: (items) ->
     siblings = []
     prev = null
@@ -545,6 +632,7 @@ class Outline
   # this call.
   beginUpdates: ->
     if ++@updateCount is 1
+      @updateCallbacks = []
       @updateMutations = []
 
   breakUndoCoalescing: ->
