@@ -1,9 +1,10 @@
 # ChangeLog
 
-## 0.5.0
+## 0.4.2
 
-- Select all now does the simple thing and ... selects all!
 - Renamed `data-level` to `data-depth`.
+- Select all now does the simple thing and ... selects all!
+- Fixed (maybe, let me know) opening of `ftml` files on Windows.
 
 ## 0.4.1
 
