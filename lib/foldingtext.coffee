@@ -63,8 +63,12 @@ module.exports =
     @subscriptions.add atom.workspace.addOpener (filePath, options) ->
       url ?= require('url')
       parsedURL = url.parse(filePath, true)
+      protocol = parsedURL.protocol or ''
 
-      if parsedURL.protocol is 'file:' or not parsedURL.protocol
+      if protocol is 'file:' or
+         filePath[protocol.length] is '\\' or # windows file path, maybe better way to detect?
+         not protocol
+
         ItemSerializer ?= require('./core/item-serializer')
         decodedURLPath = decodeURI(parsedURL.pathname)
 
