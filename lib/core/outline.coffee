@@ -67,6 +67,7 @@ class Outline
   changeCount: 0
   undoSubscriptions: null
   updateCount: 0
+  updateCallbacks: null
   updateMutations: null
   coalescingMutation: null
   stoppedChangingDelay: 300
@@ -570,7 +571,10 @@ class Outline
 
   # Public: End grouping changes. Must call to balance a previous
   # {::beginUpdates} call.
-  endUpdates: ->
+  #
+  # - `callback` (optional) Callback is called when outline finishes updating.
+  endUpdates: (callback) ->
+    @updateCallbacks.push(callback) if callback
     if --@updateCount is 0
       updateMutations = @updateMutations
       @updateMutations = null
@@ -578,6 +582,11 @@ class Outline
         @conflict = false if @conflict and not @isModified()
         @emitter.emit('did-change', updateMutations)
         @scheduleModifiedEvents()
+
+      updateCallbacks = @updateCallbacks
+      @updateCallbacks = null
+      for each in updateCallbacks
+        each()
 
   ###
   Section: Undo
