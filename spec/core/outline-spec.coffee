@@ -43,6 +43,25 @@ describe 'Outline', ->
     oneImport.lastChild.bodyText.should.equal('five')
     oneImport.lastChild.firstChild.bodyText.should.equal('six')
 
+  describe 'Insert & Remove Items', ->
+    it 'insert items at indent level', ->
+      newItem = outline.createItem('new')
+      outline.insertItemBefore(newItem, two)
+      newItem.totalIndent.should.equal(1)
+      newItem.previousSibling.should.equal(one)
+      newItem.firstChild.should.equal(two)
+      newItem.lastChild.should.equal(five)
+
+    it 'remove item leaving children', ->
+      outline.removeItem(two)
+      two.isInOutline.should.equal(false)
+      three.isInOutline.should.equal(true)
+      three.parent.should.equal(one)
+      three.totalIndent.should.equal(3)
+      four.isInOutline.should.equal(true)
+      four.parent.should.equal(one)
+      four.totalIndent.should.equal(3)
+
   describe 'Search', ->
     it 'should find DOM using xpath', ->
       outline.evaluateXPath('//li', null, null, XPathResult.ANY_TYPE, null).iterateNext().should.equal(one._liOrRootUL)

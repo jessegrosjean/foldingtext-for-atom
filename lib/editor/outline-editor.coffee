@@ -1408,7 +1408,9 @@ class OutlineEditor
             newNextSibling = @getNextVisibleSibling(newNextSibling)
       else if direction is 'right'
         newParent = @getPreviousVisibleSibling(startItem)
-
+        unless newParent
+          for each in selectedItems
+            each.indent += 1
       if newParent
         @moveItems(selectedItems, newParent, newNextSibling)
 
@@ -1460,6 +1462,59 @@ class OutlineEditor
     @outlineEditorElement.animateMoveItems(items, newParent, newNextSibling, startOffset)
     undoManager.endUndoGrouping()
     undoManager.setActionName('Move Items')
+
+  ###
+  Section: Move Lines
+  ###
+
+  moveLinesUp: (items) ->
+    @_moveLinesInDirection(items, 'up')
+
+  moveLinesDown: (items) ->
+    @_moveLinesInDirection(items, 'down')
+
+  moveLinesLeft: (items) ->
+    @_moveLinesInDirection(items, 'left')
+
+  moveLinesRight: (items) ->
+    @_moveLinesInDirection(items, 'right')
+
+  _moveLinesInDirection: (items, direction) ->
+    items ?= @selection.items
+    if items.length
+      firstItem = items[0]
+      endItem = items[items.length - 1]
+      referenceItem = null
+      indentDelta = 0
+
+      switch direction
+        when 'up'
+          referenceItem = @getPreviousVisibleItem(firstItem)
+        when 'down'
+          referenceItem = @getNextVisibleItem(@getNextVisibleItem(endItem))
+        when 'left'
+          indentDelta = -1
+          referenceItem = endItem.nextItem
+        when 'right'
+          indentDelta = 1
+          referenceItem = endItem.nextItem
+
+    @outline.beginUpdates()
+
+    @outline.removeItems(items)
+    if indentDelta
+      for each in items
+        each.indent += indentDelta
+    @outline.insertItemsBefore(items, referenceItem)
+
+    expandItems = []
+    disposable = @outline.onDidChange (mutations) ->
+      for each in mutations
+        if each.target.hasChildren
+          expandItems.push each.target
+    @outline.endUpdates =>
+      @setExpanded(expandItems)
+    disposable.dispose()
 
   ###
   Section: Delete Items
@@ -1557,6 +1612,13 @@ class OutlineEditor
         undoManager.setActionName('Delete')
 
   ###
+  Section: Delete Lines
+  ###
+
+  deleteLines: (items) ->
+    @outline.removeItems(items or @selection.items)
+
+  ###
   Section: Pasteboard
   ###
 
@@ -1611,9 +1673,8 @@ class OutlineEditor
       parent.insertChildrenBefore(items, insertBefore)
       if items.loadOptions?.expanded?
         @setExpanded(@outline.getItemsForIDs(items.loadOptions.expanded))
-      @outline.endUpdates()
-
-      @moveSelectionRange(items[0], undefined, items[items.length - 1], undefined)
+      @outline.endUpdates =>
+        @moveSelectionRange(items[0], undefined, items[items.length - 1], undefined)
 
   ###
   Section: Formatting

@@ -147,134 +147,191 @@ describe 'OutlineEditor', ->
       editor.insertText('world')
       one.bodyHTML.should.equal('<b>hello</b>world')
 
-  describe 'Moving', ->
-    it 'should move items up', ->
-      editor.setExpanded(one)
-      editor.moveSelectionRange(five)
-      editor.moveItemsUp()
-      one.firstChild.should.equal(five)
-      one.lastChild.should.equal(two)
-      editor.moveItemsUp() # should do nothing
-      one.firstChild.should.equal(five)
+    describe 'Items', ->
+      describe 'Moving', ->
+        it 'should move items up', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(five)
+          editor.moveItemsUp()
+          one.firstChild.should.equal(five)
+          one.lastChild.should.equal(two)
+          editor.moveItemsUp() # should do nothing
+          one.firstChild.should.equal(five)
 
-    it 'should move items down', ->
-      editor.setExpanded(one)
-      editor.moveSelectionRange(two)
-      editor.moveItemsDown()
-      one.firstChild.should.equal(five)
-      one.lastChild.should.equal(two)
-      editor.moveItemsDown() # should do nothing
-      one.lastChild.should.equal(two)
+        it 'should move items down', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(two)
+          editor.moveItemsDown()
+          one.firstChild.should.equal(five)
+          one.lastChild.should.equal(two)
+          editor.moveItemsDown() # should do nothing
+          one.lastChild.should.equal(two)
 
-    it 'should move items left', ->
-      editor.setExpanded(one)
-      editor.moveSelectionRange(two)
-      editor.moveItemsLeft()
-      one.firstChild.should.equal(five)
-      one.nextSibling.should.equal(two)
-      editor.moveItemsLeft() # should do nothing
-      one.nextSibling.should.equal(two)
+        it 'should move items left', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(two)
+          editor.moveItemsLeft()
+          one.firstChild.should.equal(five)
+          one.nextSibling.should.equal(two)
+          editor.moveItemsLeft() # should do nothing
+          one.nextSibling.should.equal(two)
 
-    it 'should move items left with prev sibling children selected', ->
-      editor.setExpanded(one)
-      editor.setExpanded(two)
-      editor.moveSelectionRange(four, undefined, five)
-      editor.moveItemsLeft()
-      two.nextSibling.should.equal(four)
-      four.nextSibling.should.equal(five)
+        it 'should move items left with prev sibling children selected', ->
+          editor.setExpanded(one)
+          editor.setExpanded(two)
+          editor.moveSelectionRange(four, undefined, five)
+          editor.moveItemsLeft()
+          two.nextSibling.should.equal(four)
+          four.nextSibling.should.equal(five)
 
-    it 'should move items right', ->
-      editor.setExpanded(one)
-      editor.setExpanded(two)
-      editor.moveSelectionRange(four)
-      editor.moveItemsRight()
-      three.firstChild.should.equal(four)
-      editor.moveItemsRight() # should do nothing
-      three.firstChild.should.equal(four)
+        it 'should move items right', ->
+          editor.setExpanded(one)
+          editor.setExpanded(two)
+          editor.moveSelectionRange(four)
+          editor.moveItemsRight()
+          three.firstChild.should.equal(four)
+          editor.moveItemsRight() # should do nothing
+          three.firstChild.should.equal(four)
 
-  describe 'Deleting', ->
-    it 'should delete selection', ->
-      editor.moveSelectionRange(one, 1, one, 3)
-      editor.delete()
-      one.bodyText.should.equal('o')
+      describe 'Deleting', ->
+        it 'should delete selection', ->
+          editor.moveSelectionRange(one, 1, one, 3)
+          editor.delete()
+          one.bodyText.should.equal('o')
 
-    it 'should delete backward by character', ->
-      editor.moveSelectionRange(one, 1)
-      editor.delete('backward', 'character')
-      one.bodyText.should.equal('ne')
+        it 'should delete backward by character', ->
+          editor.moveSelectionRange(one, 1)
+          editor.delete('backward', 'character')
+          one.bodyText.should.equal('ne')
 
-    it 'should delete forward by character', ->
-      editor.moveSelectionRange(one, 1)
-      editor.delete('forward', 'character')
-      one.bodyText.should.equal('oe')
+        it 'should delete forward by character', ->
+          editor.moveSelectionRange(one, 1)
+          editor.delete('forward', 'character')
+          one.bodyText.should.equal('oe')
 
-    it 'should delete backward by word', ->
-      one.bodyText = 'one two three'
-      editor.moveSelectionRange(one, 7)
-      editor.delete('backward', 'word')
-      one.bodyText.should.equal('one  three')
+        it 'should delete backward by word', ->
+          one.bodyText = 'one two three'
+          editor.moveSelectionRange(one, 7)
+          editor.delete('backward', 'word')
+          one.bodyText.should.equal('one  three')
 
-    it 'should delete forward by word', ->
-      one.bodyText = 'one two three'
-      editor.moveSelectionRange(one, 7)
-      editor.delete('forward', 'word')
-      one.bodyText.should.equal('one two')
+        it 'should delete forward by word', ->
+          one.bodyText = 'one two three'
+          editor.moveSelectionRange(one, 7)
+          editor.delete('forward', 'word')
+          one.bodyText.should.equal('one two')
 
-    it 'should delete backward by line boundary', ->
-      one.bodyText = 'one two three'
-      editor.moveSelectionRange(one, 12)
-      editor.delete('backward', 'lineboundary')
-      one.bodyText.should.equal('e')
+        it 'should delete backward by line boundary', ->
+          one.bodyText = 'one two three'
+          editor.moveSelectionRange(one, 12)
+          editor.delete('backward', 'lineboundary')
+          one.bodyText.should.equal('e')
 
-    it 'should delete backward by character joining with previous node', ->
-      editor.setExpanded(one)
-      editor.moveSelectionRange(two, 0)
-      editor.delete('backward', 'character')
-      one.bodyText.should.equal('onetwo')
-      editor.selection.focusItem.should.eql(one)
-      editor.selection.focusOffset.should.eql(3)
-      two.isInOutline.should.be.false
-      three.isInOutline.should.be.true
-      three.parent.should.eql(one)
-      four.isInOutline.should.be.true
-      four.parent.should.eql(one)
+        it 'should delete backward by character joining with previous node', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(two, 0)
+          editor.delete('backward', 'character')
+          one.bodyText.should.equal('onetwo')
+          editor.selection.focusItem.should.eql(one)
+          editor.selection.focusOffset.should.eql(3)
+          two.isInOutline.should.be.false
+          three.isInOutline.should.be.true
+          three.parent.should.eql(one)
+          four.isInOutline.should.be.true
+          four.parent.should.eql(one)
 
-    it 'should delete backward by word joining with previous node', ->
-      editor.setExpanded(one)
-      editor.moveSelectionRange(two, 0)
-      editor.delete('backward', 'word')
-      one.bodyText.should.equal('two')
-      editor.selection.focusItem.should.eql(one)
-      editor.selection.focusOffset.should.eql(0)
-      two.isInOutline.should.be.false
+        it 'should delete backward by word joining with previous node', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(two, 0)
+          editor.delete('backward', 'word')
+          one.bodyText.should.equal('two')
+          editor.selection.focusItem.should.eql(one)
+          editor.selection.focusOffset.should.eql(0)
+          two.isInOutline.should.be.false
 
-    it 'should delete backward by word from empty line joining with previous node', ->
-      editor.setExpanded(one)
-      two.bodyText = ''
-      editor.moveSelectionRange(two, 0)
-      editor.delete('backward', 'word')
-      one.bodyText.should.equal('')
-      editor.selection.focusItem.should.eql(one)
-      editor.selection.focusOffset.should.eql(0)
-      two.isInOutline.should.be.false
+        it 'should delete backward by word from empty line joining with previous node', ->
+          editor.setExpanded(one)
+          two.bodyText = ''
+          editor.moveSelectionRange(two, 0)
+          editor.delete('backward', 'word')
+          one.bodyText.should.equal('')
+          editor.selection.focusItem.should.eql(one)
+          editor.selection.focusOffset.should.eql(0)
+          two.isInOutline.should.be.false
 
-    it 'should delete forward by character joining with next node', ->
-      editor.setExpanded(one)
-      editor.moveSelectionRange(one, 3)
-      editor.delete('forward', 'character')
-      one.bodyText.should.equal('onetwo')
-      editor.selection.focusItem.should.eql(one)
-      editor.selection.focusOffset.should.eql(3)
-      two.isInOutline.should.be.false
+        it 'should delete forward by character joining with next node', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(one, 3)
+          editor.delete('forward', 'character')
+          one.bodyText.should.equal('onetwo')
+          editor.selection.focusItem.should.eql(one)
+          editor.selection.focusOffset.should.eql(3)
+          two.isInOutline.should.be.false
 
-    it 'should delete forward by word joining with previous node', ->
-      editor.setExpanded(one)
-      editor.moveSelectionRange(one, 3)
-      editor.delete('forward', 'word')
-      one.bodyText.should.equal('one')
-      editor.selection.focusItem.should.eql(one)
-      editor.selection.focusOffset.should.eql(3)
-      two.isInOutline.should.be.false
+        it 'should delete forward by word joining with previous node', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(one, 3)
+          editor.delete('forward', 'word')
+          one.bodyText.should.equal('one')
+          editor.selection.focusItem.should.eql(one)
+          editor.selection.focusOffset.should.eql(3)
+          two.isInOutline.should.be.false
+
+    describe 'Lines', ->
+      describe 'Moving', ->
+        it 'should move lines up', ->
+          editor.setExpanded(one)
+          editor.setExpanded(two)
+          editor.moveSelectionRange(five)
+          editor.moveLinesUp()
+          six.parent.should.equal(five)
+          five.parent.should.equal(one)
+          five.previousSibling.should.equal(two)
+
+        it 'should move lines down', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(five)
+          editor.moveLinesDown()
+          six.parent.should.equal(two)
+          five.parent.should.equal(one)
+          five.previousSibling.should.equal(two)
+
+        it 'should move lines right', ->
+          editor.setExpanded(one)
+          editor.setExpanded(two)
+          editor.moveSelectionRange(five)
+          editor.moveLinesRight()
+          six.parent.should.equal(two)
+          five.parent.should.equal(two)
+          five.previousSibling.should.equal(four)
+          five.nextSibling.should.equal(six)
+
+        it 'should move lines left', ->
+          editor.setExpanded(one)
+          editor.setExpanded(two)
+          editor.moveSelectionRange(five)
+          editor.moveLinesLeft()
+          six.parent.should.equal(five)
+          six.indent.should.equal(2)
+          five.parent.should.equal(root)
+          five.previousSibling.should.equal(one)
+
+      describe 'Deleting', ->
+        it 'should delete lines and reparent children to previous sibling', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(five)
+          editor.deleteLines()
+          six.parent.should.equal(two)
+          six.indent.should.equal(1)
+
+        it 'should delete lines and reparent children to parent if no previous sibling', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(two)
+          editor.deleteLines()
+          three.parent.should.equal(one)
+          three.indent.should.equal(2)
+          four.parent.should.equal(one)
+          four.indent.should.equal(2)
 
   describe 'Focus', ->
     it 'should not focus editor when setting selection unless it already has focus', ->
