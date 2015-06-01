@@ -455,7 +455,7 @@ class Item
           each = each.parent;
         each
 
-  # Public: Read-only depth of {Item} in outline.
+  # Public: Read-only depth of {Item} in outline structure.
   depth: null
   Object.defineProperty @::, 'depth',
     get: ->
@@ -465,6 +465,34 @@ class Item
         ancestor = ancestor.parent
         depth++
       depth
+
+  # Public: Visual indent of {Item} relative to parent. Normally this will be
+  # `1`, children are indented one level beyond there parent. But items can be
+  # visually over-indented in which case this value would be greater then one.
+  # It can never be less then one.
+  indent: null
+  Object.defineProperty @::, 'indent',
+    get: ->
+      return 0 if @isRoot
+      if indent = @getAttribute('indent')
+        parseInt(indent) or 1
+      else
+        1
+    set: (indent) ->
+      indent = undefined if indent <= 1
+      @setAttribute('indent', indent)
+
+  # Public: Read-only calculated total visual indent of {Item} in outline.
+  # Total indent is this item's indent plus the indent of all ancestors.
+  totalIndent: null
+  Object.defineProperty @::, 'totalIndent',
+    get: ->
+      totalIndent = @indent
+      ancestor = @parent
+      while ancestor
+        totalIndent += ancestor.indent
+        ancestor = ancestor.parent
+      totalIndent
 
   # Public: Read-only parent {Item}.
   parent: null
@@ -664,22 +692,29 @@ class Item
 
   # Public: Insert the new child item before the referenced sibling in this
   # item's list of children. If referenceSibling isn't defined the item is
-  # inserted at the end.
+  # inserted at the end. This method resets the indent of child to 1.
   #
   # - `child` The inserted child {Item} .
   # - `referenceSibling` (optional) The referenced sibling {Item} .
-  insertChildBefore: (child, referenceSibling) ->
-    @insertChildrenBefore([child], referenceSibling)
+  insertChildBefore: (child, referenceSibling, preserveIndent) ->
+    @insertChildrenBefore([child], referenceSibling, referenceSibling)
 
-  # Public: Insert the new children before the referenced sibling
-  # in this item's list of children. If referenceSibling isn't defined the new
-  # children are inserted at the end.
+  # Public: Insert the new children before the referenced sibling in this
+  # item's list of children. If referenceSibling isn't defined the new
+  # children are inserted at the end. This method resets the indent of each
+  # item in children to 1.
   #
   # - `children` {Array} of {Item}s to insert.
   # - `referenceSibling` (optional) The referenced sibling {Item}.
-  insertChildrenBefore: (children, referenceSibling) ->
+  insertChildrenBefore: (children, referenceSibling, preserveIndent) ->
     isInOutline = @isInOutline
     outline = @outline
+    totalIndent = 0
+
+    if preserveIndent
+      totalIndent = @totalIndent
+      for each in children
+        each.indent = each.totalIndent
 
     outline.removeItemsFromParents(children)
 
@@ -705,6 +740,10 @@ class Item
         each._liOrRootUL.ownerDocument is ownerDocument,
         'children must share same owner document'
       )
+      if preserveIndent
+        each.indent = each.totalIndent - totalIndent
+      else
+        each.indent = 1
       documentFragment.appendChild(each._liOrRootUL)
 
     childrenUL.insertBefore(documentFragment, referenceSiblingLI)
@@ -715,14 +754,14 @@ class Item
   # Public: Append the new children to this item's list of children.
   #
   # - `children` The children {Array} to append.
-  appendChildren: (children) ->
-    @insertChildrenBefore(children)
+  appendChildren: (children, preserveIndent) ->
+    @insertChildrenBefore(children, null, preserveIndent)
 
   # Public: Append the new child to this item's list of children.
   #
   # - `child` The child {Item} to append.
-  appendChild: (child) ->
-    @insertChildrenBefore([child])
+  appendChild: (child, preserveIndent) ->
+    @insertChildrenBefore([child], null, preserveIndent)
 
   # Public: Remove the children from this item's list of children.
   #
