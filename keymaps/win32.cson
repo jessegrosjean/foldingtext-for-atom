@@ -1,0 +1,66 @@
+'body':
+  'ctrl-alt-n': 'outline-editor:new-outline'
+
+'ft-outline-editor':
+  # Platform Bindings
+  'ctrl-left': 'editor:move-to-beginning-of-word'
+  'ctrl-right': 'editor:move-to-end-of-word'
+  'ctrl-shift-left': 'editor:select-to-beginning-of-word'
+  'ctrl-shift-right': 'editor:select-to-end-of-word'
+
+  'ctrl-backspace': 'editor:delete-to-beginning-of-word'
+  'ctrl-delete': 'editor:delete-to-end-of-word'
+  'ctrl-home': 'core:move-to-top'
+  'ctrl-end': 'core:move-to-bottom'
+  'ctrl-shift-home': 'core:select-to-top'
+  'ctrl-shift-end': 'core:select-to-bottom'
+
+  # Atom specific
+  'alt-ctrl-z': 'editor:checkout-head-revision'
+  'ctrl-<': 'editor:scroll-to-cursor'
+  'alt-ctrl-f': 'editor:fold-selection'
+
+  # Sublime Parity
+  'ctrl-a': 'core:select-all'
+  'ctrl-k ctrl-u': 'editor:upper-case'
+  'ctrl-k ctrl-l': 'editor:lower-case'
+  'ctrl-l': 'editor:select-line'
+
+  'ctrl-enter': 'editor:newline-below'
+  'ctrl-shift-enter': 'editor:newline-above'
+  'ctrl-]': 'editor:indent-selected-rows'
+  'ctrl-[': 'editor:outdent-selected-rows'
+  'ctrl-up': 'editor:move-line-up'
+  'ctrl-down': 'editor:move-line-down'
+  'ctrl-/': 'editor:toggle-line-comments'
+  'ctrl-j': 'editor:join-lines'
+  'ctrl-D': 'editor:duplicate-lines'
+
+  'ctrl-alt-[': 'editor:fold-current-row'
+  'ctrl-alt-]': 'editor:unfold-current-row'
+  'ctrl-alt-{': 'editor:fold-all' # Atom Specific
+  'ctrl-alt-}': 'editor:unfold-all' # Atom Specific
+  'ctrl-k ctrl-0': 'editor:unfold-all'
+  'ctrl-k ctrl-1': 'editor:fold-at-indent-level-1'
+  'ctrl-k ctrl-2': 'editor:fold-at-indent-level-2'
+  'ctrl-k ctrl-3': 'editor:fold-at-indent-level-3'
+  'ctrl-k ctrl-4': 'editor:fold-at-indent-level-4'
+  'ctrl-k ctrl-5': 'editor:fold-at-indent-level-5'
+  'ctrl-k ctrl-6': 'editor:fold-at-indent-level-6'
+  'ctrl-k ctrl-7': 'editor:fold-at-indent-level-7'
+  'ctrl-k ctrl-8': 'editor:fold-at-indent-level-8'
+  'ctrl-k ctrl-9': 'editor:fold-at-indent-level-9'
+
+  # FoldingText
+  'ctrl-alt-g': 'outline-editor:group-items'
+
+  'ctrl-alt-down': 'outline-editor:hoist',
+  'ctrl-alt-up': 'outline-editor:unhoist',
+
+  'ctrl-b': 'outline-editor:toggle-bold'
+  'ctrl-i': 'outline-editor:toggle-italic'
+  'ctrl-u': 'outline-editor:toggle-underline'
+  'ctrl-C': 'outline-editor:toggle-code'
+  'ctrl-k': 'outline-editor:toggle-strikethrough'
+  'ctrl-K': 'outline-editor:edit-link'
+  'ctrl-c': 'outline-editor:clear-formatting'

@@ -1,0 +1,26 @@
+'ft-outline-editor':
+  # Platform Bindings
+  'home': 'editor:move-to-first-character-of-line'
+  'end': 'editor:move-to-end-of-screen-line'
+  'shift-home': 'editor:select-to-first-character-of-line'
+  'shift-end': 'editor:select-to-end-of-line'
+
+  # Atom Specific
+  'ctrl-C': 'editor:copy-path'
+
+  # Sublime Parity
+  'tab': 'editor:indent'
+  'enter': 'editor:newline'
+  'shift-tab': 'editor:outdent-selected-rows'
+  'ctrl-K': 'editor:delete-line'
+
+'ft-outline-editor.outlineMode':
+  'left': 'editor:move-to-beginning-of-paragraph',
+  'right': 'editor:move-to-end-of-paragraph',
+  'i': 'editor:move-to-beginning-of-paragraph',
+  'a': 'editor:move-to-end-of-paragraph',
+
+  'o': 'editor:newline',
+  'O': 'editor:newline-above',
+
+  '.': 'outline-editor:toggle-fold-items'

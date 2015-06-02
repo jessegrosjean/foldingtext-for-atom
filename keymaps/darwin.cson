@@ -2,21 +2,6 @@
   'alt-cmd-n': 'outline-editor:new-outline'
 
 'ft-outline-editor':
-
-  # Platform Bindings
-  'home': 'editor:move-to-first-character-of-line'
-  'end': 'editor:move-to-end-of-screen-line'
-  'shift-home': 'editor:select-to-first-character-of-line'
-  'shift-end': 'editor:select-to-end-of-line'
-
-  'ctrl-C': 'editor:copy-path'
-
-  # Sublime Parity
-  'tab': 'editor:indent'
-  'enter': 'editor:newline'
-  'shift-tab': 'editor:outdent-selected-rows'
-  'ctrl-K': 'editor:delete-line'
-
   # Platform Bindings
   'alt-left': 'editor:move-to-beginning-of-word'
   'alt-right': 'editor:move-to-end-of-word'
@@ -46,6 +31,7 @@
 
   # Atom Specific
   'ctrl-W': 'editor:select-word'
+  'alt-cmd-z': 'editor:checkout-head-revision'
   'cmd-<': 'editor:scroll-to-cursor'
   'alt-cmd-ctrl-f': 'editor:fold-selection'
 
@@ -64,16 +50,9 @@
   'cmd-[': 'editor:outdent-selected-rows'
   'ctrl-cmd-up': 'editor:move-line-up'
   'ctrl-cmd-down': 'editor:move-line-down'
-  'ctrl-cmd-left': 'editor:outdent-selected-rows'
-  'ctrl-cmd-right': 'editor:indent-selected-rows'
-
-  'alt-cmd-g': 'outline-editor:group-items'
-
+  'cmd-/': 'editor:toggle-line-comments'
   'cmd-j': 'editor:join-lines'
   'cmd-D': 'editor:duplicate-lines'
-  'cmd-L': 'editor:split-selections-into-lines'
-  'ctrl-shift-up': 'editor:add-selection-above'
-  'ctrl-shift-down': 'editor:add-selection-below'
 
   'cmd-alt-[': 'editor:fold-current-row'
   'cmd-alt-]': 'editor:unfold-current-row'
@@ -89,8 +68,11 @@
   'cmd-k cmd-7': 'editor:fold-at-indent-level-7'
   'cmd-k cmd-8': 'editor:fold-at-indent-level-8'
   'cmd-k cmd-9': 'editor:fold-at-indent-level-9'
-  'cmd-.': 'outline-editor:toggle-fold-items'
-  'cmd->': 'outline-editor:toggle-fully-fold-items'
+
+  # FoldingText
+  'alt-cmd-g': 'outline-editor:group-items'
+  'ctrl-cmd-left': 'editor:outdent-selected-rows'
+  'ctrl-cmd-right': 'editor:indent-selected-rows'
 
   'cmd-alt-down': 'outline-editor:hoist',
   'cmd-alt-up': 'outline-editor:unhoist',
@@ -102,14 +84,3 @@
   'cmd-k': 'outline-editor:toggle-strikethrough'
   'cmd-K': 'outline-editor:edit-link'
   'ctrl-c': 'outline-editor:clear-formatting'
-
-'ft-outline-editor.outlineMode':
-  'left': 'editor:move-to-beginning-of-paragraph',
-  'right': 'editor:move-to-end-of-paragraph',
-  'i': 'editor:move-to-beginning-of-paragraph',
-  'a': 'editor:move-to-end-of-paragraph',
-
-  'o': 'editor:newline',
-  'O': 'editor:newline-above',
-
-  '.': 'outline-editor:toggle-fold-items'
