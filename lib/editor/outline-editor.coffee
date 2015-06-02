@@ -1894,10 +1894,19 @@ class OutlineEditor
   isEmpty: ->
     @outline.isEmpty()
 
-  copyPathToClipboard: ->
-    url =
-      pathname: encodeURI(@getPath() or '')
+  getFileURLObject: ->
+    if pathName = (@getPath() or '')
+      pathName = path.resolve(pathName)
+      pathName = pathName.replace(/\\/g, '/')
+      pathName = encodeURI(pathName)
+    {} =
+      protocol: 'file'
+      slashes: true
+      pathname: pathName
       query: {}
+
+  copyPathToClipboard: ->
+    url = @getFileURLObject()
 
     if query = @getSearch().query
       url.query.query = query

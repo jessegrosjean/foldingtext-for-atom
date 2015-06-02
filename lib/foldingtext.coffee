@@ -5,6 +5,7 @@ foldingTextService = require './foldingtext-service'
 ItemSerializer = null
 OutlineEditor = null
 Outline = null
+path = null
 url = null
 Q = null
 
@@ -61,38 +62,46 @@ module.exports =
           new OutlineEditor(outline)
 
     @subscriptions.add atom.workspace.addOpener (filePath, options) ->
+      ItemSerializer ?= require('./core/item-serializer')
       url ?= require('url')
-      parsedURL = url.parse(filePath, true)
-      protocol = parsedURL.protocol or ''
+      urlObject = url.parse(filePath, true)
+      path ?= require('path')
+      pathObject = {}
 
-      if protocol is 'file:' or
-         filePath[protocol.length] is '\\' or # windows file path, maybe better way to detect?
-         not protocol
+      # 1. Get path object
+      if urlObject.protocol is 'file:'
+        decodedPath = decodeURI(urlObject.path)
+        # Maybe better way to do this, but here I'm detecting windows drive
+        # letter case and when found I strip off leading /. Odd and ugly.
+        if decodedPath.match(/^\/[a-zA-Z]:/)
+          decodedPath = decodedPath.substr(1)
+        pathObject = path.parse(decodedPath)
+      else
+        pathObject = path.parse(filePath)
 
-        ItemSerializer ?= require('./core/item-serializer')
-        decodedURLPath = decodeURI(parsedURL.pathname)
+      # 2. If match path extension then open
+      if ItemSerializer.getMimeTypeForURI(pathObject.base)
+        Outline ?= require('./core/outline')
+        OutlineEditor ?= require('./editor/outline-editor')
+        Outline.getOutlineForPath(path.format(pathObject)).then (outline) ->
+          if outline
+            new OutlineEditor(outline, options)
+          else
+            null
 
-        unless decodedURLPath
-          decodedURLPath = atom.workspace.getActivePaneItem()?.getPath?()
-
-        unless mimeType = ItemSerializer.getMimeTypeForURI(decodedURLPath)
-          return
-
-        if filePath isnt decodedURLPath
-          options.hash ?= (parsedURL.hash or '#').substr(1)
-          options[key] ?= value for key, value of parsedURL.query
-          openPromise = atom.workspace.open(decodedURLPath, options)
+      # 3. Else strip off any query params and try again
+      else
+        urlObject = url.parse(pathObject.base, true)
+        if ItemSerializer.getMimeTypeForURI(urlObject.pathname)
+          options.hash ?= (urlObject.hash or '#').substr(1)
+          options[key] ?= value for key, value of urlObject.query
+          pathObject.base = urlObject.pathname
+          openPromise = atom.workspace.open(path.format(pathObject), options)
           openPromise.then (editor) ->
             editor.updateOptions?(options)
           openPromise
         else
-          Outline ?= require('./core/outline')
-          OutlineEditor ?= require('./editor/outline-editor')
-          Outline.getOutlineForPath(filePath).then (outline) ->
-            if outline
-              new OutlineEditor(outline, options)
-            else
-              null
+          null
 
   consumeStatusBarService: (statusBar) ->
     @statusBar = statusBar

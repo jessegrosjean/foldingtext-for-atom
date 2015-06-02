@@ -948,32 +948,18 @@ EventRegistery.listen '.ft-handle',
 
 EventRegistery.listen '.ft-body-text a',
   click: (e) ->
-    if href = e.target.href
-      urlParse = require('url').parse
-      url = urlParse(href, true)
-      if url.protocol is 'file:'
-        baseURL = urlParse(e.target.ownerDocument.baseURI)
-        basePath = baseURL.pathname
-        baseDir = path.dirname(basePath)
+    url = require('url')
+    if href = e.target.getAttribute('href')
+      protocol = url.parse(href).protocol
+      if not protocol
         editorElement = OutlineEditorElement.findOutlineEditorElement e.target
         editor = editorElement.editor
-        resolvedPath = null
+        href = url.resolve(url.format(editor.getFileURLObject()), href)
+      else if protocol isnt 'file:'
+        href = null
 
-        if url.pathname is basePath
-          # Link to self case
-          resolvedPath = editor.getPath()
-        else if url.pathname.indexOf(baseDir) is 0
-          # Link to file relative to self
-          resolvedPath = url.pathname.substr(baseDir.length)
-          if selfPath = editor.getPath() or atom.project.getPaths()[0]
-            resolvedPath = path.join(path.dirname(selfPath), resolvedPath)
-
-        if resolvedPath
-          url.href = null
-          url.path = null
-          url.pathname = resolvedPath
-
-        atom.workspace.open(require('url').format(url))
+      if href
+        atom.workspace.open(href)
         e.stopPropagation()
         e.preventDefault()
 
