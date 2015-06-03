@@ -103,6 +103,15 @@ module.exports =
         else
           null
 
+    if process.platform is 'darwin'
+      setTimeout ->
+        # Launch FoldingTextHelper.app which sets Atom to open .ftml files
+        # through launch services and also exports the .ftml UTI.
+        path ?= require 'path'
+        packagePath = atom.packages.getActivePackage('foldingtext-for-atom').path
+        openPath = path.join(packagePath, 'native', 'darwin', 'FoldingTextHelper.app')
+        require('child_process').exec("open #{openPath}")
+
   consumeStatusBarService: (statusBar) ->
     @statusBar = statusBar
     @statusBarDisposables = new CompositeDisposable()
