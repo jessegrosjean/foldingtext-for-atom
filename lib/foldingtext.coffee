@@ -114,7 +114,7 @@ module.exports =
           # Launch FoldingTextHelper.app so it will be found by launch
           # services, export .ftml UTIs, and set Atom as default app for .ftml
           lsregister = '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
-          exec "#{lsregister} FoldingTextHelperPath"
+          exec "#{lsregister} FoldingTextHelperPath", (error, stdout, stderr) ->
             exec "touch #{FoldingTextHelperPath}", (error, stdout, stderr) ->
               console.log "touch: #{error} #{stdout} #{stderr}"
               exec 'defaults read com.apple.LaunchServices', (error, stdout, stderr) ->
