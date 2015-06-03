@@ -113,8 +113,15 @@ module.exports =
 
           # Launch FoldingTextHelper.app so it will be found by launch
           # services, export .ftml UTIs, and set Atom as default app for .ftml
-          exec "xattr -rd #{FoldingTextHelperPath}", (error, stdout, stderr) ->
-            exec "open #{FoldingTextHelperPath}", (error, stdout, stderr) ->
+          lsregister = '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
+          exec "#{lsregister} FoldingTextHelperPath"
+            exec "touch #{FoldingTextHelperPath}", (error, stdout, stderr) ->
+              console.log "touch: #{error} #{stdout} #{stderr}"
+              exec 'defaults read com.apple.LaunchServices', (error, stdout, stderr) ->
+                console.log "read: #{error} #{stdout} #{stderr}"
+                if error or stdout.indexOf('com.foldingtext.ftml') is -1
+                  exec 'defaults write com.apple.LaunchServices LSHandlers -array-add \'{ LSHanderContentType = "com.foldingtext.ftml"; LSHandlerRoleAll = "com.github.atom"; }\'', (error, stdout, stderr) ->
+                    console.log "read: #{error} #{stdout} #{stderr}"                
 
   consumeStatusBarService: (statusBar) ->
     @statusBar = statusBar
