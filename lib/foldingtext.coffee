@@ -106,21 +106,15 @@ module.exports =
     @subscriptions.add atom.packages.onDidActivatePackage (pack) ->
       if pack.name is 'foldingtext-for-atom'
         if process.platform is 'darwin'
-          setTimeout ->
-            path ?= require 'path'
-            exec = require('child_process').exec
-            packagePath = atom.packages.getActivePackage('foldingtext-for-atom').path
-            FoldingTextHelperPath = path.join(packagePath, 'native', 'darwin', 'FoldingTextHelper.app')
+          path ?= require 'path'
+          exec = require('child_process').exec
+          packagePath = atom.packages.getActivePackage('foldingtext-for-atom').path
+          FoldingTextHelperPath = path.join(packagePath, 'native', 'darwin', 'FoldingTextHelper.app')
 
-            # Touch FoldingTextHelper.app so it will be found by launch services and export .ftml UTIs.
-            exec "touch #{FoldingTextHelperPath}"
-
-            # Associate com.foldingtext.ftml with com.github.atom if not already mentioned in launch services.
-            exec 'defaults read com.apple.LaunchServices', (error, stdout, stderr) ->
-              if error or stdout.indexOf('com.foldingtext.ftml') is -1
-                exec 'defaults write com.apple.LaunchServices LSHandlers -array-add \'{ LSHanderContentType = "com.foldingtext.ftml"; LSHandlerRoleAll = "com.github.atom"; }\'', (error, stdout, stderr) ->
-                  unless error
-                    exec '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user'
+          # Launch FoldingTextHelper.app so it will be found by launch
+          # services, export .ftml UTIs, and set Atom as default app for .ftml
+          exec "xattr -rd #{FoldingTextHelperPath}", (error, stdout, stderr) ->
+            exec "open #{FoldingTextHelperPath}", (error, stdout, stderr) ->
 
   consumeStatusBarService: (statusBar) ->
     @statusBar = statusBar
