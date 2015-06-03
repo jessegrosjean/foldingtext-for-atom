@@ -2,6 +2,8 @@
 
 ## 0.5.0
 
+- Make Atom default app for .ftml (OS X)
+- Added QuickLook support for .ftml (OS X)
 - Renamed `btag` CSS class to `ft-tag`
 - Renamed `outlineMode` CSS class to `outline-mode`
 - Renamed `ft-itemselected` CSS class to `ft-item-selected`
