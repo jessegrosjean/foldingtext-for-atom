@@ -11,12 +11,12 @@ FoldingTextService.observeOutlineEditors (editor) ->
       for each in tags
         each = each.trim()
         a = document.createElement 'A'
-        a.className = 'btag'
+        a.className = 'ft-tag'
         a.setAttribute 'data-tag', each
         a.textContent = each
         addBadgeElement a
 
-FoldingTextService.eventRegistery.listen '.btag',
+FoldingTextService.eventRegistery.listen '.ft-tag',
   click: (e) ->
     tag = e.target.textContent
     outlineEditor = FoldingTextService.OutlineEditor.findOutlineEditor e.target
@@ -120,7 +120,7 @@ atom.commands.add 'ft-outline-editor',
   'outline-editor:edit-tags': -> editTags @editor
   'outline-editor:clear-tags': -> clearTags @editor
 
-atom.commands.add 'ft-outline-editor .btag',
+atom.commands.add 'ft-outline-editor .ft-tag',
   'outline-editor:delete-tag': (e) ->
     tag = @textContent
     editor = FoldingTextService.OutlineEditor.findOutlineEditor this
@@ -136,10 +136,10 @@ atom.commands.add 'ft-outline-editor .btag',
 atom.keymaps.add 'tags-bindings',
   'ft-outline-editor':
     'cmd-shift-t': 'outline-editor:edit-tags'
-  'ft-outline-editor.outlineMode':
+  'ft-outline-editor.outline-mode':
     't': 'outline-editor:edit-tags'
 
 #atom.contextMenu.add
-#  'ft-outline-editor .btag': [
+#  'ft-outline-editor .ft-tag': [
 #    {label: 'Delete Tag', command: 'outline-editor:delete-tag'}
 #  ]

@@ -44,7 +44,7 @@ atom.commands.add 'ft-outline-editor',
 atom.keymaps.add 'status-bindings',
   'ft-outline-editor':
     'ctrl-space': 'outline-editor:toggle-status-complete'
-  'ft-outline-editor.outlineMode':
+  'ft-outline-editor.outline-mode':
     's t': 'outline-editor:toggle-status-todo'
     's w': 'outline-editor:toggle-status-waiting'
     's a': 'outline-editor:toggle-status-active'

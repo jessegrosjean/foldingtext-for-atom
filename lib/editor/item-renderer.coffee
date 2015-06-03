@@ -86,7 +86,7 @@ class ItemRenderer
       if @editor.selection.isTextMode
         classes.push 'ft-text-selected'
       else
-        classes.push 'ft-itemselected'
+        classes.push 'ft-item-selected'
 
     if @editor.getHoistedItem() is item
       classes.push 'ft-hoistedItem'

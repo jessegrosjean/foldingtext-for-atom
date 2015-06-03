@@ -14,7 +14,7 @@
   'shift-tab': 'editor:outdent-selected-rows'
   'ctrl-K': 'editor:delete-line'
 
-'ft-outline-editor.outlineMode':
+'ft-outline-editor.outline-mode':
   'left': 'editor:move-to-beginning-of-paragraph',
   'right': 'editor:move-to-end-of-paragraph',
   'i': 'editor:move-to-beginning-of-paragraph',

@@ -81,9 +81,9 @@ describe 'OutlineEditorElement', ->
       it 'should render selection state', ->
         li = editorElement.itemRenderer.renderedLIForItem(one)
         editor.moveSelectionRange(one)
-        li.classList.contains('ft-itemselected').should.be.true
+        li.classList.contains('ft-item-selected').should.be.true
         editor.moveSelectionRange(two)
-        li.classList.contains('ft-itemselected').should.be.false
+        li.classList.contains('ft-item-selected').should.be.false
 
       it 'should render expanded state', ->
         li = editorElement.itemRenderer.renderedLIForItem(one)

@@ -46,7 +46,7 @@ atom.commands.add 'ft-outline-editor',
   'outline-editor:clear-priority': -> togglePriority @editor, undefined
 
 atom.keymaps.add 'priorities-bindings',
-  'ft-outline-editor.outlineMode':
+  'ft-outline-editor.outline-mode':
     '1': 'outline-editor:toggle-priority-1'
     '2': 'outline-editor:toggle-priority-2'
     '3': 'outline-editor:toggle-priority-3'

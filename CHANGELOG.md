@@ -1,5 +1,11 @@
 # ChangeLog
 
+## 0.5.0
+
+- Renamed `btag` CSS class to `ft-tag`
+- Renamed `outlineMode` CSS class to `outline-mode`
+- Renamed `ft-itemselected` CSS class to `ft-item-selected`
+
 ## 0.4.4
 
 - Fixed broken "Toggle Fold" keybindings.

@@ -684,7 +684,7 @@ class OutlineEditor
   #   if tags = item.getAttribute 'data-tags', true
   #     for each in tags
   #       span = document.createElement 'A'
-  #       span.className = 'btag'
+  #       span.className = 'ft-tag'
   #       span.textContent = each.trim()
   #       renderBadgeElement span
   # ```
@@ -1232,11 +1232,11 @@ class OutlineEditor
 
     classList = outlineEditorElement.classList
     if currentSelection.isTextMode
-      classList.remove('outlineMode')
+      classList.remove('outline-mode')
       classList.add('textMode')
     else
       classList.remove('textMode')
-      classList.add('outlineMode')
+      classList.add('outline-mode')
 
     @emitter.emit 'did-change-selection', currentSelection
 
