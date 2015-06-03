@@ -74,8 +74,11 @@
   'ctrl-cmd-left': 'editor:outdent-selected-rows'
   'ctrl-cmd-right': 'editor:indent-selected-rows'
 
-  'cmd-alt-down': 'outline-editor:hoist',
-  'cmd-alt-up': 'outline-editor:unhoist',
+  'cmd-.': 'outline-editor:toggle-fold-items'
+  'cmd->': 'outline-editor:toggle-fully-fold-items'
+
+  'cmd-alt-down': 'outline-editor:hoist'
+  'cmd-alt-up': 'outline-editor:unhoist'
 
   'cmd-b': 'outline-editor:toggle-bold'
   'cmd-i': 'outline-editor:toggle-italic'

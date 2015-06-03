@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.4.4
+
+- Fixed broken "Toggle Fold" keybindings.
+
 ## 0.4.3
 
 - Fixed Windows/Linux keybindings.

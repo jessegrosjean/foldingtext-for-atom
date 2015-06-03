@@ -54,6 +54,9 @@
   # FoldingText
   'ctrl-alt-g': 'outline-editor:group-items'
 
+  'ctrl-.': 'outline-editor:toggle-fold-items'
+  'ctrl->': 'outline-editor:toggle-fully-fold-items'
+
   'ctrl-alt-down': 'outline-editor:hoist',
   'ctrl-alt-up': 'outline-editor:unhoist',
 
