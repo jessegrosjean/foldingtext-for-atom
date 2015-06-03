@@ -2,8 +2,8 @@
 
 ## 0.4.3
 
+- Fixed Windows/Linux keybindings.
 - Fixed opening of outline files on Windows.
-- Fixed Windows/Linux keybindings, might still need work.
 
 ## 0.4.2
 
