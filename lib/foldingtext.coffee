@@ -106,15 +106,16 @@ module.exports =
     @subscriptions.add atom.packages.onDidActivatePackage (pack) ->
       if pack.name is 'foldingtext-for-atom'
         if process.platform is 'darwin'
-          path ?= require 'path'
+          path ?= require('path')
           exec = require('child_process').exec
           packagePath = atom.packages.getActivePackage('foldingtext-for-atom').path
           FoldingTextHelperPath = path.join(packagePath, 'native', 'darwin', 'FoldingTextHelper.app')
-
-          # Launch FoldingTextHelper.app so it will be found by launch
-          # services, export .ftml UTIs, and set Atom as default app for .ftml
-          exec "xattr -rd #{FoldingTextHelperPath}", (error, stdout, stderr) ->
-            exec "open #{FoldingTextHelperPath}", (error, stdout, stderr) ->
+          lsregister = '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
+          exec "#{lsregister} #{FoldingTextHelperPath}"
+          #LaunchServices = require('launch-services')
+          #LaunchServices.registerURL("file://#{FoldingTextHelperPath}", true)
+          #unless LaunchServices.getDefaultRoleHandlerForContentType('com.foldingtext.ftml', null)
+          #  LaunchServices.setDefaultRoleHandlerForContentType('com.foldingtext.ftml', null, 'com.github.atom')
 
   consumeStatusBarService: (statusBar) ->
     @statusBar = statusBar

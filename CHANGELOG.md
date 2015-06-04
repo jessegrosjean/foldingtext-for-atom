@@ -2,7 +2,7 @@
 
 ## 0.5.0
 
-- Make Atom default app for .ftml (OS X)
+- Set type indentifier for .ftml (OS X)
 - Added QuickLook support for .ftml (OS X)
 - Renamed `btag` CSS class to `ft-tag`
 - Renamed `outlineMode` CSS class to `outline-mode`
