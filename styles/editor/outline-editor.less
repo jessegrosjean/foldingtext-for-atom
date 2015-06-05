@@ -69,7 +69,7 @@ input[is="ft-outline-editor-focus"] {
   display:flex;
   flex-direction: row;
   &.ft-hoistedItem {
-    margin: (1em * @ft-line-height) / 2.0;
+    margin: @ft-item-indent / 2.0;
     > .ft-branch-controls {
       display: none;
     }
@@ -82,6 +82,14 @@ input[is="ft-outline-editor-focus"] {
       }
     }
   }
+}
+
+.generate-indent-levels(16);
+.generate-indent-levels(@n, @i: 2) when (@i =< @n) {
+  .ft-item[indent="@{i}"] {
+    margin-left: @ft-item-indent * (@i - 1);
+  }
+  .generate-indent-levels(@n, (@i + 1));
 }
 
 .ft-branch-controls {
@@ -103,12 +111,14 @@ input[is="ft-outline-editor-focus"] {
   color: @syntax-text-color;
   &:before {
     display: inline-block;
-    width: 1em * @ft-line-height;
+    width: @ft-item-indent;
     font-weight: normal;
     color: @syntax-invisible-character-color;
     content: '▸︎';
   }
 }
+
+//indent
 
 .ft-border {
   flex-grow: 1;
