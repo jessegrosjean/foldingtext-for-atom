@@ -1408,9 +1408,9 @@ class OutlineEditor
             newNextSibling = @getNextVisibleSibling(newNextSibling)
       else if direction is 'right'
         newParent = @getPreviousVisibleSibling(startItem)
-        unless newParent
-          for each in selectedItems
-            each.indent += 1
+        #unless newParent
+          #for each in selectedItems
+          #  each.indent += 1
       if newParent
         @moveItems(selectedItems, newParent, newNextSibling)
 
