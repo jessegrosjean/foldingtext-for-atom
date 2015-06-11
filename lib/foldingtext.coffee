@@ -26,7 +26,7 @@ module.exports =
   config:
     disableAnimation:
       type: 'boolean'
-      default: true
+      default: false
 
   provideFoldingTextService: ->
     foldingTextService
