@@ -97,7 +97,9 @@ describe 'Outline', ->
       expect(child.parent).toBe(undefined)
 
     it 'should undo remove child', ->
+      outline.undoManager.beginUndoGrouping()
       one.removeChild(two)
+      outline.undoManager.endUndoGrouping()
       outline.undoManager.undo()
       two.parent.should.equal(one)
 

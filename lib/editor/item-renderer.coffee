@@ -185,6 +185,7 @@ class ItemRenderer
           if @editor.isVisible each
             children.appendChild @renderItemLI each, depth + 1
           each = each.nextSibling
+          @updateItemChildrenGaps(item, children)
         children
 
   addBadgeRenderer: (callback, priority=0) ->
@@ -412,6 +413,30 @@ class ItemRenderer
       renderedChildrenUL = @renderChildrenUL item
       if renderedChildrenUL
         renderedLI.appendChild renderedChildrenUL
+
+  updateItemChildrenGaps: (item, renderedChildrenUL) ->
+    ###
+    eachChild = item.firstChild
+    eachChildLI = renderedChildrenUL.firstElementChild
+    editor = @editor
+    gap = false
+
+    while eachChild
+      if editor.isVisible(each)
+        if gap
+          each.classes.add('ft-gap-before')
+          gap = false
+      else
+        each.classes.remove('ft-gap-before')
+        each.classes.remove('ft-gap-after')
+        gap = true
+
+      eachChild = eachChild.nextSibling
+      eachChildLI = eachChildLI.nextSibling
+
+    if gap
+      renderedChildrenUL.lastElementChild.classes.add('ft-gap-before')
+    ###
 
   updateItemExpanded: (item) ->
     @updateItemClass item

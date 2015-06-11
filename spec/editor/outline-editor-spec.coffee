@@ -184,13 +184,28 @@ describe 'OutlineEditor', ->
           two.nextSibling.should.equal(four)
           four.nextSibling.should.equal(five)
 
+        it 'should move items left by adjusting indent if they are over-indent', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(two)
+          editor.moveItemsRight() # over-indent
+          editor.moveItemsRight() # over-indent
+          two.indent.should.equal(3)
+          editor.moveItemsLeft()
+          two.indent.should.equal(2)
+          editor.moveItemsLeft()
+          two.indent.should.equal(1)
+
         it 'should move items right', ->
           editor.setExpanded(one)
           editor.setExpanded(two)
           editor.moveSelectionRange(four)
           editor.moveItemsRight()
           three.firstChild.should.equal(four)
-          editor.moveItemsRight() # should do nothing
+          four.indent.should.equal(1)
+          editor.moveItemsRight() # should over-indent
+          four.indent.should.equal(2)
+          editor.moveItemsRight() # should over-indent
+          four.indent.should.equal(3)
           three.firstChild.should.equal(four)
 
       describe 'Deleting', ->
@@ -320,14 +335,14 @@ describe 'OutlineEditor', ->
         it 'should delete lines and reparent children to previous sibling', ->
           editor.setExpanded(one)
           editor.moveSelectionRange(five)
-          editor.deleteLines()
+          editor.deleteParagraphsBackward()
           six.parent.should.equal(two)
           six.indent.should.equal(1)
 
         it 'should delete lines and reparent children to parent if no previous sibling', ->
           editor.setExpanded(one)
           editor.moveSelectionRange(two)
-          editor.deleteLines()
+          editor.deleteParagraphsBackward()
           three.parent.should.equal(one)
           three.indent.should.equal(2)
           four.parent.should.equal(one)

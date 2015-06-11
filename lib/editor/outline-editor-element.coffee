@@ -964,7 +964,14 @@ EventRegistery.listen '.ft-body-text a',
         e.preventDefault()
 
 #
-# Handle Cut/Copy/Paste
+# Handle Context Menu
+#
+
+EventRegistery.listen 'ft-outline-editor',
+  'contextmenu': (e) -> @onContextMenu(e)
+
+#
+# Handle Commands
 #
 
 clipboardAsDatatransfer =
@@ -973,6 +980,9 @@ clipboardAsDatatransfer =
   setData: (type, data) -> atom.clipboard.write(data)
 
 atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagationAndGroupUndo(
+  'core:undo': -> @editor.undo()
+  'core:redo': -> @editor.redo()
+
   'core:cut': (e) -> @editor.cutSelection clipboardAsDatatransfer
   'core:copy': (e) -> @editor.copySelection clipboardAsDatatransfer
   'core:paste': (e) -> @editor.pasteToSelection clipboardAsDatatransfer
@@ -984,45 +994,43 @@ atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagationAndGro
   'outline-editor:cut-text': (e) -> @editor.cutSelection(clipboardAsDatatransfer, Constants.TEXTMimeType)
   'outline-editor:copy-text': (e) -> @editor.copySelection(clipboardAsDatatransfer, Constants.TEXTMimeType)
   'outline-editor:paste-text': (e) -> @editor.pasteToSelection(clipboardAsDatatransfer, Constants.TEXTMimeType)
-)
 
-#
-# Handle Context Menu
-#
-
-EventRegistery.listen 'ft-outline-editor',
-  'contextmenu': (e) -> @onContextMenu(e)
-
-#
-# Handle Commands
-#
-
-atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagationAndGroupUndo(
-  'core:undo': -> @editor.undo()
-  'core:redo': -> @editor.redo()
+  # Text Commands
   'editor:newline': -> @editor.insertNewline()
-  'editor:newline-above': -> @editor.insertItemAbove()
-  'editor:newline-below': -> @editor.insertItemBelow()
+  'editor:newline-above': -> @editor.insertNewlineAbove()
+  'editor:newline-below': -> @editor.insertNewlineBelow()
   'editor:newline-ignore-field-editor': -> @editor.insertNewlineIgnoringFieldEditor()
   'editor:line-break': -> @editor.insertLineBreak()
-  'editor:indent': -> @editor.indent()
-  'editor:indent-selected-rows': -> @editor.indent()
-  'editor:outdent-selected-rows': -> @editor.outdent()
+  'editor:indent': -> @editor.indentLines()
+  'editor:indent-selected-rows': -> @editor.indentLines()
+  'editor:outdent-selected-rows': -> @editor.outdentLines()
   'editor:insert-tab-ignoring-field-editor': -> @editor.insertTabIgnoringFieldEditor()
   'core:backspace': -> @editor.deleteBackward()
-  #'core:backspace-decomposing-previous-character': -> @editor.deleteBackwardByDecomposingPreviousCharacter()
   'editor:delete-to-beginning-of-word': -> @editor.deleteWordBackward()
   'editor:delete-to-beginning-of-line': -> @editor.deleteToBeginningOfLine()
-  'deleteToEndOfParagraph': -> @editor.deleteToEndOfParagraph()
+  'editor:delete-to-end-of-paragraph': -> @editor.deleteToEndOfParagraph()
   'core:delete': -> @editor.deleteForward()
   'editor:delete-to-end-of-word': -> @editor.deleteWordForward()
-  'editor:move-line-up': -> @editor.moveItemsUp()
-  'editor:move-line-down': -> @editor.moveItemsDown()
+  'editor:delete-line': -> @editor.deleteParagraphsBackward()
+  'editor:move-line-up': -> @editor.moveLinesUp()
+  'editor:move-line-down': -> @editor.moveLinesDown()
+  'editor:duplicate-lines': -> @editor.duplicateLines()
+  'editor:join-lines': -> @editor.joinLines()
+
+  # Outline Commands
+  'outline-editor:indent-selected-items': -> @editor.indentItems()
+  'outline-editor:outdent-selected-items': -> @editor.outdentItems()
+  'outline-editor:move-item-up': -> @editor.moveItemsUp()
+  'outline-editor:move-item-down': -> @editor.moveItemsDown()
+  'outline-editor:duplicate-items': -> @editor.duplicateItems()
+  'outline-editor:join-items': -> @editor.joinItems()
   'outline-editor:promote-child-items': -> @editor.promoteChildItems()
   'outline-editor:demote-trailing-sibling-items': -> @editor.demoteTrailingSiblingItems()
   'outline-editor:group-items': -> @editor.groupItems()
-  'deleteItemsBackward': -> @editor.deleteItemsBackward()
-  'deleteItemsForward': -> @editor.deleteItemsForward()
+  'outline-editor:delete-items-backward': -> @editor.deleteItemsBackward()
+  'outline-editor:delete-items-forward': -> @editor.deleteItemsForward()
+
+  # Text Formatting Commands
   'outline-editor:toggle-abbreviation': -> @editor.toggleFormattingTag 'ABBR'
   'outline-editor:toggle-bold': -> @editor.toggleFormattingTag 'B'
   'outline-editor:toggle-citation': -> @editor.toggleFormattingTag 'CITE'
@@ -1040,17 +1048,13 @@ atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagationAndGro
   'outline-editor:toggle-superscript': -> @editor.toggleFormattingTag 'SUP'
   'outline-editor:toggle-underline': -> @editor.toggleFormattingTag 'U'
   'outline-editor:toggle-variable': -> @editor.toggleFormattingTag 'VAR'
-
   'outline-editor:clear-formatting': -> @editor.clearFormatting()
   'editor:upper-case': -> @editor.upperCase()
   'editor:lower-case': -> @editor.lowerCase()
 )
 
 atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagation(
-  'core:cancel': ->
-    if @editor.isTextMode()
-      @editor.extendSelectionRangeToItemBoundaries()
-
+  'core:cancel': -> @editor.cancel()
   'core:move-backward': -> @editor.moveBackward()
   'core:select-backward': -> @editor.moveBackwardAndModifySelection()
   'core:move-up': -> @editor.moveUp()
@@ -1089,8 +1093,6 @@ atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagation(
   'editor:select-paragraph-forward': -> @editor.moveParagraphForwardAndModifySelection()
   'core:select-all': -> @editor.selectAll()
   'editor:select-line': -> @editor.extendSelectionRangeToItemBoundaries()
-  'outline-editor:hoist': -> @editor.hoistItem()
-  'outline-editor:unhoist': -> @editor.unhoist()
   'editor:scroll-to-top': -> @editor.scrollToBeginningOfDocument()
   'editor:scroll-to-bottom': -> @editor.scrollToEndOfDocument()
   'editor:scroll-to-selection': -> @editor.centerSelectionInVisibleArea()
@@ -1117,6 +1119,8 @@ atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagation(
   'editor:fold-at-indent-level-9': -> @editor.foldAllAtIndentLevel(8)
   'outline-editor:toggle-fold-items': -> @editor.toggleFoldItems()
   'outline-editor:toggle-fully-fold-items': -> @editor.toggleFullyFoldItems()
+  'outline-editor:hoist': -> @editor.hoistItem()
+  'outline-editor:unhoist': -> @editor.unhoist()
   'editor:copy-path': -> @editor.copyPathToClipboard()
 )
 

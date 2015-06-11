@@ -32,7 +32,6 @@
   'ctrl-[': 'editor:outdent-selected-rows'
   'ctrl-up': 'editor:move-line-up'
   'ctrl-down': 'editor:move-line-down'
-  'ctrl-/': 'editor:toggle-line-comments'
   'ctrl-j': 'editor:join-lines'
   'ctrl-D': 'editor:duplicate-lines'
 
@@ -57,8 +56,8 @@
   'ctrl-.': 'outline-editor:toggle-fold-items'
   'ctrl->': 'outline-editor:toggle-fully-fold-items'
 
-  'ctrl-alt-down': 'outline-editor:hoist',
-  'ctrl-alt-up': 'outline-editor:unhoist',
+  'ctrl-alt-down': 'outline-editor:hoist'
+  'ctrl-alt-up': 'outline-editor:unhoist'
 
   'ctrl-b': 'outline-editor:toggle-bold'
   'ctrl-i': 'outline-editor:toggle-italic'

@@ -910,6 +910,10 @@ class OutlineEditor
   focusIfNeeded: ->
     @focus() unless @isFocused()
 
+  cancel: ->
+    if @isTextMode()
+      @extendSelectionRangeToItemBoundaries()
+
   ###
   Section: Selection
   ###
@@ -1255,15 +1259,15 @@ class OutlineEditor
     classList = outlineEditorElement.classList
     if currentSelection.isTextMode
       classList.remove('outline-mode')
-      classList.add('textMode')
+      classList.add('text-mode')
     else
-      classList.remove('textMode')
+      classList.remove('text-mode')
       classList.add('outline-mode')
 
     @emitter.emit 'did-change-selection', currentSelection
 
   ###
-  Section: Insert Items
+  Section: Insert
   ###
 
   # Public: Insert text at current selection. If is in text selection mode the
@@ -1289,6 +1293,9 @@ class OutlineEditor
     else
       @moveSelectionRange(@insertItem(insertedText))
 
+  insertTabIgnoringFieldEditor: ->
+    @insertText('\t')
+
   insertNewline: ->
     selectionRange = @selection
     if selectionRange.isTextMode
@@ -1311,6 +1318,12 @@ class OutlineEditor
         undoManager.endUndoGrouping()
     else
       @insertItem()
+
+  insertNewlineAbove: (text) ->
+    @insertItem(text, true)
+
+  insertNewlineBelow: (text) ->
+    @insertItem(text)
 
   # Public: Insert item at current selection.
   #
@@ -1357,40 +1370,15 @@ class OutlineEditor
 
     insertItem
 
-  insertItemAbove: (text) ->
-    @insertItem(text, true)
-
-  insertItemBelow: (text) ->
-    @insertItem(text)
-
-  indent: ->
-    @moveItemsRight()
-
-  outdent: ->
-    @moveItemsLeft()
-
-  insertTabIgnoringFieldEditor: ->
-    @insertText('\t')
-
-  getTypingFormattingTags: ->
-    @_textModeTypingFormattingTags
-
-  setTypingFormattingTags: (typingFormattingTags) ->
-    if typingFormattingTags
-      typingFormattingTags = _.clone(typingFormattingTags)
-    @_textModeTypingFormattingTags = typingFormattingTags or {}
-
-  toggleTypingFormattingTag: (tagName, tagValue) ->
-    typingFormattingTags = @getTypingFormattingTags()
-    if typingFormattingTags[tagName] isnt undefined
-      delete typingFormattingTags[tagName]
-    else
-      typingFormattingTags[tagName] = tagValue or null
-    @setTypingFormattingTags typingFormattingTags
-
   ###
   Section: Move Items
   ###
+
+  indentItems: ->
+    @moveItemsRight()
+
+  outdentItems: ->
+    @moveItemsLeft()
 
   moveItemsUp: ->
     @_moveItemsInDirection('up')
@@ -1412,15 +1400,15 @@ class OutlineEditor
       newParent
 
       if direction is 'up'
-        newNextSibling  = @getPreviousVisibleSibling(startItem)
+        newNextSibling = @getPreviousVisibleSibling(startItem)
         if newNextSibling
-          newParent = startItem.parent
+          newParent = newNextSibling.parent
       else if direction is 'down'
         endItem = selectedItems[selectedItems.length - 1]
-        newNextSibling = @getNextVisibleSibling(endItem)
-        if newNextSibling
-          newParent = endItem.parent
-          newNextSibling = @getNextVisibleSibling(newNextSibling)
+        newPreviousSibling = @getNextVisibleSibling(endItem)
+        if newPreviousSibling
+          newParent = newPreviousSibling.parent
+          newNextSibling = @getNextVisibleSibling(newPreviousSibling)
       else if direction is 'left'
         startItemParent = startItem.parent
         if startItemParent isnt @getHoistedItem()
@@ -1430,9 +1418,7 @@ class OutlineEditor
             newNextSibling = @getNextVisibleSibling(newNextSibling)
       else if direction is 'right'
         newParent = @getPreviousVisibleSibling(startItem)
-        #unless newParent
-          #for each in selectedItems
-          #  each.indent += 1
+
       if newParent
         @moveItems(selectedItems, newParent, newNextSibling)
 
@@ -1489,6 +1475,12 @@ class OutlineEditor
   Section: Move Lines
   ###
 
+  indentLines: ->
+    @moveLinesRight()
+
+  outdentLines: ->
+    @moveLinesLeft()
+
   moveLinesUp: (items) ->
     @_moveLinesInDirection(items, 'up')
 
@@ -1505,41 +1497,46 @@ class OutlineEditor
     items ?= @selection.items
     if items.length
       firstItem = items[0]
+      itemsDepths = (each.depth for each in items)
       endItem = items[items.length - 1]
       referenceItem = null
-      indentDelta = 0
+      depthDelta = 0
 
       switch direction
         when 'up'
           referenceItem = @getPreviousVisibleItem(firstItem)
+          unless referenceItem
+            return
         when 'down'
           referenceItem = @getNextVisibleItem(@getNextVisibleItem(endItem))
         when 'left'
-          indentDelta = -1
+          depthDelta = -1
           referenceItem = endItem.nextItem
         when 'right'
-          indentDelta = 1
+          depthDelta = 1
           referenceItem = endItem.nextItem
 
     @outline.beginUpdates()
 
+    if depthDelta isnt 0
+      for each, i in itemsDepths
+        itemsDepths[i] += depthDelta
+
     @outline.removeItems(items)
-    if indentDelta
-      for each in items
-        each.indent += indentDelta
-    @outline.insertItemsBefore(items, referenceItem)
+    @outline.insertItemsAtDepthsBefore(items, itemsDepths, referenceItem)
 
     expandItems = []
     disposable = @outline.onDidChange (mutations) ->
       for each in mutations
         if each.target.hasChildren
           expandItems.push each.target
+
     @outline.endUpdates =>
       @setExpanded(expandItems)
-    disposable.dispose()
+      disposable.dispose()
 
   ###
-  Section: Delete Items
+  Section: Delete
   ###
 
   deleteBackward: ->
@@ -1563,6 +1560,38 @@ class OutlineEditor
   deleteWordForward: ->
     @delete('forward', 'word')
 
+  deleteParagraphsBackward: (items) ->
+    #@delete('forward', 'paragraph')
+    # should move this logic in to delete
+    items ?= @selection.items
+    if items.length
+      parentWasExpandedItemIDs = {}
+      for each in items
+        if @isExpanded(each)
+          for eachChild in each.children
+            parentWasExpandedItemIDs[eachChild.id] = true
+
+      expandItems = []
+      disposable = @outline.onDidChange (mutations) ->
+        for eachMutation in mutations
+          if eachMutation.type is Mutation.CHILDREN_CHANGED
+            for each in eachMutation.addedItems
+              if parentWasExpandedItemIDs[each.id]
+                expandItems.push(each.parent)
+
+      #undoManager = @outline.undoManager
+      #undoManager.beginUndoGrouping()
+      @outline.beginUpdates()
+      @outline.removeItems(items)
+      @outline.endUpdates =>
+        @setExpanded(expandItems)
+        disposable.dispose()
+      #undoManager.endUndoGrouping()
+      #undoManager.setActionName('Delete Lines')
+
+  deleteParagraphsForward: (items) ->
+    @delete('forward', 'paragraph')
+
   deleteItemsBackward: ->
     @delete('backward', 'item')
 
@@ -1574,6 +1603,9 @@ class OutlineEditor
     selectionRange = @selection
     undoManager = outline.undoManager
     outlineEditorElement = @outlineEditorElement
+
+    # if granularity is 'paragraph' Shouldn't do the
+    # selectionRange.isTextMode, should try to support all deletion uniformily
 
     if selectionRange.isTextMode
       if selectionRange.isCollapsed
@@ -1632,13 +1664,6 @@ class OutlineEditor
         outline.endUpdates()
         undoManager.endUndoGrouping()
         undoManager.setActionName('Delete')
-
-  ###
-  Section: Delete Lines
-  ###
-
-  deleteLines: (items) ->
-    @outline.removeItems(items or @selection.items)
 
   ###
   Section: Pasteboard
@@ -1701,6 +1726,22 @@ class OutlineEditor
   ###
   Section: Formatting
   ###
+
+  getTypingFormattingTags: ->
+    @_textModeTypingFormattingTags
+
+  setTypingFormattingTags: (typingFormattingTags) ->
+    if typingFormattingTags
+      typingFormattingTags = _.clone(typingFormattingTags)
+    @_textModeTypingFormattingTags = typingFormattingTags or {}
+
+  toggleTypingFormattingTag: (tagName, tagValue) ->
+    typingFormattingTags = @getTypingFormattingTags()
+    if typingFormattingTags[tagName] isnt undefined
+      delete typingFormattingTags[tagName]
+    else
+      typingFormattingTags[tagName] = tagValue or null
+    @setTypingFormattingTags typingFormattingTags
 
   toggleFormattingTag: (tagName, attributes={}) ->
     startItem = @selection.startItem

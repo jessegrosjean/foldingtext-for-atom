@@ -26,7 +26,7 @@ module.exports =
   config:
     disableAnimation:
       type: 'boolean'
-      default: false
+      default: true
 
   provideFoldingTextService: ->
     foldingTextService
@@ -46,7 +46,7 @@ module.exports =
     @subscriptions.add foldingTextService.observeOutlineEditors =>
       unless @workspaceDisplayedEditor
         require './extensions/ui/popovers'
-        require './extensions/text-formatting-popover'
+        #require './extensions/text-formatting-popover'
         require './extensions/edit-link-popover'
         require './extensions/priorities'
         require './extensions/status'

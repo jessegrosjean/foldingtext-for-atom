@@ -469,34 +469,6 @@ class Item
         depth++
       depth
 
-  # Public: Visual indent of {Item} relative to parent. Normally this will be
-  # `1`, children are indented one level beyond there parent. But items can be
-  # visually over-indented in which case this value would be greater then one.
-  # It can never be less then one.
-  indent: null
-  Object.defineProperty @::, 'indent',
-    get: ->
-      return 0 if @isRoot
-      if indent = @getAttribute('indent')
-        parseInt(indent) or 1
-      else
-        1
-    set: (indent) ->
-      indent = undefined if indent <= 1
-      @setAttribute('indent', indent)
-
-  # Public: Read-only calculated total visual indent of {Item} in outline.
-  # Total indent is this item's indent plus the indent of all ancestors.
-  totalIndent: null
-  Object.defineProperty @::, 'totalIndent',
-    get: ->
-      totalIndent = @indent
-      ancestor = @parent
-      while ancestor
-        totalIndent += ancestor.indent
-        ancestor = ancestor.parent
-      totalIndent
-
   # Public: Read-only parent {Item}.
   parent: null
   Object.defineProperty @::, 'parent',
@@ -695,29 +667,22 @@ class Item
 
   # Public: Insert the new child item before the referenced sibling in this
   # item's list of children. If referenceSibling isn't defined the item is
-  # inserted at the end. This method resets the indent of child to 1.
+  # inserted at the end.
   #
   # - `child` The inserted child {Item} .
   # - `referenceSibling` (optional) The referenced sibling {Item} .
-  insertChildBefore: (child, referenceSibling, preserveIndent) ->
-    @insertChildrenBefore([child], referenceSibling, referenceSibling)
+  insertChildBefore: (child, referenceSibling) ->
+    @insertChildrenBefore([child], referenceSibling)
 
   # Public: Insert the new children before the referenced sibling in this
   # item's list of children. If referenceSibling isn't defined the new
-  # children are inserted at the end. This method resets the indent of each
-  # item in children to 1.
+  # children are inserted at the end.
   #
   # - `children` {Array} of {Item}s to insert.
   # - `referenceSibling` (optional) The referenced sibling {Item}.
-  insertChildrenBefore: (children, referenceSibling, preserveIndent) ->
+  insertChildrenBefore: (children, referenceSibling) ->
     isInOutline = @isInOutline
     outline = @outline
-    totalIndent = 0
-
-    if preserveIndent
-      totalIndent = @totalIndent
-      for each in children
-        each.indent = each.totalIndent
 
     outline.removeItemsFromParents(children)
 
@@ -743,10 +708,6 @@ class Item
         each._liOrRootUL.ownerDocument is ownerDocument,
         'children must share same owner document'
       )
-      if preserveIndent
-        each.indent = each.totalIndent - totalIndent
-      else
-        each.indent = 1
       documentFragment.appendChild(each._liOrRootUL)
 
     childrenUL.insertBefore(documentFragment, referenceSiblingLI)
@@ -757,14 +718,14 @@ class Item
   # Public: Append the new children to this item's list of children.
   #
   # - `children` The children {Array} to append.
-  appendChildren: (children, preserveIndent) ->
-    @insertChildrenBefore(children, null, preserveIndent)
+  appendChildren: (children) ->
+    @insertChildrenBefore(children, null)
 
   # Public: Append the new child to this item's list of children.
   #
   # - `child` The child {Item} to append.
-  appendChild: (child, preserveIndent) ->
-    @insertChildrenBefore([child], null, preserveIndent)
+  appendChild: (child) ->
+    @insertChildrenBefore([child], null)
 
   # Public: Remove the children from this item's list of children.
   #
@@ -784,37 +745,11 @@ class Item
       outline.beginUpdates()
       outline.recoredUpdateMutation mutation
 
-    siblingChildren = []
-    outerThis = this
-    lastSibling
-
     for each in children
-      if lastSibling and lastSibling.nextSibling isnt each
-        @_removeSiblingChildren(siblingChildren)
-        siblingChildren = [each]
-      else
-        siblingChildren.push(each)
-      lastSibling = each
-
-    @_removeSiblingChildren(siblingChildren)
+      each._liOrRootUL.parentNode.removeChild(each._liOrRootUL)
 
     if isInOutline
       outline.endUpdates()
-
-  _removeSiblingChildren: (siblingChildren) ->
-    if @isInOutline
-      first = siblingChildren[0]
-      last = siblingChildren[siblingChildren.length - 1]
-      range = @_liOrRootUL.ownerDocument.createRange()
-      range.setStartBefore(first._liOrRootUL)
-      range.setEndAfter(last._liOrRootUL)
-      range.deleteContents()
-    else
-      # Range method is better (in Chrome at least) because it generates a
-      # single mutation. But range method fails in Safari when items are
-      # not in a document. So in case when not in outline remove manually.
-      for each in siblingChildren
-        each._liOrRootUL.parentNode.removeChild(each._liOrRootUL)
 
   # Public: Remove the given child from this item's list of children.
   #

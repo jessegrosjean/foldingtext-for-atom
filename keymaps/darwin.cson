@@ -9,10 +9,10 @@
   'alt-shift-right': 'editor:select-to-end-of-word'
 
   # Apple Specific
-  'alt-up': 'editor:move-paragraph-backward',
-  'shift-alt-up': 'editor:select-paragraph-backward',
-  'alt-down': 'editor:move-paragraph-forward',
-  'shift-alt-down': 'editor:select-paragraph-forward',
+  'alt-up': 'editor:move-paragraph-backward'
+  'shift-alt-up': 'editor:select-paragraph-backward'
+  'alt-down': 'editor:move-paragraph-forward'
+  'shift-alt-down': 'editor:select-paragraph-forward'
 
   'cmd-backspace': 'editor:delete-to-beginning-of-line'
   'cmd-shift-backspace': 'editor:delete-to-beginning-of-line'
@@ -50,7 +50,6 @@
   'cmd-[': 'editor:outdent-selected-rows'
   'ctrl-cmd-up': 'editor:move-line-up'
   'ctrl-cmd-down': 'editor:move-line-down'
-  'cmd-/': 'editor:toggle-line-comments'
   'cmd-j': 'editor:join-lines'
   'cmd-D': 'editor:duplicate-lines'
 
@@ -87,3 +86,12 @@
   'cmd-k': 'outline-editor:toggle-strikethrough'
   'cmd-K': 'outline-editor:edit-link'
   'ctrl-c': 'outline-editor:clear-formatting'
+
+'ft-outline-editor.outline-mode':
+  'cmd-]': 'outline-editor:indent-selected-items'
+  'cmd-[': 'outline-editor:outdent-selected-items'
+  'ctrl-cmd-up': 'outline-editor:move-item-up'
+  'ctrl-cmd-down': 'outline-editor:move-item-down'
+  'ctrl-cmd-left': 'outline-editor:outdent-selected-items'
+  'ctrl-cmd-right': 'outline-editor:indent-selected-items'
+

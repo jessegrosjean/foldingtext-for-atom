@@ -15,12 +15,16 @@
   'ctrl-K': 'editor:delete-line'
 
 'ft-outline-editor.outline-mode':
-  'left': 'editor:move-to-beginning-of-paragraph',
-  'right': 'editor:move-to-end-of-paragraph',
-  'i': 'editor:move-to-beginning-of-paragraph',
-  'a': 'editor:move-to-end-of-paragraph',
+  'tab': 'outline-editor:indent-selected-items'
+  'shift-tab': 'outline-editor:outdent-selected-items'
+  'ctrl-K': 'outline-editor:delete-items-backward'
 
-  'o': 'editor:newline',
-  'O': 'editor:newline-above',
+  'left': 'editor:move-to-beginning-of-paragraph'
+  'right': 'editor:move-to-end-of-paragraph'
+  'i': 'editor:move-to-beginning-of-paragraph'
+  'a': 'editor:move-to-end-of-paragraph'
+
+  'o': 'editor:newline'
+  'O': 'editor:newline-above'
 
   '.': 'outline-editor:toggle-fold-items'

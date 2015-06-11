@@ -417,39 +417,41 @@ class Outline
   # Public: Insert the item before the given `referenceItem`. If the reference
   # item isn't defined insert at the end of the outline.
   #
-  # Unlike {Item::insertChildBefore} this method uses {Item::indent} to
-  # determine where in the outline structure to insert the item. Depending on
-  # the indent value this item may become referenceItem's parent, previous
-  # sibling, or unrelated.
+  # Unlike {Item::insertChildBefore} this method uses `depth` to determine
+  # where in the outline structure to insert the item. Depending on the depth
+  # value this item may become referenceItem's parent, previous sibling, or
+  # unrelated.
   #
   # - `item` {Item} to insert.
+  # - `depth` {Number} depth to insert at.
   # - `referenceItem` Reference {Item} to insert before.
-  insertItemBefore: (item, referenceItem) ->
+  insertItemAtDepthBefore: (item, depth, referenceItem) ->
+    depth ?= 1
+    depth = 1 if depth < 1
+
     @beginUpdates()
 
-    item.indent = item.totalIndent
     item.removeFromParent()
 
     while lastChild = item.lastChild
-      @insertItemAtLevelBefore(lastChild, referenceItem)
+      @insertItemAtDepthBefore(lastChild, depth + 1, referenceItem)
       referenceItem = lastChild
 
     # 1. Start values
     itemParent = referenceItem?.previousItemOrRoot or @root.lastDescendantOrSelf
     itemNextSibling = itemParent.firstChild
-    itemParentTotalIndent = itemParent.totalIndent
-    itemTotalIndent = item.totalIndent
+    itemParentDepth = itemParent.depth
     nextBranch = referenceItem
 
     # 2. Find parent for inserted item
-    while itemParentTotalIndent >= itemTotalIndent
+    while itemParentDepth >= depth
       itemNextSibling = itemParent.nextSibling
       itemParent = itemParent.parent
-      itemParentTotalIndent = itemParent.totalIndent
+      itemParentDepth = itemParent.depth
 
     # 3. Reparent trailing sub-branches to new item.
     if nextBranch
-      while nextBranch and (nextBranch.totalIndent > itemTotalIndent)
+      while nextBranch and (nextBranch.depth > depth)
         if nextBranch is itemNextSibling
           itemNextSibling = nextBranch.nextSibling;
 
@@ -463,15 +465,16 @@ class Outline
     @endUpdates()
 
   # Public: Insert the items before the given `referenceItem`. See
-  # {Outline::insertItemBefore} for more implementation details. This method
-  # works differently then {Item::insertChildrenBefore}.
+  # {Outline::insertItemAtDepthBefore} for more implementation details. This
+  # method works differently then {Item::insertChildrenBefore}.
   #
   # - `items` {Array} of {Item}s to insert.
+  # - `depths` {Array} of {Numbers}s of depths to insert at.
   # - `referenceItem` Reference {Item} to insert before.
-  insertItemsBefore: (items, referenceItem) ->
+  insertItemsAtDepthsBefore: (items, depths, referenceItem) ->
     @beginUpdates()
-    for each in items
-      @insertItemBefore(each, referenceItem)
+    for each, i in items
+      @insertItemAtDepthBefore(each, depths?[i], referenceItem)
     @endUpdates()
 
   # Public: Remove the item but leave it's child items in the outline.
@@ -479,13 +482,12 @@ class Outline
   # - `item` {Item} to remove.
   removeItem: (item) ->
     @beginUpdates()
-    totalIndent = item.totalIndent
     previousItem = item.previousItem
     nextBranch = item.nextBranch
+    children = item.children
+    childrenDepths = (each.depth for each in children)
     item.removeFromParent()
-    item.indent = totalIndent
-    while each = item.firstChild
-      @insertItemBefore(each, nextBranch)
+    @insertItemsAtDepthsBefore(children, childrenDepths, nextBranch)
     @endUpdates()
 
   # Public: Remove the items but leave there child items in the outline.
@@ -497,6 +499,8 @@ class Outline
       @removeItem(each)
     @endUpdates()
 
+  # Not sure about this method... I think they are being used to handle moving
+  # items from one outline to another... is that needed? TODO
   removeItemsFromParents: (items) ->
     siblings = []
     prev = null
@@ -528,6 +532,8 @@ class Outline
     if isInOutline
       if undoManager.isUndoRegistrationEnabled()
         undoManager.registerUndoOperation ->
+          # This seems especially wrong? should now only have mutations on the
+          # undo stack
           parent.insertChildrenBefore(siblings, nextSibling)
 
       undoManager.disableUndoRegistration()

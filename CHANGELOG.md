@@ -1,5 +1,10 @@
 # ChangeLog
 
+## 0.5.1
+
+- Filter line indicators
+- Removed formatting popup
+
 ## 0.5.0
 
 - Set type indentifier for .ftml (OS X)
