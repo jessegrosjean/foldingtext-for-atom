@@ -767,12 +767,16 @@ class OutlineEditor
       @getPreviousVisibleItem(last, hoistedItem)
 
   getFirstVisibleAncestorOrSelf: (item, hoistedItem) ->
+    return null unless item
+
     while item and not @isVisible item, hoistedItem
       item = item.parent
     item
 
   getVisibleParent: (item, hoistedItem) ->
-    if @isVisible(item?.parent, hoistedItem)
+    return null unless item
+
+    if @isVisible(item.parent, hoistedItem)
       item.parent
 
   # Public: Returns previous visible sibling {Item} relative to given item.
@@ -780,7 +784,9 @@ class OutlineEditor
   # - `item` {Item}
   # - `hoistedItem` (optional) Hoisted item {Item} case to consider.
   getPreviousVisibleSibling: (item, hoistedItem) ->
-    item = item?.previousSibling
+    return null unless item
+
+    item = item.previousSibling
     while item
       if @isVisible item, hoistedItem
         return item
@@ -791,7 +797,9 @@ class OutlineEditor
   # - `item` {Item}
   # - `hoistedItem` (optional) Hoisted item {Item} case to consider.
   getNextVisibleSibling: (item, hoistedItem) ->
-    item = item?.nextSibling
+    return null unless item
+
+    item = item.nextSibling
     while item
       if @isVisible item, hoistedItem
         return item
@@ -802,7 +810,9 @@ class OutlineEditor
   # - `item` {Item}
   # - `hoistedItem` (optional) Hoisted item {Item} case to consider.
   getNextVisibleItem: (item, hoistedItem) ->
-    item = item?.nextItem
+    return null unless item
+
+    item = item.nextItem
     while item
       if @isVisible item, hoistedItem
         return item
@@ -813,7 +823,9 @@ class OutlineEditor
   # - `item` {Item}
   # - `hoistedItem` (optional) Hoisted item {Item} case to consider.
   getPreviousVisibleItem: (item, hoistedItem) ->
-    item = item?.previousItem
+    return null unless item
+
+    item = item.previousItem
     while item
       if @isVisible item, hoistedItem
         return item
@@ -824,7 +836,9 @@ class OutlineEditor
   # - `item` {Item}
   # - `hoistedItem` (optional) Hoisted item {Item} case to consider.
   getFirstVisibleChild: (item, hoistedItem) ->
-    firstChild = item?.firstChild
+    return null unless item
+
+    firstChild = item.firstChild
     if @isVisible firstChild, hoistedItem
       return firstChild
     @getNextVisibleSibling firstChild, hoistedItem
@@ -834,12 +848,16 @@ class OutlineEditor
   # - `item` {Item}
   # - `hoistedItem` (optional) Hoisted item {Item} case to consider.
   getLastVisibleChild: (item, hoistedItem) ->
-    lastChild = item?.lastChild
+    return null unless item
+
+    lastChild = item.lastChild
     if @isVisible lastChild, hoistedItem
       return lastChild
     @getPreviousVisibleSibling lastChild, hoistedItem
 
   getLastVisibleDescendantOrSelf: (item, hoistedItem) ->
+    return null unless item
+
     lastChild = item.getLastVisibleChild item, hoistedItem
     if lastChild
       @getLastVisibleDescendantOrSelf lastChild, hoistedItem
@@ -851,6 +869,8 @@ class OutlineEditor
   # - `item` {Item}
   # - `hoistedItem` (optional) Hoisted item {Item} case to consider.
   getPreviousVisibleBranch: (item, hoistedItem) ->
+    return null unless item
+
     previousBranch = item?.previousBranch
     if @isVisible previousBranch, hoistedItem
       previousBranch
@@ -862,7 +882,9 @@ class OutlineEditor
   # - `item` {Item}
   # - `hoistedItem` (optional) Hoisted item {Item} case to consider.
   getNextVisibleBranch: (item, hoistedItem) ->
-    nextBranch = item?.nextBranch
+    return null unless item
+
+    nextBranch = item.nextBranch
     if @isVisible nextBranch, hoistedItem
       nextBranch
     else
