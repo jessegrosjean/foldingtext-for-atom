@@ -157,12 +157,15 @@ class Item
   setAttribute: (name, value) ->
     assert.ok(name isnt 'id', 'id is reserved attribute name')
 
+    value = Item.objectToAttributeValueString value
+    oldValue = @getAttribute name or undefined
+
+    if value is oldValue
+      return
+
     outline = @outline
     isInOutline = @isInOutline
-    value = Item.objectToAttributeValueString value
-
     if isInOutline
-      oldValue = @getAttribute name or undefined
       mutation = Mutation.createAttributeMutation this, name, oldValue
       outline.emitter.emit 'will-change', mutation
       outline.beginUpdates()
