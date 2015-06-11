@@ -38,11 +38,20 @@
 
 'context-menu':
   'ft-outline-editor': [
-    { label: 'Undo', command: 'core:undo' },
-    { label: 'Redo', command: 'core:redo' },
-    { type: 'separator' },
-    { label: 'Cut', command: 'core:cut' },
-    { label: 'Copy', command: 'core:copy' },
-    { label: 'Paste', command: 'core:paste' },
+    { label: 'Cut', command: 'core:cut' }
+    { label: 'Copy', command: 'core:copy' }
+    { label: 'Paste', command: 'core:paste' }
+    { type: 'separator' }
+    {
+      label: 'Formatting'
+      submenu: [
+        { label: 'Bold', command: 'outline-editor:toggle-bold' },
+        { label: 'Italic', command: 'outline-editor:toggle-italic' },
+        { label: 'Underline', command: 'outline-editor:toggle-underline' },
+        { label: 'Edit Link', command: 'outline-editor:edit-link' },
+        { type: 'separator' }
+        { label: 'Clear Formatting', command: 'outline-editor:clear-formatting' },
+      ]
+    },
     { type: 'separator' }
   ]
