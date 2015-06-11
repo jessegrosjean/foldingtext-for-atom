@@ -70,14 +70,6 @@ class Item
     else
       assert.ok(false, "Expected 'LI' or 'UL', but got #{tagName}")
 
-    originalID = liOrRootUL.id
-    assignedID = outline.nextOutlineUniqueItemID(originalID)
-
-    if originalID isnt assignedID
-      liOrRootUL.id = assignedID
-      if remappedIDCallback and originalID
-        remappedIDCallback(originalID, assignedID)
-
     @outline = outline
     @_liOrRootUL = liOrRootUL
     @_bodyAttributedString = null
@@ -94,6 +86,14 @@ class Item
         @attributedBodyText = text
       else
         _bodyP(liOrRootUL).textContent = text
+
+    originalID = liOrRootUL.id
+    assignedID = outline.nextOutlineUniqueItemID(originalID)
+
+    if originalID isnt assignedID
+      liOrRootUL.id = assignedID
+      if remappedIDCallback and originalID
+        remappedIDCallback(originalID, assignedID, this)
 
   ###
   Section: Attributes
@@ -620,8 +620,8 @@ class Item
   # Public: Deep clones this item.
   #
   # Returns a duplicate {Item}.
-  cloneItem: ->
-    @outline.cloneItem(this)
+  cloneItem: (remappedIDCallback) ->
+    @outline.cloneItem(this, remappedIDCallback)
 
   # Public: Given an array of items determines and returns the common
   # ancestors of those items.

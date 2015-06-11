@@ -48,6 +48,8 @@
   'shift-enter': 'editor:newline'
   'cmd-]': 'editor:indent-selected-rows'
   'cmd-[': 'editor:outdent-selected-rows'
+  'ctrl-cmd-right': 'editor:indent-selected-rows'
+  'ctrl-cmd-left': 'editor:outdent-selected-rows'
   'ctrl-cmd-up': 'editor:move-line-up'
   'ctrl-cmd-down': 'editor:move-line-down'
   'cmd-j': 'editor:join-lines'
@@ -70,9 +72,6 @@
 
   # FoldingText
   'alt-cmd-g': 'outline-editor:group-items'
-  'ctrl-cmd-left': 'editor:outdent-selected-rows'
-  'ctrl-cmd-right': 'editor:indent-selected-rows'
-
   'cmd-.': 'outline-editor:toggle-fold-items'
   'cmd->': 'outline-editor:toggle-fully-fold-items'
 
@@ -86,12 +85,3 @@
   'cmd-k': 'outline-editor:toggle-strikethrough'
   'cmd-K': 'outline-editor:edit-link'
   'ctrl-c': 'outline-editor:clear-formatting'
-
-'ft-outline-editor.outline-mode':
-  'cmd-]': 'outline-editor:indent-selected-items'
-  'cmd-[': 'outline-editor:outdent-selected-items'
-  'ctrl-cmd-up': 'outline-editor:move-item-up'
-  'ctrl-cmd-down': 'outline-editor:move-item-down'
-  'ctrl-cmd-left': 'outline-editor:outdent-selected-items'
-  'ctrl-cmd-right': 'outline-editor:indent-selected-items'
-

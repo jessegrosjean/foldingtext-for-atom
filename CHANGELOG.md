@@ -3,7 +3,9 @@
 ## 0.5.1
 
 - Filter line indicators
-- Removed formatting popup
+- Added join items command
+- Added duplicate items command
+- Removed formatting popup, moved those items into context menu.
 
 ## 0.5.0
 

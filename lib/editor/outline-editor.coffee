@@ -1464,76 +1464,77 @@ class OutlineEditor
       undoManager.endUndoGrouping()
       undoManager.setActionName('Group Items')
 
+  duplicateItems: ->
+    selectedItems = @selection.itemsCommonAncestors
+    if selectedItems.length > 0
+      anchorItem = @selection.anchorItem
+      nextAnchorItem = null
+      focusItem = @selection.focusItem
+      nextFocusItem = null
+      outline = @outline
+      outlineEditor = this
+      expandedClones = []
+      clonedItems = []
+      oldToClonedIDs = {}
+
+      for each in selectedItems
+        clonedItems.push each.cloneItem (oldID, cloneID, cloneItem) ->
+          oldItem = outline.getItemForID(oldID)
+          if oldItem is anchorItem
+            nextAnchorItem = cloneItem
+          if oldItem is focusItem
+            nextFocusItem = cloneItem
+          if outlineEditor.isExpanded(oldItem)
+            expandedClones.push(cloneItem)
+
+      last = selectedItems[selectedItems.length - 1]
+      insertBefore = last.nextSibling
+      parent = insertBefore?.parent ? selectedItems[0].parent
+      undoManager = @outline.undoManager
+
+      undoManager.beginUndoGrouping()
+      @setExpanded(expandedClones)
+      parent.insertChildrenBefore(clonedItems, insertBefore)
+      @moveSelectionRange(nextFocusItem, @selection.focusOffset, nextAnchorItem, @selection.anchorOffset)
+      undoManager.endUndoGrouping()
+      undoManager.setActionName('Duplicate Items')
+
+  joinItems: ->
+    selectedItems = @selection.itemsCommonAncestors
+    if selectedItems.length > 0
+      joinTo = selectedItems[0]
+      toJoin = selectedItems.slice(1)
+
+      unless toJoin.length > 0
+        toJoin.push(nextVisible) if nextVisible = @getNextVisibleItem(joinTo)
+
+      if toJoin.length > 0
+        joinToOriginalTextLength = joinTo.bodyText.length
+        insertToJoinsBefore = null
+
+        if joinTo.contains(toJoin[0])
+          insertToJoinsBefore = joinTo.firstChild
+
+        undoManager = @outline.undoManager
+        undoManager.beginUndoGrouping()
+        @outline.beginUpdates()
+
+        for each in toJoin
+          joinTo.insertChildrenBefore(each.children, insertToJoinsBefore)
+          joinTo.appendBodyText(new AttributedString(' '))
+          joinTo.appendBodyText(each.attributedBodyText)
+
+        @outline.endUpdates()
+        @moveSelectionRange(joinTo, joinToOriginalTextLength)
+        undoManager.endUndoGrouping()
+        undoManager.setActionName('Join Items')
+
   moveItems: (items, newParent, newNextSibling, startOffset) ->
     undoManager = newParent.outline.undoManager
     undoManager.beginUndoGrouping()
     @outlineEditorElement.animateMoveItems(items, newParent, newNextSibling, startOffset)
     undoManager.endUndoGrouping()
     undoManager.setActionName('Move Items')
-
-  ###
-  Section: Move Lines
-  ###
-
-  indentLines: ->
-    @moveLinesRight()
-
-  outdentLines: ->
-    @moveLinesLeft()
-
-  moveLinesUp: (items) ->
-    @_moveLinesInDirection(items, 'up')
-
-  moveLinesDown: (items) ->
-    @_moveLinesInDirection(items, 'down')
-
-  moveLinesLeft: (items) ->
-    @_moveLinesInDirection(items, 'left')
-
-  moveLinesRight: (items) ->
-    @_moveLinesInDirection(items, 'right')
-
-  _moveLinesInDirection: (items, direction) ->
-    items ?= @selection.items
-    if items.length
-      firstItem = items[0]
-      itemsDepths = (each.depth for each in items)
-      endItem = items[items.length - 1]
-      referenceItem = null
-      depthDelta = 0
-
-      switch direction
-        when 'up'
-          referenceItem = @getPreviousVisibleItem(firstItem)
-          unless referenceItem
-            return
-        when 'down'
-          referenceItem = @getNextVisibleItem(@getNextVisibleItem(endItem))
-        when 'left'
-          depthDelta = -1
-          referenceItem = endItem.nextItem
-        when 'right'
-          depthDelta = 1
-          referenceItem = endItem.nextItem
-
-    @outline.beginUpdates()
-
-    if depthDelta isnt 0
-      for each, i in itemsDepths
-        itemsDepths[i] += depthDelta
-
-    @outline.removeItems(items)
-    @outline.insertItemsAtDepthsBefore(items, itemsDepths, referenceItem)
-
-    expandItems = []
-    disposable = @outline.onDidChange (mutations) ->
-      for each in mutations
-        if each.target.hasChildren
-          expandItems.push each.target
-
-    @outline.endUpdates =>
-      @setExpanded(expandItems)
-      disposable.dispose()
 
   ###
   Section: Delete
@@ -1559,38 +1560,6 @@ class OutlineEditor
 
   deleteWordForward: ->
     @delete('forward', 'word')
-
-  deleteParagraphsBackward: (items) ->
-    #@delete('forward', 'paragraph')
-    # should move this logic in to delete
-    items ?= @selection.items
-    if items.length
-      parentWasExpandedItemIDs = {}
-      for each in items
-        if @isExpanded(each)
-          for eachChild in each.children
-            parentWasExpandedItemIDs[eachChild.id] = true
-
-      expandItems = []
-      disposable = @outline.onDidChange (mutations) ->
-        for eachMutation in mutations
-          if eachMutation.type is Mutation.CHILDREN_CHANGED
-            for each in eachMutation.addedItems
-              if parentWasExpandedItemIDs[each.id]
-                expandItems.push(each.parent)
-
-      #undoManager = @outline.undoManager
-      #undoManager.beginUndoGrouping()
-      @outline.beginUpdates()
-      @outline.removeItems(items)
-      @outline.endUpdates =>
-        @setExpanded(expandItems)
-        disposable.dispose()
-      #undoManager.endUndoGrouping()
-      #undoManager.setActionName('Delete Lines')
-
-  deleteParagraphsForward: (items) ->
-    @delete('forward', 'paragraph')
 
   deleteItemsBackward: ->
     @delete('backward', 'item')

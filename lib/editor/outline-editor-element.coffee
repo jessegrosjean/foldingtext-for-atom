@@ -559,7 +559,6 @@ class OutlineEditorElement extends HTMLElement
     caretPosition = pick?.itemCaretPosition
     if caretPosition
       selection = @editor.selection
-
       if selection.isTextMode
         unless selection.contains caretPosition.offsetItem, caretPosition.offset
           @editor.moveSelectionRange caretPosition.offsetItem, caretPosition.offset
@@ -1001,9 +1000,9 @@ atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagationAndGro
   'editor:newline-below': -> @editor.insertNewlineBelow()
   'editor:newline-ignore-field-editor': -> @editor.insertNewlineIgnoringFieldEditor()
   'editor:line-break': -> @editor.insertLineBreak()
-  'editor:indent': -> @editor.indentLines()
-  'editor:indent-selected-rows': -> @editor.indentLines()
-  'editor:outdent-selected-rows': -> @editor.outdentLines()
+  'editor:indent': -> @editor.indentItems()
+  'editor:indent-selected-rows': -> @editor.indentItems()
+  'editor:outdent-selected-rows': -> @editor.outdentItems()
   'editor:insert-tab-ignoring-field-editor': -> @editor.insertTabIgnoringFieldEditor()
   'core:backspace': -> @editor.deleteBackward()
   'editor:delete-to-beginning-of-word': -> @editor.deleteWordBackward()
@@ -1011,19 +1010,13 @@ atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagationAndGro
   'editor:delete-to-end-of-paragraph': -> @editor.deleteToEndOfParagraph()
   'core:delete': -> @editor.deleteForward()
   'editor:delete-to-end-of-word': -> @editor.deleteWordForward()
-  'editor:delete-line': -> @editor.deleteParagraphsBackward()
-  'editor:move-line-up': -> @editor.moveLinesUp()
-  'editor:move-line-down': -> @editor.moveLinesDown()
-  'editor:duplicate-lines': -> @editor.duplicateLines()
-  'editor:join-lines': -> @editor.joinLines()
+  'editor:delete-line': -> @editor.deleteItemsBackward()
+  'editor:move-line-up': -> @editor.moveItemsUp()
+  'editor:move-line-down': -> @editor.moveItemsDown()
+  'editor:duplicate-lines': -> @editor.duplicateItems()
+  'editor:join-lines': -> @editor.joinItems()
 
   # Outline Commands
-  'outline-editor:indent-selected-items': -> @editor.indentItems()
-  'outline-editor:outdent-selected-items': -> @editor.outdentItems()
-  'outline-editor:move-item-up': -> @editor.moveItemsUp()
-  'outline-editor:move-item-down': -> @editor.moveItemsDown()
-  'outline-editor:duplicate-items': -> @editor.duplicateItems()
-  'outline-editor:join-items': -> @editor.joinItems()
   'outline-editor:promote-child-items': -> @editor.promoteChildItems()
   'outline-editor:demote-trailing-sibling-items': -> @editor.demoteTrailingSiblingItems()
   'outline-editor:group-items': -> @editor.groupItems()

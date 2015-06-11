@@ -15,10 +15,6 @@
   'ctrl-K': 'editor:delete-line'
 
 'ft-outline-editor.outline-mode':
-  'tab': 'outline-editor:indent-selected-items'
-  'shift-tab': 'outline-editor:outdent-selected-items'
-  'ctrl-K': 'outline-editor:delete-items-backward'
-
   'left': 'editor:move-to-beginning-of-paragraph'
   'right': 'editor:move-to-end-of-paragraph'
   'i': 'editor:move-to-beginning-of-paragraph'
