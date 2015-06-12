@@ -1915,7 +1915,7 @@ class OutlineEditor
     @outline.getLongTitle()
 
   getURI: ->
-    @outline.getUri()
+    @outline.getURI()
 
   getPath: ->
     @outline.getPath()
@@ -1926,30 +1926,16 @@ class OutlineEditor
   isEmpty: ->
     @outline.isEmpty()
 
-  getFileURLObject: ->
-    if pathName = (@getPath() or '')
-      pathName = path.resolve(pathName)
-      pathName = pathName.replace(/\\/g, '/')
-      pathName = encodeURI(pathName)
-    {} =
-      protocol: 'file'
-      slashes: true
-      pathname: pathName
-      query: {}
-
   copyPathToClipboard: ->
-    url = @getFileURLObject()
-
-    if query = @getSearch().query
-      url.query.query = query
-
-    unless @getHoistedItem().isRoot
-      url.hash = @getHoistedItem().id
-
-    if @selection.isValid
-      url.query.selection = "#{@selection.focusItem?.id},#{@selection.focusOffset},#{@selection.anchorItem?.id},#{@selection.anchorOffset}"
-
-    atom.clipboard.write(require('url').format(url))
+    atom.clipboard.write @outline.getHREF
+      absolute: true
+      query: @getSearch().query
+      hoistedItem: @getHoistedItem()
+      selection:
+        focusItem: @selection.focusItem
+        focusOffset: @selection.focusOffset
+        anchorItem: @selection.anchorItem
+        anchorOffset: @selection.anchorOffset
 
   save: ->
     @outline.save(this)

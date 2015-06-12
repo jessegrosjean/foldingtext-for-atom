@@ -84,6 +84,8 @@ class Outline
 
   # Public: Create a new outline.
   constructor: (options) ->
+    @id = shortid()
+
     @outlineStore = @createOutlineStore()
 
     rootElement = @outlineStore.getElementById Constants.RootID
@@ -667,8 +669,52 @@ class Outline
     @emitter.emit 'did-change-path', @getPath()
     @setMimeType(null)
 
-  getUri: ->
+  getURI: (options) ->
     @getPath()
+
+  # Public: Get an href to this outline.
+  #
+  # * `options` (optional) The {Object} with URL options (default: {}):
+  #   * `relativeTo` A {String} path to relativize against
+  #   * `query` A {String} item path to set when opening the outline.
+  #   * `hoistedItem` An {Item} to hoist when opening the outline
+  #   * `selection` An {Object} with the selection to set when opening the outline.
+  #     * `focusItem` The focus {Item}.
+  #     * `focusOffset` The focus offset {Number}.
+  #     * `anchorItem` The anchor {Item}.
+  #     * `anchorOffset` The anchor offset {Number}.
+  getHREF: (options={}) ->
+    if pathName = (@getPath() or '')
+      pathName = path.resolve(pathName)
+      pathName = pathName.replace(/\\/g, '/')
+      if relativeTo = options.relativeTo
+        if fs.statSync(relativeTo).isFile()
+          relativeTo = path.dirname(relativeTo)
+        pathName = path.relative(relativeTo, pathName)
+      pathName = encodeURI(pathName)
+
+    url =
+      protocol: if relativeTo then undefined else 'file'
+      slashes: not relativeTo
+      pathname: pathName
+      query: {}
+
+    if query = options.query
+      url.query.query = query
+
+    hoistedItem = options.hoistedItem
+    if hoistedItem and not hoistedItem.isRoot
+      url.hash = hoistedItem.id
+
+    if options.selection?.focusItem
+      selection = options.selection
+      focusItem = selection.focusItem
+      focusOffset = selection.focusOffset ? undefined
+      anchorItem = selection.anchorItem ? focusItem
+      anchorOffset = selection.anchorOffset ? focusOffset
+      url.query.selection = "#{focusItem?.id},#{focusOffset},#{anchorItem?.id},#{anchorOffset}"
+
+    require('url').format(url)
 
   getBaseName: ->
     @file?.getBaseName() or 'Untitled'

@@ -8,5 +8,6 @@ module.exports =
 
   FTMLMimeType: 'text/ftml+html'
   OPMLMimeType: 'text/opml+xml'
+  URIListMimeType: 'text/uri-list'
   HTMLMimeType: 'text/html'
   TEXTMimeType: 'text/plain'

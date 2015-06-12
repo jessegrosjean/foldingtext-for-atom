@@ -623,10 +623,12 @@ class OutlineEditorElement extends HTMLElement
     e.stopPropagation()
     e.dataTransfer.effectAllowed = 'all'
     e.dataTransfer.setDragImage li, x, y
+
     e.dataTransfer.setData 'application/json', JSON.stringify
       outlineID: item.outline.id
       itemID: item.id
     ItemSerializer.writeItemsToDataTransfer [item], @editor, e.dataTransfer, Constants.FTMLMimeType
+    ItemSerializer.writeItemsToDataTransfer [item], @editor, e.dataTransfer, Constants.URIListMimeType
 
     @editor._hackDragItemMouseOffset =
       xOffset: x
@@ -685,22 +687,12 @@ class OutlineEditorElement extends HTMLElement
     # For some reason "dropEffect is always set to 'none' on e. So track it in
     # store state instead. Not sure if I'm doing something wrong or what.
     dropEffect = @editor.dropEffect()
-    droppedItems = @_itemsToInsertForEvent e
+    droppedItems = @_itemsToInsertForEvent e, dropEffect
     dropParentItem = @editor.dropParentItem()
     dropInsertBeforeItem = @editor.dropInsertBeforeItem()
 
-    if droppedItems.length and dropParentItem
-      insertItems
-      if dropEffect is 'all' or dropEffect is 'move'
-        insertItems = droppedItems
-      else if dropEffect is 'copy'
-        insertItems = []
-        for each in droppedItems
-          insertItems.push each.cloneItem()
-      else if dropEffect is 'link'
-        console.log 'links unsupported right now'
-        atom.beep()
-        return
+    if dropParentItem and droppedItems.length > 0
+      insertItems = droppedItems
 
       if insertItems.length and insertItems[0] isnt dropInsertBeforeItem
         outline = dropParentItem.outline
@@ -739,17 +731,28 @@ class OutlineEditorElement extends HTMLElement
 
     @editor.debouncedSetDragState({})
 
-  _itemsToInsertForEvent: (e) ->
-    draggedItem = @editor.draggedItem()
-    return [draggedItem] if draggedItem
+  _itemsToInsertForEvent: (e, dropEffect) ->
+    if draggedItem = @editor.draggedItem()
+      if dropEffect is 'all' or dropEffect is 'move'
+        return [draggedItem]
+      else if dropEffect is 'copy'
+        return [draggedItem.cloneItem()]
+      else if dropEffect is 'link'
+        return [draggedItem.linkItemForOutline(@editor.outline)]
 
     try
       # If item is from another outline must import it into this outline.
       draggedItemIDs = JSON.parse e.dataTransfer.getData('application/json')
       outline = Outline.getOutlineForID draggedItemIDs.outlineID
       draggedItem = outline.getItemForID draggedItemIDs.itemID
-      draggedItem = @editor.outline.importItem draggedItem.cloneItem()
-      return [draggedItem] if draggedItem
+      if draggedItem
+        if dropEffect is 'all' or dropEffect is 'move'
+          draggedItem.removeFromParent()
+          return [@editor.outline.importItem draggedItem.cloneItem()]
+        else if dropEffect is 'copy'
+          return [@editor.outline.importItem draggedItem.cloneItem()]
+        else if dropEffect is 'link'
+          return [draggedItem.linkItemForOutline(@editor.outline)]
     catch error
 
     ItemSerializer.readItemsFromDataTransfer @editor, e.dataTransfer
@@ -953,12 +956,13 @@ EventRegistery.listen '.ft-body-text a',
       if not protocol
         editorElement = OutlineEditorElement.findOutlineEditorElement e.target
         editor = editorElement.editor
-        href = url.resolve(url.format(editor.getFileURLObject()), href)
+        href = url.resolve(editor.getPath(), href)
       else if protocol isnt 'file:'
         href = null
 
       if href
-        atom.workspace.open(href)
+        atom.workspace.open href,
+          searchAllPanes: true
         e.stopPropagation()
         e.preventDefault()
 

@@ -53,7 +53,7 @@ readItemsFromDataTransfer = (editor, dataTransfer, mimeType) ->
   items = []
   for eachItem in dataTransfer.items
     file = eachItem.getAsFile()
-    if file.path and file.path.length > 0
+    if file?.path and file?.path.length > 0
       item = editor.outline.createItem file.name
       item.addElementInBodyTextRange 'A', { href: 'file://' + file.path }, 0, file.name.length
       items.push item
@@ -88,6 +88,15 @@ registerSerialization
 
 registerSerialization
   priority: 3
+  extensions: []
+  mimeTypes: [Constants.URIListMimeType]
+  serializeItems: (items, editor) ->
+    require('./serializations/uri-list').serializeItems(items, editor)
+  deserializeItems: (itemsData, outline) ->
+    require('./serializations/uri-list').deserializeItems(itemsData, outline)
+
+registerSerialization
+  priority: 4
   extensions: []
   mimeTypes: [Constants.TEXTMimeType]
   serializeItems: (items, editor) ->
