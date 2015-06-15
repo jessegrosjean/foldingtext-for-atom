@@ -1,12 +1,11 @@
 # ChangeLog
 
-## 0.5.1
+## 0.6.0
 
-- Filter line indicators
 - Added join items command.
 - Added duplicate items command.
 - Added support for "move" drag and drop effect between outlines.
-- Added support for "link" drag and drop effect. To create links hold down the control key when dragging and dropping on OS X.
+- Added support for "link" drag and drop effect. To create links hold down the control key when dragging and dropping on OS X. A hyperlink is inserted linking back to the dragged item. You can link to other parts of the current outline, or to other outlines.
 - Removed formatting popup, moved those items into context menu.
 
 ## 0.5.0
