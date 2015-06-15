@@ -932,13 +932,29 @@ this call. </p>
   
 </dd>
 <dt class='method-def' id='instance-endUpdates'>
-  <span class='signature'>::endUpdates()</span>
+  <span class='signature'>::endUpdates(callback<sup>?</sup>)</span>
 </dt>
 <dd class='method-def'>
   <p>End grouping changes. Must call to balance a previous
-<a class='reference' href='#instance-beginUpdates'>::beginUpdates</a> call. </p>
+<a class='reference' href='#instance-beginUpdates'>::beginUpdates</a> call.</p>
   
-  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>callback<sup>?</sup></th><td>
+    Callback is called when outline finishes updating. 
+    
+  </td>
+</tr>
+  </tbody>
+</table>
   
 </dd>
 </dl>
@@ -1058,6 +1074,52 @@ on-disk contents of its associated file.</p>
     <tr><th>filePath</th><td>
     A <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> representing the new file path 
     
+  </td>
+</tr>
+  </tbody>
+</table>
+  
+</dd>
+<dt class='method-def' id='instance-getHREF'>
+  <span class='signature'>::getHREF(options<sup>?</sup>)</span>
+</dt>
+<dd class='method-def'>
+  <p>Get an href to this outline.</p>
+  
+  <table class='parameter table table-condensed table-hover'>
+  <col style='width:25%'>
+  <col style='width:75%'>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th>options<sup>?</sup></th><td>
+    The <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object'>Object</a> with URL options (default: {}):
+    <ul>
+  <li>
+  <code>relativeTo</code>
+  &mdash;
+  A <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> path to relativize against
+</li>
+<li>
+  <code>query</code>
+  &mdash;
+  A <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> item path to set when opening the outline.
+</li>
+<li>
+  <code>hoistedItem</code>
+  &mdash;
+  An <a class='reference' href='../Item'>Item</a> to hoist when opening the outline
+</li>
+<li>
+  <code>selection</code>
+  &mdash;
+  An <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object'>Object</a> with the selection to set when opening the outline.
+</li>
+</ul>
   </td>
 </tr>
   </tbody>
