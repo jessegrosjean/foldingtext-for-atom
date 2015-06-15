@@ -185,7 +185,7 @@ class ItemRenderer
           if @editor.isVisible each
             children.appendChild @renderItemLI each, depth + 1
           each = each.nextSibling
-          @updateItemChildrenGaps(item, children)
+        @updateItemChildrenGaps(item, children)
         children
 
   addBadgeRenderer: (callback, priority=0) ->
@@ -401,6 +401,8 @@ class ItemRenderer
             eachChildItem = outline.getItemForID eachChildRenderedLI.id
             @animateInsertRenderedItemLI eachChildItem, eachChildRenderedLI
 
+      @updateItemChildrenGaps(item, renderedChildrenUL)
+
   updateRefreshItemChildren: (item) ->
     renderedLI = @renderedLIForItem item
     if renderedLI
@@ -416,26 +418,37 @@ class ItemRenderer
 
   updateItemChildrenGaps: (item, renderedChildrenUL) ->
     ###
+    This isn't working well. For one it's two hard to style and maybe not performant.
+    Maybe better would be a "line numbers" style gutter that indicated folded regions.
+    Might be generally useful, and would also be easily clickable.
+    ###
+
+    ###
     eachChild = item.firstChild
-    eachChildLI = renderedChildrenUL.firstElementChild
+    eachChildLI = renderedChildrenUL?.firstElementChild
     editor = @editor
+    outline = editor.outline
     gap = false
 
-    while eachChild
-      if editor.isVisible(each)
-        if gap
-          each.classes.add('ft-gap-before')
-          gap = false
+    while eachChildLI
+      eachChild = outline.getItemForID(eachChildLI.id)
+      previousID = eachChild.previousSibling?.id
+      previousVisibleID = eachChildLI.previousSibling?.id
+
+      if previousID isnt previousVisibleID
+        eachChildLI.classList.add('ft-gap-before')
       else
-        each.classes.remove('ft-gap-before')
-        each.classes.remove('ft-gap-after')
-        gap = true
+        eachChildLI.classList.remove('ft-gap-before')
 
-      eachChild = eachChild.nextSibling
+      nextID = eachChild.nextSibling?.id
+      nextVisibleID = eachChildLI.nextSibling?.id
+
+      if nextID isnt nextVisibleID
+        eachChildLI.classList.add('ft-gap-after')
+      else
+        eachChildLI.classList.remove('ft-gap-after')
+
       eachChildLI = eachChildLI.nextSibling
-
-    if gap
-      renderedChildrenUL.lastElementChild.classes.add('ft-gap-before')
     ###
 
   updateItemExpanded: (item) ->
