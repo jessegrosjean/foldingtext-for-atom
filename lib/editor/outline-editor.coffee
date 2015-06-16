@@ -75,7 +75,7 @@ class OutlineEditor
       options.hostElement.appendChild(outlineEditorElement)
       delete options.hostElement
 
-    @updateOptions(options)
+    @updateOptionsAfterOpenOrReopen(options)
 
   copy: ->
     new OutlineEditor(@outline)
@@ -89,7 +89,7 @@ class OutlineEditor
       query: @getSearch().query
       selection: "#{@selection.focusItem?.id},#{@selection.focusOffset},#{@selection.anchorItem?.id},#{@selection.anchorOffset}"
 
-  updateOptions: (options) ->
+  updateOptionsAfterOpenOrReopen: (options) ->
     if options.hash
       options.hoisted ?= options.hash.split(',')
 
@@ -138,7 +138,7 @@ class OutlineEditor
       @options = @serialize()
 
     @subscriptions.add outline.onDidReload =>
-      @updateOptions(@options)
+      @updateOptionsAfterOpenOrReopen(@options)
       @outlineEditorElement.enableAnimation()
 
     @subscriptions.add outline.onDidDestroy => @destroy()

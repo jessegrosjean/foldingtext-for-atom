@@ -46,7 +46,6 @@ module.exports =
     @subscriptions.add foldingTextService.observeOutlineEditors =>
       unless @workspaceDisplayedEditor
         require './extensions/ui/popovers'
-        #require './extensions/text-formatting-popover'
         require './extensions/edit-link-popover'
         require './extensions/priorities'
         require './extensions/status'
@@ -54,54 +53,21 @@ module.exports =
         @addStatusBarItemsIfReady()
         @workspaceDisplayedEditor = true
 
-    @subscriptions.add atom.workspace.addOpener (filePath, options) ->
-      if filePath is 'outline-editor://new-outline'
+    @subscriptions.add atom.workspace.addOpener (uri, options) ->
+      if uri is 'outline-editor://new-outline'
         Outline ?= require('./core/outline')
         OutlineEditor ?= require('./editor/outline-editor')
         Outline.getOutlineForPath(null, true).then (outline) ->
           new OutlineEditor(outline)
 
-    @subscriptions.add atom.workspace.addOpener (filePath, options) ->
+    @subscriptions.add atom.workspace.addOpener (uri, options) ->
       ItemSerializer ?= require('./core/item-serializer')
-      url ?= require('url')
-      urlObject = url.parse(filePath, true)
-      path ?= require('path')
-      pathObject = {}
-
-      # 1. Get path object
-      if urlObject.protocol is 'file:'
-        decodedPath = decodeURI(urlObject.path)
-        # Maybe better way to do this, but here I'm detecting windows drive
-        # letter case and when found I strip off leading /. Odd and ugly.
-        if decodedPath.match(/^\/[a-zA-Z]:/)
-          decodedPath = decodedPath.substr(1)
-        pathObject = path.parse(decodedPath)
-      else
-        pathObject = path.parse(filePath)
-
-      # 2. If match path extension then open
-      if ItemSerializer.getMimeTypeForURI(pathObject.base)
+      if ItemSerializer.getMimeTypeForURI(uri)
         Outline ?= require('./core/outline')
         OutlineEditor ?= require('./editor/outline-editor')
-        Outline.getOutlineForPath(path.format(pathObject)).then (outline) ->
+        Outline.getOutlineForPath(uri).then (outline) ->
           if outline
             new OutlineEditor(outline, options)
-          else
-            null
-
-      # 3. Else strip off any query params and try again
-      else
-        urlObject = url.parse(pathObject.base, true)
-        if ItemSerializer.getMimeTypeForURI(urlObject.pathname)
-          options.hash ?= (urlObject.hash or '#').substr(1)
-          options[key] ?= value for key, value of urlObject.query
-          pathObject.base = urlObject.pathname
-          openPromise = atom.workspace.open(path.format(pathObject), options)
-          openPromise.then (editor) ->
-            editor.updateOptions?(options)
-          openPromise
-        else
-          null
 
     @subscriptions.add atom.packages.onDidActivatePackage (pack) ->
       if pack.name is 'foldingtext-for-atom'
@@ -112,10 +78,57 @@ module.exports =
           FoldingTextHelperPath = path.join(packagePath, 'native', 'darwin', 'FoldingTextHelper.app')
           lsregister = '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
           exec "#{lsregister} #{FoldingTextHelperPath}"
-          #LaunchServices = require('launch-services')
-          #LaunchServices.registerURL("file://#{FoldingTextHelperPath}", true)
-          #unless LaunchServices.getDefaultRoleHandlerForContentType('com.foldingtext.ftml', null)
-          #  LaunchServices.setDefaultRoleHandlerForContentType('com.foldingtext.ftml', null, 'com.github.atom')
+
+    @subscriptions.add @monkeyPatchWorkspaceOpen()
+
+  monkeyPatchWorkspaceOpen: ->
+    # Patched for two purposes. First strip off URL params and move them to
+    # options. Second call updateOptionsAfterOpenOrReopen so item gets options
+    # anytime it is opened, not just the first time.
+    workspaceOriginalOpen = atom.workspace.open
+    workspaceMonkeyOpen = (args...) ->
+      uri = args[0]
+      options = args[1]
+
+      try
+        if uri
+          url ?= require('url')
+          urlObject = url.parse(uri, true)
+          path ?= require('path')
+          pathObject = {}
+          options ?= {}
+
+          if urlObject.protocol is 'file:'
+            decodedPath = decodeURI(urlObject.path)
+            # Maybe better way to do this, but here I'm detecting windows drive
+            # letter case and when found I strip off leading /. Odd and ugly.
+            if decodedPath.match(/^\/[a-zA-Z]:/)
+              decodedPath = decodedPath.substr(1)
+            pathObject = path.parse(decodedPath)
+          else
+            pathObject = path.parse(uri)
+
+          ItemSerializer ?= require('./core/item-serializer')
+          unless ItemSerializer.getMimeTypeForURI(pathObject.base)
+            urlObject = url.parse(pathObject.base, true)
+            if ItemSerializer.getMimeTypeForURI(urlObject.pathname)
+              options.hash ?= (urlObject.hash or '#').substr(1)
+              options[key] ?= value for key, value of urlObject.query
+              pathObject.base = urlObject.pathname
+              uri = path.format(pathObject)
+              args[0] = uri
+              args[1] = options
+      catch error
+        console.log error
+
+      openPromise = workspaceOriginalOpen.apply(atom.workspace, args)
+      openPromise?.then? (item) ->
+        item.updateOptionsAfterOpenOrReopen?(options)
+      openPromise
+    atom.workspace.open = workspaceMonkeyOpen
+    new Disposable ->
+      if atom.workspace.open is workspaceMonkeyOpen
+        atom.workspace.open = workspaceOriginalOpen
 
   consumeStatusBarService: (statusBar) ->
     @statusBar = statusBar
