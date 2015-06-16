@@ -956,7 +956,7 @@ EventRegistery.listen '.ft-body-text a',
       if not protocol
         editorElement = OutlineEditorElement.findOutlineEditorElement e.target
         editor = editorElement.editor
-        href = url.resolve(editor.getPath(), href)
+        href = url.resolve(editor.getPath() or '', href)
       else if protocol isnt 'file:'
         href = null
 
