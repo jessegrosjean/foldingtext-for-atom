@@ -676,8 +676,9 @@ class Outline
   #
   # * `options` (optional) The {Object} with URL options (default: {}):
   #   * `relativeTo` A {String} path to relativize against
-  #   * `query` A {String} item path to set when opening the outline.
   #   * `hoistedItem` An {Item} to hoist when opening the outline
+  #   * `query` A {String} item path to set when opening the outline.
+  #   * `expanded` An {Array} of items to expand when opening the outline.
   #   * `selection` An {Object} with the selection to set when opening the outline.
   #     * `focusItem` The focus {Item}.
   #     * `focusOffset` The focus offset {Number}.
@@ -691,7 +692,7 @@ class Outline
         if fs.statSync(relativeTo).isFile()
           relativeTo = path.dirname(relativeTo)
         pathName = path.relative(relativeTo, pathName)
-      pathName = encodeURI(pathName)
+      pathName = (encodeURIComponent(each) for each in pathName.split('/')).join('/')
 
     url =
       protocol: if relativeTo then undefined else 'file'
@@ -699,12 +700,15 @@ class Outline
       pathname: pathName
       query: {}
 
-    if query = options.query
-      url.query.query = query
-
     hoistedItem = options.hoistedItem
     if hoistedItem and not hoistedItem.isRoot
       url.hash = hoistedItem.id
+
+    if query = options.query
+      url.query.query = query
+
+    if expanded = options.expanded
+      url.query.expanded = (each.id for each in expanded).join(',')
 
     if options.selection?.focusItem
       selection = options.selection

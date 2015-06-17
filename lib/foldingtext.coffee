@@ -99,12 +99,11 @@ module.exports =
           options ?= {}
 
           if urlObject.protocol is 'file:'
-            decodedPath = decodeURI(urlObject.path)
             # Maybe better way to do this, but here I'm detecting windows drive
             # letter case and when found I strip off leading /. Odd and ugly.
-            if decodedPath.match(/^\/[a-zA-Z]:/)
-              decodedPath = decodedPath.substr(1)
-            pathObject = path.parse(decodedPath)
+            if urlObject.path.match(/^\/[a-zA-Z]:/)
+              urlObject.path = urlObject.path.substr(1)
+            pathObject = path.parse(urlObject.path + (urlObject.hash or ''))
           else
             pathObject = path.parse(uri)
 
@@ -114,7 +113,7 @@ module.exports =
             if ItemSerializer.getMimeTypeForURI(urlObject.pathname)
               options.hash ?= (urlObject.hash or '#').substr(1)
               options[key] ?= value for key, value of urlObject.query
-              pathObject.base = urlObject.pathname
+              pathObject.base = (decodeURIComponent(each) for each in urlObject.pathname.split('/'))
               uri = path.format(pathObject)
               args[0] = uri
               args[1] = options

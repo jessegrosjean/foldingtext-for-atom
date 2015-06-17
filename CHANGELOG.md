@@ -1,5 +1,10 @@
 # ChangeLog
 
+## 0.6.1
+
+- Fixed empty pane bug when opening links to other outlines.
+- Fixed links to outlines with spaces and other URL special characters in path.
+
 ## 0.6.0
 
 - Added join items command.

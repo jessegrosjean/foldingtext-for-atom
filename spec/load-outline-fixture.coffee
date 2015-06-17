@@ -13,7 +13,7 @@ fs = require 'fs'
 module.exports = ->
   unless @outlineTemplate
     @outlineTemplate = new Outline()
-    @outlineTemplate.loadSync(path.join(__dirname, 'fixtures/outline.ftml'))
+    @outlineTemplate.loadSync(path.join(__dirname, 'fixtures/outline [loo!]!@#$%^&?*()-+.ftml'))
 
   outline = new Outline()
   for each in @outlineTemplate.root.children
