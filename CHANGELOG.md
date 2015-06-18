@@ -2,6 +2,7 @@
 
 ## 0.6.1
 
+- Default to .ftml extension when saving new outlines.
 - Fixed empty pane bug when opening links to other outlines.
 - Fixed links to outlines with spaces and other URL special characters in path.
 

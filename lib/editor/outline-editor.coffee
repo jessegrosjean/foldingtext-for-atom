@@ -1946,6 +1946,16 @@ class OutlineEditor
   shouldPromptToSave: ->
     @isModified() and not @outline.hasMultipleEditors()
 
+  getSaveDialogOptions: ->
+    defaultPath = @getPath()
+
+    unless defaultPath
+      defaultPath = atom.project.getPaths()[0] ? ''
+      defaultPath = path.join(defaultPath, 'Untitled.ftml')
+
+    {} =
+      defaultPath: defaultPath
+
   ###
   Section: Util
   ###
