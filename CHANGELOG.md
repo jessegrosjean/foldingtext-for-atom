@@ -1,5 +1,10 @@
 # ChangeLog
 
+## 0.6.2
+
+- Fixed bug creating local links in unsaved outline.
+- Fixed bug where all drags defaulted to copying items.
+
 ## 0.6.1
 
 - Default to .ftml extension when saving new outlines.
