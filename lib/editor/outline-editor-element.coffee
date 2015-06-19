@@ -746,7 +746,7 @@ class OutlineEditorElement extends HTMLElement
   _itemsToInsertForEvent: (e, dropEffect) ->
     # If moving an item within a single editor window
     if (draggedItem = @editor.getDraggedItem()) and (dropEffect is 'all' or dropEffect is 'move')
-      [draggedItem]
+      return [draggedItem]
 
     # Else if linking item
     else if dropEffect is 'link'
