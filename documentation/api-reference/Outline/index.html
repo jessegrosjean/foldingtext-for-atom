@@ -1080,8 +1080,8 @@ on-disk contents of its associated file.</p>
 </table>
   
 </dd>
-<dt class='method-def' id='instance-getHREF'>
-  <span class='signature'>::getHREF(options<sup>?</sup>)</span>
+<dt class='method-def' id='instance-getFileURL'>
+  <span class='signature'>::getFileURL(options<sup>?</sup>)</span>
 </dt>
 <dd class='method-def'>
   <p>Get an href to this outline.</p>
@@ -1100,9 +1100,9 @@ on-disk contents of its associated file.</p>
     The <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object'>Object</a> with URL options (default: {}):
     <ul>
   <li>
-  <code>relativeTo</code>
+  <code>hoistedItem</code>
   &mdash;
-  A <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> path to relativize against
+  An <a class='reference' href='../Item'>Item</a> to hoist when opening the outline
 </li>
 <li>
   <code>query</code>
@@ -1110,9 +1110,9 @@ on-disk contents of its associated file.</p>
   A <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String'>String</a> item path to set when opening the outline.
 </li>
 <li>
-  <code>hoistedItem</code>
+  <code>expanded</code>
   &mdash;
-  An <a class='reference' href='../Item'>Item</a> to hoist when opening the outline
+  An <a class='reference' href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array'>Array</a> of items to expand when opening the outline.
 </li>
 <li>
   <code>selection</code>
