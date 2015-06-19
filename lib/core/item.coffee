@@ -4,6 +4,7 @@ AttributedString = require './attributed-string'
 Constants = require './constants'
 Mutation = require './mutation'
 ItemPath = require './item-path'
+UrlUtil = require './url-util'
 _ = require 'underscore-plus'
 assert = require 'assert'
 
@@ -622,16 +623,6 @@ class Item
   # Returns a duplicate {Item}.
   cloneItem: (remappedIDCallback) ->
     @outline.cloneItem(this, remappedIDCallback)
-
-  linkItemForOutline: (outline) ->
-    linkItem = outline.createItem('')
-    linkItem.attributedBodyText = @attributedBodyText
-    link = @outline.getHREF
-      relativeTo: outline.getPath()
-      selection:
-        focusItem: this
-    linkItem.addElementInBodyTextRange('A', href: link, 0, linkItem.bodyText.length)
-    linkItem
 
   # Public: Given an array of items determines and returns the common
   # ancestors of those items.

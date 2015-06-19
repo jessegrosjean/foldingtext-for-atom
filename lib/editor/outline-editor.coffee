@@ -1779,19 +1779,16 @@ class OutlineEditor
   Section: Drag and Drop
   ###
 
-  draggedItem: ->
-    @outline._draggedItemHack
-
-  dropEffect: ->
+  getDropEffect: ->
     @_dragState.dropEffect
 
-  dropParentItem: ->
+  getDropParentItem: ->
     @_dragState.dropParentItem
 
-  dropInsertBeforeItem: ->
+  getDropInsertBeforeItem: ->
     @_dragState.dropInsertBeforeItem
 
-  dropInsertAfterItem: ->
+  getDropInsertAfterItem: ->
     @_dragState.dropInsertAfterItem
 
   _refreshIfDifferent: (item1, item2) ->
@@ -1805,10 +1802,8 @@ class OutlineEditor
       state.dropInsertAfterItem = @getLastVisibleChild(state.dropParentItem)
 
     oldState = @_dragState
-    @outline._draggedItemHack = state.draggedItem
     @_dragState = state
 
-    @_refreshIfDifferent(oldState.draggedItem, state.draggedItem)
     @_refreshIfDifferent(oldState.dropParentItem, state.dropParentItem)
     @_refreshIfDifferent(oldState.dropInsertBeforeItem, state.dropInsertBeforeItem)
     @_refreshIfDifferent(oldState.dropInsertAfterItem, state.dropInsertAfterItem)
@@ -1920,6 +1915,9 @@ class OutlineEditor
   getPath: ->
     @outline.getPath()
 
+  getFileURL: (options) ->
+    @outline.getFileURL(options)
+
   isModified: ->
     @outline.isModified()
 
@@ -1927,8 +1925,7 @@ class OutlineEditor
     @outline.isEmpty()
 
   copyPathToClipboard: ->
-    atom.clipboard.write @outline.getHREF
-      absolute: true
+    atom.clipboard.write @outline.getFileURL
       query: @getSearch().query
       hoistedItem: @getHoistedItem()
       selection:

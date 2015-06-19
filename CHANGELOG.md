@@ -4,8 +4,10 @@
 
 - Default to .ftml extension when saving new outlines.
 - Fixed empty pane bug when opening links to other outlines.
+- Fixed dragging links between items in different Atom windows.
 - Fixed exception when clicking on link to outline item in an unsaved outline.
 - Fixed links to outlines with spaces and other URL special characters in path.
+- Fixed link to self generated URLs to be shorter and less specific... only include query parameters, not file name.
 
 ## 0.6.0
 

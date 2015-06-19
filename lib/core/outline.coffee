@@ -6,6 +6,7 @@ UndoManager = require './undo-manager'
 Constants = require './constants'
 ItemPath = require './item-path'
 Mutation = require './mutation'
+UrlUtil = require './url-util'
 shortid = require './shortid'
 _ = require 'underscore-plus'
 assert = require 'assert'
@@ -675,7 +676,6 @@ class Outline
   # Public: Get an href to this outline.
   #
   # * `options` (optional) The {Object} with URL options (default: {}):
-  #   * `relativeTo` A {String} path to relativize against
   #   * `hoistedItem` An {Item} to hoist when opening the outline
   #   * `query` A {String} item path to set when opening the outline.
   #   * `expanded` An {Array} of items to expand when opening the outline.
@@ -684,31 +684,18 @@ class Outline
   #     * `focusOffset` The focus offset {Number}.
   #     * `anchorItem` The anchor {Item}.
   #     * `anchorOffset` The anchor offset {Number}.
-  getHREF: (options={}) ->
-    if pathName = (@getPath() or '')
-      pathName = path.resolve(pathName)
-      pathName = pathName.replace(/\\/g, '/')
-      if relativeTo = options.relativeTo
-        if fs.statSync(relativeTo).isFile()
-          relativeTo = path.dirname(relativeTo)
-        pathName = path.relative(relativeTo, pathName)
-      pathName = (encodeURIComponent(each) for each in pathName.split('/')).join('/')
-
-    url =
-      protocol: if relativeTo then undefined else 'file'
-      slashes: not relativeTo
-      pathname: pathName
-      query: {}
+  getFileURL: (options={}) ->
+    urlOptions = {}
 
     hoistedItem = options.hoistedItem
     if hoistedItem and not hoistedItem.isRoot
-      url.hash = hoistedItem.id
+      urlOptions.hash = hoistedItem.id
 
     if query = options.query
-      url.query.query = query
+      urlOptions.query = query
 
     if expanded = options.expanded
-      url.query.expanded = (each.id for each in expanded).join(',')
+      urlOptions.expanded = (each.id for each in expanded).join(',')
 
     if options.selection?.focusItem
       selection = options.selection
@@ -716,9 +703,15 @@ class Outline
       focusOffset = selection.focusOffset ? undefined
       anchorItem = selection.anchorItem ? focusItem
       anchorOffset = selection.anchorOffset ? focusOffset
-      url.query.selection = "#{focusItem?.id},#{focusOffset},#{anchorItem?.id},#{anchorOffset}"
+      urlOptions.selection = "#{focusItem?.id},#{focusOffset},#{anchorItem?.id},#{anchorOffset}"
 
-    require('url').format(url)
+    if @getPath()
+      UrlUtil.pathnameAndOptionsToFileURL(@getPath(), urlOptions)
+    else
+      # Hack... in case where outline has no path can't return file:// url
+      # since they require and absolute path. So instead just return the
+      # encoded options.
+      UrlUtil.relativeFileURLHREF('file:///', 'file:///', urlOptions)
 
   getBaseName: ->
     @file?.getBaseName() or 'Untitled'

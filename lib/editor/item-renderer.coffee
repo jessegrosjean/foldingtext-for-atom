@@ -91,13 +91,13 @@ class ItemRenderer
     if @editor.getHoistedItem() is item
       classes.push 'ft-hoistedItem'
 
-    if @editor.dropParentItem() is item
+    if @editor.getDropParentItem() is item
       classes.push 'ft-drop-parent-item'
 
-    if @editor.dropInsertBeforeItem() is item
+    if @editor.getDropInsertBeforeItem() is item
       classes.push 'ft-drop-before'
 
-    if @editor.dropInsertAfterItem() is item
+    if @editor.getDropInsertAfterItem() is item
       classes.push 'ft-drop-after'
 
     classes.join ' '

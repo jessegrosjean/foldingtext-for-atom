@@ -31,7 +31,7 @@ describe 'FoldingText', ->
         outlineEditor = atom.workspace.getActivePaneItem()
         outlineEditor.getPath().should.equal(outlinePath)
         waitsForPromise ->
-          atom.workspace.open(outlineEditor.outline.getHREF(query: 'two')).then ->
+          atom.workspace.open(outlineEditor.outline.getFileURL(query: 'two')).then ->
             outlineEditor.getSearch().query.should.equal('two')
 
     it 'should hoisted item based on query parameter', ->
@@ -43,7 +43,7 @@ describe 'FoldingText', ->
         outlineEditor = atom.workspace.getActivePaneItem()
         outline = outlineEditor.outline
         waitsForPromise ->
-          atom.workspace.open(outline.getHREF(hoistedItem: outline.getItemForID('2'))).then ->
+          atom.workspace.open(outline.getFileURL(hoistedItem: outline.getItemForID('2'))).then ->
             outlineEditor.getHoistedItem().bodyText.should.equal('two')
 
     it 'should expand item based on query parameter', ->
@@ -56,7 +56,7 @@ describe 'FoldingText', ->
         outline = outlineEditor.outline
         waitsForPromise ->
           expanded = [outline.getItemForID('1'), outline.getItemForID('2')]
-          atom.workspace.open(outline.getHREF(expanded: expanded)).then ->
+          atom.workspace.open(outline.getFileURL(expanded: expanded)).then ->
             outlineEditor.isExpanded(outline.getItemForID('1')).should.be.ok
             outlineEditor.isExpanded(outline.getItemForID('2')).should.be.ok
             outlineEditor.isExpanded(outline.getItemForID('5')).should.not.be.ok
@@ -73,7 +73,7 @@ describe 'FoldingText', ->
           selection =
             focusItem: outline.getItemForID('4')
             focusOffset: 1
-          atom.workspace.open(outline.getHREF(selection: selection)).then ->
+          atom.workspace.open(outline.getFileURL(selection: selection)).then ->
             outlineEditor.selection.toString().should.equal('anchor:4,1 focus:4,1')
 
   describe 'FoldingText Service', ->

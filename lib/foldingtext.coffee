@@ -8,6 +8,7 @@ Outline = null
 path = null
 url = null
 Q = null
+_ = null
 
 atom.deserializers.add
   name: 'OutlineEditorDeserializer'
@@ -84,7 +85,9 @@ module.exports =
   monkeyPatchWorkspaceOpen: ->
     # Patched for two purposes. First strip off URL params and move them to
     # options. Second call updateOptionsAfterOpenOrReopen so item gets options
-    # anytime it is opened, not just the first time.
+    # anytime it is opened, not just the first time. This patch only effects
+    # file:// urls where there is an outline mime type defined for the url
+    # pathname.
     workspaceOriginalOpen = atom.workspace.open
     workspaceMonkeyOpen = (args...) ->
       uri = args[0]
@@ -94,29 +97,16 @@ module.exports =
         if uri
           url ?= require('url')
           urlObject = url.parse(uri, true)
-          path ?= require('path')
-          pathObject = {}
-          options ?= {}
-
+          # Only mess with file URLs
           if urlObject.protocol is 'file:'
-            # Maybe better way to do this, but here I'm detecting windows drive
-            # letter case and when found I strip off leading /. Odd and ugly.
-            if urlObject.path.match(/^\/[a-zA-Z]:/)
-              urlObject.path = urlObject.path.substr(1)
-            pathObject = path.parse(urlObject.path + (urlObject.hash or ''))
-          else
-            pathObject = path.parse(uri)
-
-          ItemSerializer ?= require('./core/item-serializer')
-          unless ItemSerializer.getMimeTypeForURI(pathObject.base)
-            urlObject = url.parse(pathObject.base, true)
+            ItemSerializer ?= require('./core/item-serializer')
+            # Only mess with file URLs that have outline mime type
             if ItemSerializer.getMimeTypeForURI(urlObject.pathname)
-              options.hash ?= (urlObject.hash or '#').substr(1)
-              options[key] ?= value for key, value of urlObject.query
-              pathObject.base = (decodeURIComponent(each) for each in urlObject.pathname.split('/'))
-              uri = path.format(pathObject)
-              args[0] = uri
-              args[1] = options
+              result = require('./core/url-util').fileURLToPathnameAndOptions(urlObject)
+              _ ?= require 'underscore-plus'
+              _.extend(result.options, options)
+              args[0] = result.pathname
+              args[1] = options = result.options
       catch error
         console.log error
 
@@ -124,6 +114,7 @@ module.exports =
       openPromise?.then? (item) ->
         item.updateOptionsAfterOpenOrReopen?(options)
       openPromise
+
     atom.workspace.open = workspaceMonkeyOpen
     new Disposable ->
       if atom.workspace.open is workspaceMonkeyOpen

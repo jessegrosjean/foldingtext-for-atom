@@ -4,7 +4,7 @@ serializeItems = (items, editor) ->
   lines = []
   for each in items
     lines.push "# #{each.bodyHTML}"
-    lines.push each.outline.getHREF
+    lines.push each.outline.getFileURL
       selection:
         focusItem: each
   lines.join('\n')

@@ -348,8 +348,8 @@ describe 'OutlineEditor', ->
   describe 'Copy Path to Clipboard', ->
     it 'should copy path query parameters even when outline has no path', ->
       editor.copyPathToClipboard()
-      atom.clipboard.read().should.equal('file://?selection=1%2C0%2C1%2C0')
+      atom.clipboard.read().should.equal('?selection=1%2C0%2C1%2C0')
 
       editor.setSearch('one two')
       editor.copyPathToClipboard()
-      atom.clipboard.read().should.equal('file://?query=one%20two')
+      atom.clipboard.read().should.equal('?query=one%20two')
