@@ -970,6 +970,13 @@ EventRegistery.listen '.ft-body-text a',
         editorElement = OutlineEditorElement.findOutlineEditorElement e.target
         outline = editorElement.editor.outline
         baseURL = outline.getFileURL() ? ''
+
+        unless baseURL # not saved
+          atom.notifications.addWarning 'Unable to follow relative links until you save the outline.'
+          e.stopPropagation()
+          e.preventDefault()
+          return
+
         href = url.resolve(baseURL, href)
         protocol = 'file:'
 
