@@ -17,7 +17,10 @@ relativeFileURLHREF = (fromFileURL, toFileURL, options={}) ->
         fromPathname = path.dirname(fromPathname)
       finalPathname = path.relative(fromPathname, toPathname)
   else
-    finalPathname = toPathnameAndOptions.pathname
+    if toPathnameAndOptions.pathname is '.'
+      finalPathname = ''
+    else
+      finalPathname = toPathnameAndOptions.pathname
 
   finalURLlObject.pathname = finalPathname
   if path.isAbsolute(finalPathname)
