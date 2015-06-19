@@ -1782,6 +1782,9 @@ class OutlineEditor
   getDropEffect: ->
     @_dragState.dropEffect
 
+  getDraggedItem: ->
+    @_dragState.draggedItem
+
   getDropParentItem: ->
     @_dragState.dropParentItem
 
@@ -1804,6 +1807,7 @@ class OutlineEditor
     oldState = @_dragState
     @_dragState = state
 
+    @_refreshIfDifferent(oldState.draggedItem, state.draggedItem)
     @_refreshIfDifferent(oldState.dropParentItem, state.dropParentItem)
     @_refreshIfDifferent(oldState.dropInsertBeforeItem, state.dropInsertBeforeItem)
     @_refreshIfDifferent(oldState.dropInsertAfterItem, state.dropInsertAfterItem)

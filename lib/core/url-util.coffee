@@ -4,17 +4,20 @@ url = require 'url'
 fs = require 'fs'
 
 relativeFileURLHREF = (fromFileURL, toFileURL, options={}) ->
-  fromPathnameAndOptions = fileURLToPathnameAndOptions(fromFileURL)
   toPathnameAndOptions = fileURLToPathnameAndOptions(toFileURL)
-  fromPathname = fromPathnameAndOptions.pathname
   toPathname = toPathnameAndOptions.pathname
+  fromPathnameAndOptions = fileURLToPathnameAndOptions(fromFileURL)
+  fromPathname = fromPathnameAndOptions.pathname
   finalURLlObject = {}
   finalPathname = ''
 
-  unless fromPathname is toPathname
-    if fs.statSync(fromPathname).isFile()
-      fromPathname = path.dirname(fromPathname)
-    finalPathname = path.relative(fromPathname, toPathname)
+  if fromPathnameAndOptions.pathname is '.'
+    unless fromPathname is toPathname
+      if fs.statSync(fromPathname).isFile()
+        fromPathname = path.dirname(fromPathname)
+      finalPathname = path.relative(fromPathname, toPathname)
+  else
+    finalPathname = toPathnameAndOptions.pathname
 
   finalURLlObject.pathname = finalPathname
   if path.isAbsolute(finalPathname)
@@ -57,7 +60,7 @@ fileURLToPathnameAndOptions = (fileURL) ->
     urlObject = url.parse(fileURL, true)
   else
     urlObject = fileURL
-  pathname = urlObject.pathname
+  pathname = urlObject.pathname ? ''
   options = {}
 
   # Detect windows drive letter and then Handle leading / in pathname of

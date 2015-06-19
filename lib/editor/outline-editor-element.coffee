@@ -626,7 +626,9 @@ class OutlineEditorElement extends HTMLElement
     e.dataTransfer.setDragImage li, x, y
 
     e.dataTransfer.setData 'application/json', JSON.stringify
-      itemFileURL: item.outline.getFileURL(selection: item)
+      itemFileURL: item.outline.getFileURL
+        selection:
+          focusItem: item
       itemHTML: item.bodyHTML
       outlineID: item.outline.id
       itemID: item.id
@@ -637,7 +639,10 @@ class OutlineEditorElement extends HTMLElement
     @editor._hackDragItemMouseOffset =
       xOffset: x
       yOffset: y
-    @editor.setDragState {}
+
+    @editor.setDragState
+      draggedItem: item
+      dropEffect: 'move'
 
   onDrag: (e) ->
     e.stopPropagation()
@@ -648,8 +653,9 @@ class OutlineEditorElement extends HTMLElement
     #  e.preventDefault()
 
   onDragEnd: (e) ->
-    # Should remove item if was a move. Remove item
-    @editor.setDragState {}
+    if e.dataTransfer.dropEffect is 'move' and @editor.getDraggedItem()
+      @editor.getDraggedItem().removeFromParent()
+    @editor.debouncedSetDragState {}
     e.stopPropagation()
 
   onDragEnter: (e) ->
@@ -659,7 +665,7 @@ class OutlineEditorElement extends HTMLElement
     e.stopPropagation()
     e.preventDefault()
 
-    draggedItem = @_draggedItemForEvent e
+    draggedItem = @editor.getDraggedItem()
     dropTarget = @_dropTargetForEvent e
     dropEffect = e.dataTransfer.effectAllowed
 
@@ -674,15 +680,19 @@ class OutlineEditorElement extends HTMLElement
     e.dataTransfer.dropEffect = dropEffect
 
     @editor.debouncedSetDragState
+      'draggedItem': draggedItem
       'dropEffect': dropEffect
       'dropParentItem': dropTarget.parent
       'dropInsertBeforeItem': dropTarget.insertBefore
 
   onDragLeave: (e) ->
     @editor.debouncedSetDragState
+      'draggedItem': @editor.getDraggedItem()
       'dropEffect': e.dataTransfer.dropEffect
 
   onDrop: (e) ->
+    console.log('onDrop')
+
     e.stopPropagation()
     e.preventDefault()
 
@@ -729,50 +739,33 @@ class OutlineEditorElement extends HTMLElement
         @editor.moveItems(insertItems, dropParentItem, dropInsertBeforeItem, moveStartOffset)
         undoManager.setActionName('Drag and Drop')
 
+    @editor.setDragState({})
     @editor.debouncedSetDragState({})
 
   _draggedItemForEvent: (e) ->
     try
       dragInfo = JSON.parse e.dataTransfer.getData('application/json')
-      outline = Outline.getOutlineForID dragInfo.outlineID
-      return outline.getItemForID dragInfo.itemID
+      return @outlineEditor.outline.getItemForID(dragInfo.itemID)
+      #outline = Outline.getOutlineForID dragInfo.outlineID
+      #return outline.getItemForID dragInfo.itemID
     catch error
 
   _itemsToInsertForEvent: (e, dropEffect) ->
-    targetOutline = @editor.outline
-    if draggedItem = @_draggedItemForEvent(e)
-      # Means dragging within single atom window
-
+    if (draggedItem = @editor.getDraggedItem()) and (dropEffect is 'all' or dropEffect is 'move' or dropEffect is 'copy')
+      # Means dragging move or copy within single outline
       if dropEffect is 'all' or dropEffect is 'move'
-        if draggedItem.outline is targetOutline
-          [draggedItem]
-        else
-          draggedItem.removeFromParent()
-          [targetOutline.importItem draggedItem.cloneItem()]
+        [draggedItem]
       else if dropEffect is 'copy'
-        if draggedItem.outline is targetOutline
-          [draggedItem.cloneItem()]
-        else
-          [targetOutline.importItem draggedItem.cloneItem()]
-      else if dropEffect is 'link'
-        linkItem = targetOutline.createItem('')
-        linkItem.bodyHTML = draggedItem.bodyHTML
-        destinationFileURL = targetOutline.getFileURL()
-        draggedFileURL = draggedItem.outline.getFileURL
-          selection:
-            focusItem: draggedItem
-        href = UrlUtil.relativeFileURLHREF(destinationFileURL, draggedFileURL)
-        linkItem.addElementInBodyTextRange('A', href: href, 0, linkItem.bodyText.length)
-        [linkItem]
+        [draggedItem.cloneItem()]
     else if dropEffect is 'link'
       try
         dragInfo = JSON.parse e.dataTransfer.getData('application/json')
         linkItemFileURL = dragInfo.itemFileURL
         itemHTML = dragInfo.itemHTML ? linkItemFileURL
         if linkItemFileURL
-          linkItem = targetOutline.createItem()
+          linkItem = @editor.outline.createItem()
           linkItem.bodyHTML = itemHTML
-          linkItemHREF = UrlUtil.relativeFileURLHREF targetOutline.getFileURL(), linkItemFileURL
+          linkItemHREF = UrlUtil.relativeFileURLHREF @editor.outline.getFileURL(), linkItemFileURL
           linkItem.addElementInBodyTextRange('A', href: linkItemHREF, 0, linkItem.bodyText.length)
           return [linkItem]
       catch error
