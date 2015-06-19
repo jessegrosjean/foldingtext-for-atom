@@ -15,6 +15,7 @@ Outline = require '../core/outline'
 Selection = require './selection'
 diff = require 'fast-diff'
 path = require 'path'
+url = require 'url'
 
 module.exports =
 class OutlineEditorElement extends HTMLElement
@@ -742,25 +743,25 @@ class OutlineEditorElement extends HTMLElement
     @editor.setDragState({})
     @editor.debouncedSetDragState({})
 
-  _draggedItemForEvent: (e) ->
-    try
-      dragInfo = JSON.parse e.dataTransfer.getData('application/json')
-      return @outlineEditor.outline.getItemForID(dragInfo.itemID)
-      #outline = Outline.getOutlineForID dragInfo.outlineID
-      #return outline.getItemForID dragInfo.itemID
-    catch error
-
   _itemsToInsertForEvent: (e, dropEffect) ->
-    if (draggedItem = @editor.getDraggedItem()) and (dropEffect is 'all' or dropEffect is 'move' or dropEffect is 'copy')
-      # Means dragging move or copy within single outline
-      if dropEffect is 'all' or dropEffect is 'move'
-        [draggedItem]
-      else if dropEffect is 'copy'
-        [draggedItem.cloneItem()]
+    # If moving an item within a single editor window
+    if (draggedItem = @editor.getDraggedItem()) and (dropEffect is 'all' or dropEffect is 'move')
+      [draggedItem]
+
+    # Else if linking item
     else if dropEffect is 'link'
       try
         dragInfo = JSON.parse e.dataTransfer.getData('application/json')
         linkItemFileURL = dragInfo.itemFileURL
+
+        # If not dragging/dropping from the same outline make sure that source
+        # outline has a path.
+        unless @editor.outline.id is dragInfo.outlineID
+          unless url.parse(linkItemFileURL).pathname
+            atom.notifications.addError 'Unable to create link',
+              detail: 'To create a link from this outline you must first save it.'
+            return []
+
         itemHTML = dragInfo.itemHTML ? linkItemFileURL
         if linkItemFileURL
           linkItem = @editor.outline.createItem()
@@ -770,9 +771,8 @@ class OutlineEditorElement extends HTMLElement
           return [linkItem]
       catch error
 
-      ItemSerializer.readItemsFromDataTransfer @editor, e.dataTransfer
-    else
-      ItemSerializer.readItemsFromDataTransfer @editor, e.dataTransfer
+    # Otherwise deserialize from pasteboard data
+    ItemSerializer.readItemsFromDataTransfer @editor, e.dataTransfer
 
   _dropTargetForEvent: (e) ->
     picked = @pick(e.clientX, e.clientY)

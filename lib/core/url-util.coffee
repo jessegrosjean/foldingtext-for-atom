@@ -11,7 +11,7 @@ relativeFileURLHREF = (fromFileURL, toFileURL, options={}) ->
   finalURLlObject = {}
   finalPathname = ''
 
-  if fromPathnameAndOptions.pathname is '.'
+  unless fromPathnameAndOptions.pathname is '.'
     unless fromPathname is toPathname
       if fs.statSync(fromPathname).isFile()
         fromPathname = path.dirname(fromPathname)
