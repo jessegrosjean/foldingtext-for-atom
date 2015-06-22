@@ -700,7 +700,8 @@ class Item
 
   # Public: Insert the new child item before the referenced sibling in this
   # item's list of children. If referenceSibling isn't defined the item is
-  # inserted at the end.
+  # inserted at the end. This method sets the indent of child to match
+  # referenceSibling or 1.
   #
   # - `child` The inserted child {Item} .
   # - `referenceSibling` (optional) The referenced sibling {Item} .
@@ -709,7 +710,8 @@ class Item
 
   # Public: Insert the new children before the referenced sibling in this
   # item's list of children. If referenceSibling isn't defined the new
-  # children are inserted at the end.
+  # children are inserted at the end. This method resets the indent of
+  # children to match referenceSibling or 1.
   #
   # - `children` {Array} of {Item}s to insert.
   # - `referenceSibling` (optional) The referenced sibling {Item}.
@@ -719,13 +721,13 @@ class Item
 
     outline.removeItemsFromParents(children)
 
-    if isInOutline
-      previousSibling = null
-      if referenceSibling
-        previousSibling = referenceSibling.previousSibling
-      else
-        previousSibling = @lastChild
+    previousSibling = null
+    if referenceSibling
+      previousSibling = referenceSibling.previousSibling
+    else
+      previousSibling = @lastChild
 
+    if isInOutline
       mutation = Mutation.createChildrenMutation this, children, [], previousSibling, referenceSibling
       outline.emitter.emit 'will-change', mutation
       outline.beginUpdates()
@@ -735,15 +737,16 @@ class Item
     documentFragment = ownerDocument.createDocumentFragment()
     referenceSiblingLI = referenceSibling?._liOrRootUL
     childrenUL = _childrenUL(@_liOrRootUL, true)
+    childIndent = previousSibling?.indent ? referenceSibling?.indent ? 1
 
     for each in children
-      assert.ok(
-        each._liOrRootUL.ownerDocument is ownerDocument,
-        'children must share same owner document'
-      )
+      assert.ok(each._liOrRootUL.ownerDocument is ownerDocument, 'children must share same owner document')
       documentFragment.appendChild(each._liOrRootUL)
 
     childrenUL.insertBefore(documentFragment, referenceSiblingLI)
+
+    for each in children
+      each.indent = childIndent
 
     if isInOutline
       outline.endUpdates()
