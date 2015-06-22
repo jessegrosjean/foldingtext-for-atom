@@ -129,7 +129,7 @@ class Item
     @_liOrRootUL.hasAttribute(name)
 
   # Public: Get the value of the specified attribute. If the attribute does
-  # not exist will return `undefined`.
+  # not exist will return `null`.
   #
   # - `name` The {String} attribute name.
   # - `array` (optional) {Boolean} true if should split comma separated value to create an array.
@@ -159,7 +159,7 @@ class Item
     assert.ok(name isnt 'id', 'id is reserved attribute name')
 
     value = Item.objectToAttributeValueString value
-    oldValue = @getAttribute name or undefined
+    oldValue = @getAttribute name
 
     if value is oldValue
       return
@@ -186,7 +186,7 @@ class Item
   # - `name` The {String} attribute name.
   removeAttribute: (name) ->
     if @hasAttribute name
-      @setAttribute name, undefined
+      @setAttribute name, null
 
   @attributeValueStringToObject: (value, clazz) ->
     switch clazz
