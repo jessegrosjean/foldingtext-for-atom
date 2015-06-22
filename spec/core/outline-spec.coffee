@@ -43,6 +43,52 @@ describe 'Outline', ->
     oneImport.lastChild.bodyText.should.equal('five')
     oneImport.lastChild.firstChild.bodyText.should.equal('six')
 
+  describe 'Insert & Remove Items', ->
+    it 'insert items at indent level 1 by default', ->
+      newItem = outline.createItem('new')
+      outline.insertItemAtDepthBefore(newItem, undefined, two)
+      newItem.depth.should.equal(1)
+      newItem.previousSibling.should.equal(one)
+      newItem.firstChild.should.equal(two)
+      newItem.lastChild.should.equal(five)
+
+    it 'insert items at specified indent level', ->
+      three.indent = 3
+      four.indent = 2
+      newItem = outline.createItem('new')
+      outline.insertItemAtDepthBefore(newItem, 3, three)
+      newItem.depth.should.equal(3)
+      three.depth.should.equal(5)
+      four.depth.should.equal(4)
+      two.firstChild.should.equal(newItem)
+      newItem.firstChild.should.equal(three)
+      newItem.lastChild.should.equal(four)
+
+    it 'insert items with children', ->
+      three.indent = 4
+      four.indent = 3
+      newItem = outline.createItem('new')
+      newItemChild = outline.createItem('new child')
+      newItem.appendChild(newItemChild)
+      outline.insertItemAtDepthBefore(newItem, 3, three)
+      newItem.depth.should.equal(3)
+      newItemChild.depth.should.equal(4)
+      three.depth.should.equal(6)
+      four.depth.should.equal(5)
+      two.firstChild.should.equal(newItem)
+      newItemChild.firstChild.should.equal(three)
+      newItemChild.lastChild.should.equal(four)
+
+    it 'remove item leaving children', ->
+      outline.removeItem(two)
+      two.isInOutline.should.equal(false)
+      three.isInOutline.should.equal(true)
+      three.parent.should.equal(one)
+      three.depth.should.equal(3)
+      four.isInOutline.should.equal(true)
+      four.parent.should.equal(one)
+      four.depth.should.equal(3)
+
   describe 'Search', ->
     it 'should find DOM using xpath', ->
       outline.evaluateXPath('//li', null, null, XPathResult.ANY_TYPE, null).iterateNext().should.equal(one._liOrRootUL)
