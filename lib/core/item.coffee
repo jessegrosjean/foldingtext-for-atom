@@ -815,11 +815,17 @@ class Item
   ###
 
   # Extended: Returns debug string for this branch.
-  branchToString: (indent) ->
-    indent ?= ''
-    results = [@toString(indent)]
+  branchToString: (depthString) ->
+    depthString ?= ''
+    indent = @indent
+
+    while indent
+      depthString += '  '
+      indent--
+
+    results = [@toString(depthString)]
     for each in @children
-      results.push(each.branchToString(indent + '    '))
+      results.push(each.branchToString(depthString))
     results.join('\n')
 
   # Extended: Returns debug HTML string for this branch.
@@ -827,8 +833,8 @@ class Item
     @_liOrRootUL.outerHTML
 
   # Extended: Returns debug string for this item.
-  toString: (indent) ->
-    (indent or '') + '(' + @id + ') ' + @bodyHTML
+  toString: (depthString) ->
+    (depthString or '') + '(' + @id + ') ' + @bodyHTML
 
 ###
 Section: Util Functions
