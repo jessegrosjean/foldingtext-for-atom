@@ -84,6 +84,14 @@ input[is="ft-outline-editor-focus"] {
   }
 }
 
+.generate-indent-levels(16);
+.generate-indent-levels(@n, @i: 2) when (@i =< @n) {
+  .ft-item[indent="@{i}"] {
+    margin-left: @ft-item-indent * (@i - 1);
+  }
+  .generate-indent-levels(@n, (@i + 1));
+}
+
 .ft-branch-controls {
   .user-select(none);
   display: flex;
