@@ -998,9 +998,18 @@ EventRegistery.listen 'ft-outline-editor',
 #
 
 clipboardAsDatatransfer =
+  # TODO Replace with native electron API when possible. Or better yet replace
+  # with HTML API when possible.
   items: []
-  getData: (type) -> atom.clipboard.read()
-  setData: (type, data) -> atom.clipboard.write(data)
+  getData: (type) ->
+    if type is Constants.URIListMimeType
+      # Hack so never return any data for URIListMimeType from
+      # clipboardAsDatatransfer. Underlying issue is that atom clipboard
+      # doesn't track types yet, but should in future electron update.
+      return null
+    atom.clipboard.read()
+  setData: (type, data) ->
+    atom.clipboard.write(data)
 
 atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagationAndGroupUndo(
   'core:undo': -> @editor.undo()

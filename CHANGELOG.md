@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.6.3
+
+- Fixes some cases where pasting text would create a link.
+
 ## 0.6.2
 
 - Fixed bug creating local links in unsaved outline.
