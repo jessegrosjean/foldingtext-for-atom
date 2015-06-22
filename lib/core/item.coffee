@@ -470,6 +470,37 @@ class Item
         depth++
       depth
 
+  # Public: Visual indent of {Item} relative to parent. Normally this will be
+  # 1 for children with a parent as they are indented one level beyond there
+  # parent. But items can be visually over-indented in which case this value
+  # would be greater then 1. It can never be less then one for an item that
+  # has a parent. It is 0 if an item does not have a parent.
+  indent: null
+  Object.defineProperty @::, 'indent',
+    get: ->
+      if indent = @getAttribute('indent')
+        parseInt(indent) or 1
+      else if @parent
+        1
+      else
+        0
+
+    set: (indent) ->
+      if indent?
+        assert.ok(@parent, 'Can only set indent on an item with a parent')
+
+      indent = 1 if indent < 1
+
+      if previousSibling = @previousSibling
+        assert.ok(indent <= previousSibling.indent, 'item indent must be less then or equal to previousSibling indent')
+
+      if nextSibling = @nextSibling
+        assert.ok(indent >= nextSibling.indent, 'item indent must be greater then or equal to nextSibling indent')
+
+      indent = null if indent <= 1
+
+      @setAttribute('indent', indent)
+
   # Public: Read-only parent {Item}.
   parent: null
   Object.defineProperty @::, 'parent',
