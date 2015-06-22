@@ -459,15 +459,16 @@ class Item
           each = each.parent;
         each
 
-  # Public: Read-only depth of {Item} in outline structure.
+  # Public: Read-only "depth" of {Item} in outline structure. Calculated by
+  # summing the {Item:indent} of this item and all of it's ancestors.
   depth: null
   Object.defineProperty @::, 'depth',
     get: ->
-      depth = 0
+      depth = @indent
       ancestor = @parent
       while ancestor
+        depth += ancestor.indent
         ancestor = ancestor.parent
-        depth++
       depth
 
   # Public: Visual indent of {Item} relative to parent. Normally this will be
