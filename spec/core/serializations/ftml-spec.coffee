@@ -6,7 +6,6 @@ fixtureAsFTMLString = '''
   <!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml">
     <head>
       <meta charset="UTF-8" />
-      <style type="text/css">p { white-space: pre-wrap; }</style>
     </head>
     <body>
       <ul id="FoldingText">

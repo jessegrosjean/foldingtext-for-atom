@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.7.1
+
+- Preserve .ftml and .opml file "head" elements through read/write process.
+
 ## 0.7.0
 
 - Adds context menu items for opening, copying, editing, and removing links.

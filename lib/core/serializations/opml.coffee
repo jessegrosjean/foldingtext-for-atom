@@ -1,8 +1,8 @@
 assert = require 'assert'
 
 serializeItems = (items, editor) ->
-  loadOptions = items[0].outline.serializedState or {}
   opmlDocumentument = document.implementation.createDocument(null, 'opml', null)
+  loadedOPMLHead = items[0].outline.loadOptions?.loadedOPMLHead
   headElement = opmlDocumentument.createElement('head')
   bodyElement = opmlDocumentument.createElement('body')
   documentElement = opmlDocumentument.documentElement
@@ -10,15 +10,12 @@ serializeItems = (items, editor) ->
   documentElement.setAttribute('version', '2.0')
   documentElement.appendChild(headElement)
 
-  if loadOptions?.title
-    titleElement = opmlDocumentument.createElement 'title'
-    titleElement.textContent = loadOptions.title
-    headElement.appendChild(titleElement)
-
-  if loadOptions?.ownerName
-    ownerNameElement = opmlDocumentument.createElement 'ownerName'
-    ownerNameElement.textContent = loadOptions.ownerName
-    headElement.appendChild(ownerNameElement)
+  if loadedOPMLHead
+    for each in loadedOPMLHead.children
+      if each.tagName.toLowerCase() is 'expansionstate'
+        # Ignore, will write these values ourselves
+      else
+        headElement.appendChild(opmlDocumentument.importNode(each, true))
 
   if editor
     lastVisibleLineNumber = 0
@@ -134,6 +131,7 @@ deserializeItems = (opml, outline) ->
   items.loadOptions =
     title: title
     ownerName: ownerName
+    loadedOPMLHead: headElement.cloneNode(true)
     expanded: Object.keys(expandedItemIDs)
   items
 
