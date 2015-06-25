@@ -3,6 +3,7 @@ dom = require '../dom'
 
 serializeItems = (items, editor) ->
   htmlDocument = document.implementation.createHTMLDocument()
+  loadedFTMLHead = items[0].outline.loadOptions?.loadedFTMLHead
   rootUL = htmlDocument.createElement('ul')
   style = document.createElement('style')
   head = htmlDocument.head
@@ -16,6 +17,14 @@ serializeItems = (items, editor) ->
           expandedIDs.push each.id
         each = each.nextItem
 
+  if loadedFTMLHead
+    for each in loadedFTMLHead.children
+      if (each.tagName is 'META' and each.hasAttribute('charset')) or
+         (each.tagName is 'META' and each.name is 'expandedItems')
+        # Ignore, will write these values ourselves
+      else
+        head.appendChild(htmlDocument.importNode(each, true))
+
   if expandedIDs.length
     expandedMeta = htmlDocument.createElement 'meta'
     expandedMeta.name = 'expandedItems'
@@ -25,10 +34,6 @@ serializeItems = (items, editor) ->
   encodingMeta = htmlDocument.createElement 'meta'
   encodingMeta.setAttribute 'charset', 'UTF-8'
   head.appendChild encodingMeta
-
-  style.type = 'text/css'
-  style.appendChild htmlDocument.createTextNode('p { white-space: pre-wrap; }')
-  head.appendChild style
 
   rootUL.id = Constants.RootID
   htmlDocument.documentElement.lastChild.appendChild rootUL
@@ -65,7 +70,7 @@ deserializeItems = (ftmlString, outline) ->
     if rootUL
       rootUL.id = Constants.RootID
   expandedItemIDs = {}
-  loadOptions = {}
+  loadOptions = loadedFTMLHead: htmlDocument.head.cloneNode(true)
   items = []
 
   items.loadOptions = loadOptions

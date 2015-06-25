@@ -1,5 +1,6 @@
 # Copyright (c) 2015 Jesse Grosjean. All rights reserved.
 Constants = require './constants'
+UrlUtil = require './url-util'
 path = require 'path'
 
 serializations = []
@@ -55,7 +56,9 @@ readItemsFromDataTransfer = (editor, dataTransfer, mimeType) ->
     file = eachItem.getAsFile()
     if file?.path and file?.path.length > 0
       item = editor.outline.createItem file.name
-      item.addElementInBodyTextRange 'A', { href: 'file://' + file.path }, 0, file.name.length
+      fileURL = UrlUtil.getFileURLFromPathnameAndOptions(file.path)
+      fileHREF = UrlUtil.getHREFFromFileURLs(editor.outline.getFileURL(), fileURL)
+      item.addElementInBodyTextRange 'A', href: fileHREF, 0, file.name.length
       items.push item
   items
 

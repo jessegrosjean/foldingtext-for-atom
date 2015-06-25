@@ -1,7 +1,7 @@
 {
   "name": "foldingtext-for-atom",
   "main": "./lib/foldingtext",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "Outline editor with productivity features.",
   "keywords": [
     "outline",
@@ -37,7 +37,7 @@
     "matches-selector": "^1.0.0",
     "q": "^1.1.2",
     "shallow-equals": "0.0.0",
-    "should": "^6.0.1",
+    "should": "^7.0.0",
     "underscore-plus": "^1.6.6",
     "velocity-animate": "^1.2.1"
   }

@@ -3,10 +3,10 @@ path = require 'path'
 url = require 'url'
 fs = require 'fs'
 
-relativeFileURLHREF = (fromFileURL, toFileURL, options={}) ->
-  toPathnameAndOptions = fileURLToPathnameAndOptions(toFileURL)
+getHREFFromFileURLs = (fromFileURL, toFileURL, options={}) ->
+  toPathnameAndOptions = getPathnameAndOptionsFromFileURL(toFileURL)
   toPathname = toPathnameAndOptions.pathname
-  fromPathnameAndOptions = fileURLToPathnameAndOptions(fromFileURL)
+  fromPathnameAndOptions = getPathnameAndOptionsFromFileURL(fromFileURL)
   fromPathname = fromPathnameAndOptions.pathname
   finalURLlObject = {}
   finalPathname = ''
@@ -38,7 +38,15 @@ relativeFileURLHREF = (fromFileURL, toFileURL, options={}) ->
 
   url.format(finalURLlObject)
 
-pathnameAndOptionsToFileURL = (pathname, options) ->
+getURLFromHREFAndBaseURL = (href, baseURL, options={}) ->
+  protocol = url.parse(href).protocol
+  unless protocol
+    unless baseURL
+      return null
+    href = url.resolve(baseURL, href)
+  href
+
+getFileURLFromPathnameAndOptions = (pathname, options) ->
   pathname = path.resolve(pathname)
   pathname = pathname.replace(/\\/g, '/')
   pathname = (encodeURIComponent(each) for each in pathname.split('/')).join('/')
@@ -57,7 +65,7 @@ pathnameAndOptionsToFileURL = (pathname, options) ->
 
   url.format(urlObject)
 
-fileURLToPathnameAndOptions = (fileURL) ->
+getPathnameAndOptionsFromFileURL = (fileURL) ->
   urlObject = null
   if _.isString(fileURL)
     urlObject = url.parse(fileURL, true)
@@ -82,6 +90,7 @@ fileURLToPathnameAndOptions = (fileURL) ->
     options: options
 
 module.exports =
-  relativeFileURLHREF: relativeFileURLHREF
-  pathnameAndOptionsToFileURL: pathnameAndOptionsToFileURL
-  fileURLToPathnameAndOptions: fileURLToPathnameAndOptions
+  getHREFFromFileURLs: getHREFFromFileURLs
+  getURLFromHREFAndBaseURL: getURLFromHREFAndBaseURL
+  getFileURLFromPathnameAndOptions: getFileURLFromPathnameAndOptions
+  getPathnameAndOptionsFromFileURL: getPathnameAndOptionsFromFileURL

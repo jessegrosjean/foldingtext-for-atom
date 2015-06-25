@@ -794,12 +794,12 @@ class Outline
       urlOptions.selection = "#{focusItem?.id},#{focusOffset},#{anchorItem?.id},#{anchorOffset}"
 
     if @getPath()
-      UrlUtil.pathnameAndOptionsToFileURL(@getPath(), urlOptions)
+      UrlUtil.getFileURLFromPathnameAndOptions(@getPath(), urlOptions)
     else
       # Hack... in case where outline has no path can't return file:// url
       # since they require and absolute path. So instead just return the
       # encoded options.
-      UrlUtil.relativeFileURLHREF('file:///', 'file:///', urlOptions)
+      UrlUtil.getHREFFromFileURLs('file:///', 'file:///', urlOptions)
 
   getBaseName: ->
     @file?.getBaseName() or 'Untitled'

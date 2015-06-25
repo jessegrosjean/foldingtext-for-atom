@@ -1,8 +1,15 @@
 # ChangeLog
 
-## 0.6.3
+## 0.7.1
 
+- Preserve .ftml and .opml file "head" elements through read/write process.
+
+## 0.7.0
+
+- Adds context menu items for opening, copying, editing, and removing links.
 - Fixes some cases where pasting text would create a link.
+- Fixes (maybe) installing on windows... please let me know! :)
+- Fixes bad links created when dragging a file from desktop into an outline.
 
 ## 0.6.2
 
