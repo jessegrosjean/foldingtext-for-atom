@@ -1,5 +1,5 @@
 path = require 'path'
-outlinePath = path.join(__dirname, 'fixtures/outline [loo!]!@#$%^&?*()-+.ftml')
+outlinePath = path.join(__dirname, 'fixtures/outline [loo!]!@#$%^&()-+.ftml')
 
 describe 'FoldingText', ->
   [workspaceElement, activationPromise] = []
