@@ -11,6 +11,7 @@ rafdebounce = require './raf-debounce'
 ItemPath = require '../core/item-path'
 Velocity = require 'velocity-animate'
 Mutation = require '../core/mutation'
+UrlUtil = require '../core/url-util'
 shortid = require '../core/shortid'
 Outline = require '../core/outline'
 Selection = require './selection'
@@ -18,6 +19,7 @@ _ = require 'underscore-plus'
 Item = require '../core/item'
 assert = require 'assert'
 path = require 'path'
+url = require 'url'
 
 # Public: Editor for {Outline}s.
 #
@@ -1956,6 +1958,134 @@ class OutlineEditor
 
     {} =
       defaultPath: defaultPath
+
+  ###
+  Section: Links
+  ###
+
+  getURLInfoFromHREF: (href) ->
+    results = {}
+
+    unless href
+      selection = @selection
+      item = selection.startItem
+      offset = selection.startOffset ? 0
+      longestEffectiveRange = {}
+      linkAttributes = item.getElementAtBodyTextIndex('A', offset, null, longestEffectiveRange)
+      if linkAttributes
+        href = linkAttributes?.href
+        results.item = item
+        results.longestEffectiveRange = longestEffectiveRange
+    if href
+      results.href = href
+      resolvedURL = UrlUtil.getURLFromHREFAndBaseURL(href, @outline.getFileURL())
+      if results.protocol = url.parse(resolvedURL).protocol
+        results.resolvedURL = resolvedURL
+
+    results
+
+  openLink: (href) ->
+    urlInfo = @getURLInfoFromHREF(href)
+    if urlInfo.resolvedURL
+      if urlInfo.protocol is 'file:'
+        atom.workspace.open urlInfo.resolvedURL, searchAllPanes: true
+      else
+        require('shell').openExternal(urlInfo.resolvedURL)
+    else if urlInfo.href
+      atom.notifications.addWarning "Can not open relative links until you save the outline."
+    else
+      atom.notifications.addWarning "Could not find link to open."
+
+  copyLink: (href) ->
+    urlInfo = @getURLInfoFromHREF(href)
+    if urlInfo.href
+      atom.clipboard.write(urlInfo.href)
+    else
+      atom.notifications.addWarning "Could not find link to copy."
+
+  editLink: ->
+    urlInfo = @getURLInfoFromHREF()
+    if urlInfo.href
+      item = urlInfo.item
+      location = urlInfo.longestEffectiveRange.location
+      end = urlInfo.longestEffectiveRange.end
+      @moveSelectionRange(item, location, item, end)
+
+    textInput = document.createElement 'ft-text-input'
+    textInput.setText urlInfo.href ? ''
+    textInput.setPlaceholderText 'http://'
+
+    editor = this
+    savedSelection = @selection
+
+    textInput.setDelegate
+      restoreFocus: ->
+        editor.focus()
+        editor.moveSelectionRange savedSelection
+
+      cancelled: ->
+        textInputPanel.destroy()
+
+      confirm: ->
+        linkText = textInput.getText()
+        if savedSelection.isCollapsed
+          insertText = new AttributedString linkText
+          insertText.addAttributeInRange 'A', href: linkText, 0, linkText.length
+          item.replaceBodyTextInRange insertText, offset, 0
+          savedSelection = editor.createSelection item, offset, item, offset + linkText.length
+        else
+          editor._transformSelectedText (eachItem, start, end) ->
+            if linkText
+              eachItem.addElementInBodyTextRange('A', href: linkText, start, end - start)
+            else
+              eachItem.removeElementInBodyTextRange('A', start, end - start)
+        textInputPanel.destroy()
+        @restoreFocus()
+
+    textInputPanel = atom.workspace.addPopoverPanel
+      item: textInput
+      className: 'ft-text-input-panel'
+      target: -> editor.selection.selectionClientRect
+      viewport: -> editor.outlineEditorElement.getBoundingClientRect()
+
+    textInput.focusTextEditor()
+
+  removeLink: ->
+    urlInfo = @getURLInfoFromHREF()
+    if urlInfo.resolvedURL or urlInfo.href
+      item = urlInfo.item
+      location = urlInfo.longestEffectiveRange.location
+      end = urlInfo.longestEffectiveRange.end
+      item.removeElementInBodyTextRange('A', location, end)
+      @moveSelectionRange(item, location, item, end)
+    else
+      atom.notifications.addWarning "Could not find link to remove."
+
+  showLinkInFileManager: (href) ->
+    urlInfo = @getURLInfoFromHREF(href)
+    if urlInfo.resolvedURL
+      if urlInfo.protocol is 'file:'
+        pathname = UrlUtil.getPathnameAndOptionsFromFileURL(urlInfo.resolvedURL).pathname
+        require('shell').showItemInFolder(pathname)
+      else
+        atom.notifications.addWarning "#{urlInfo.resolvedURL} is not a system file path. Try 'Open Link' instead."
+    else if urlInfo.href
+      atom.notifications.addWarning "Can not show relative links until you save the outline."
+    else
+      atom.notifications.addWarning "Could not find link to show."
+
+  openLinkWithFileManager: (href) ->
+    urlInfo = @getURLInfoFromHREF(href)
+    if urlInfo.resolvedURL
+      if urlInfo.protocol is 'file:'
+        pathname = UrlUtil.getPathnameAndOptionsFromFileURL(urlInfo.resolvedURL).pathname
+        require('shell').openItem(pathname)
+      else
+        require('shell').openExternal(urlInfo.resolvedURL)
+    else if urlInfo.href
+      atom.notifications.addWarning "Can not open relative links until you save the outline."
+    else
+      atom.notifications.addWarning "Could not find link to open."
 
   ###
   Section: Util

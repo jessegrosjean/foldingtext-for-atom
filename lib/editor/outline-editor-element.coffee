@@ -766,7 +766,7 @@ class OutlineEditorElement extends HTMLElement
         if linkItemFileURL
           linkItem = @editor.outline.createItem()
           linkItem.bodyHTML = itemHTML
-          linkItemHREF = UrlUtil.relativeFileURLHREF @editor.outline.getFileURL(), linkItemFileURL
+          linkItemHREF = UrlUtil.getHREFFromFileURLs @editor.outline.getFileURL(), linkItemFileURL
           linkItem.addElementInBodyTextRange('A', href: linkItemHREF, 0, linkItem.bodyText.length)
           return [linkItem]
       catch error
@@ -963,28 +963,12 @@ EventRegistery.listen '.ft-handle',
 
 EventRegistery.listen '.ft-body-text a',
   click: (e) ->
-    url = require('url')
     if href = e.target.getAttribute('href')
-      protocol = url.parse(href).protocol
-      unless protocol
-        editorElement = OutlineEditorElement.findOutlineEditorElement e.target
-        outline = editorElement.editor.outline
-        baseURL = outline.getFileURL() ? ''
-
-        unless baseURL # not saved
-          atom.notifications.addWarning 'Unable to follow relative links until you save the outline.'
-          e.stopPropagation()
-          e.preventDefault()
-          return
-
-        href = url.resolve(baseURL, href)
-        protocol = 'file:'
-
-      if protocol is 'file:'
-        atom.workspace.open href,
-          searchAllPanes: true
-        e.stopPropagation()
-        e.preventDefault()
+      editorElement = OutlineEditorElement.findOutlineEditorElement e.target
+      editor = editorElement.editor
+      editor.openLink(href)
+      e.stopPropagation()
+      e.preventDefault()
 
 #
 # Handle Context Menu
@@ -1147,6 +1131,12 @@ atom.commands.add 'ft-outline-editor', EventRegistery.stopEventPropagation(
   'outline-editor:toggle-fully-fold-items': -> @editor.toggleFullyFoldItems()
   'outline-editor:hoist': -> @editor.hoistItem()
   'outline-editor:unhoist': -> @editor.unhoist()
+  'outline-editor:open-link': -> @editor.openLink()
+  'outline-editor:copy-link': -> @editor.copyLink()
+  'outline-editor:edit-link': -> @editor.editLink()
+  'outline-editor:remove-link': -> @editor.removeLink()
+  'outline-editor:show-link-in-file-manager': -> @editor.showLinkInFileManager()
+  'outline-editor:open-link-with-file-manager': -> @editor.openLinkWithFileManager()
   'editor:copy-path': -> @editor.copyPathToClipboard()
 )
 

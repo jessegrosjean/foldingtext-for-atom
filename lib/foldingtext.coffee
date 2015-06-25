@@ -47,7 +47,7 @@ module.exports =
     @subscriptions.add foldingTextService.observeOutlineEditors =>
       unless @workspaceDisplayedEditor
         require './extensions/ui/popovers'
-        require './extensions/edit-link-popover'
+        #require './extensions/edit-link-popover'
         require './extensions/priorities'
         require './extensions/status'
         require './extensions/tags'
@@ -102,7 +102,7 @@ module.exports =
             ItemSerializer ?= require('./core/item-serializer')
             # Only mess with file URLs that have outline mime type
             if ItemSerializer.getMimeTypeForURI(urlObject.pathname)
-              result = require('./core/url-util').fileURLToPathnameAndOptions(urlObject)
+              result = require('./core/url-util').getPathnameAndOptionsFromFileURL(urlObject)
               _ ?= require 'underscore-plus'
               _.extend(result.options, options)
               args[0] = result.pathname

@@ -55,3 +55,29 @@
     },
     { type: 'separator' }
   ]
+
+  'ft-outline-editor a': [
+    { label: 'Open Link', command: 'outline-editor:open-link'}
+    { label: 'Copy Link', command: 'outline-editor:copy-link'}
+    { label: 'Edit Link', command: 'outline-editor:edit-link'}
+    { label: 'Remove Link', command: 'outline-editor:remove-link'}
+    { type: 'separator' }
+  ]
+
+  '.platform-darwin ft-outline-editor a': [
+    { label: 'Show Link in Finder', command: 'outline-editor:show-link-in-file-manager'}
+    { label: 'Open Link with Finder', command: 'outline-editor:open-link-with-file-manager'}
+    { type: 'separator' }
+  ]
+
+  '.platform-win32 ft-outline-editor a': [
+    { label: 'Show Link in Explorer', command: 'outline-editor:show-link-in-file-manager'}
+    { label: 'Open Link with Explorer', command: 'outline-editor:open-link-with-file-manager'}
+    { type: 'separator' }
+  ]
+
+  '.platform-linux ft-outline-editor a': [
+    { label: 'Show Link in File Manager', command: 'outline-editor:show-link-in-file-manager'}
+    { label: 'Open Link with File Manager', command: 'outline-editor:open-link-with-file-manager'}
+    { type: 'separator' }
+  ]
