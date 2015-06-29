@@ -2029,6 +2029,8 @@ class OutlineEditor
       confirm: ->
         linkText = textInput.getText()
         if savedSelection.isCollapsed
+          item = savedSelection.startItem
+          offset = savedSelection.startOffset
           insertText = new AttributedString linkText
           insertText.addAttributeInRange 'A', href: linkText, 0, linkText.length
           item.replaceBodyTextInRange insertText, offset, 0
