@@ -3,6 +3,7 @@
 ## 0.7.1
 
 - Fix error when inserting link on empty line.
+- Fix some problems working with paths and URLs on Windows.
 - Preserve .ftml and .opml file "head" elements through read/write process.
 
 ## 0.7.0

@@ -49,7 +49,15 @@ getURLFromHREFAndBaseURL = (href, baseURL, options={}) ->
 getFileURLFromPathnameAndOptions = (pathname, options) ->
   pathname = path.resolve(pathname)
   pathname = pathname.replace(/\\/g, '/')
-  pathname = (encodeURIComponent(each) for each in pathname.split('/')).join('/')
+
+  encodedPathSegments = []
+  for each in pathname.split('/')
+    if pathname.match(/^[a-zA-Z]:/)
+      # Don't encode Windows drive letter
+      encodedPathSegments.push(each)
+    else
+      encodedPathSegments.push(encodeURIComponent(each))
+  pathname = encodedPathSegments.join('/')
 
   options ?= {}
   hash = options.hash
