@@ -1539,29 +1539,131 @@ class OutlineEditor
     undoManager.setActionName('Move Items')
 
   ###
+  Section: Move Lines
+  ###
+
+  indentLines: ->
+    @moveLinesRight()
+
+  outdentLines: ->
+    @moveLinesLeft()
+
+  moveLinesUp: (items) ->
+    @_moveLinesInDirection(items, 'up')
+
+  moveLinesDown: (items) ->
+    @_moveLinesInDirection(items, 'down')
+
+  moveLinesLeft: (items) ->
+    @_moveLinesInDirection(items, 'left')
+
+  moveLinesRight: (items) ->
+    @_moveLinesInDirection(items, 'right')
+
+  _moveLinesInDirection: (items, direction) ->
+    items ?= @selection.items
+    if items.length
+      firstItem = items[0]
+      itemsDepths = (each.depth for each in items)
+      endItem = items[items.length - 1]
+      referenceItem = null
+      depthDelta = 0
+
+      switch direction
+        when 'up'
+          referenceItem = @getPreviousVisibleItem(firstItem)
+          unless referenceItem
+            return
+        when 'down'
+          referenceItem = @getNextVisibleItem(@getNextVisibleItem(endItem))
+        when 'left'
+          depthDelta = -1
+          referenceItem = endItem.nextItem
+        when 'right'
+          depthDelta = 1
+          referenceItem = endItem.nextItem
+
+    @outline.beginUpdates()
+
+    if depthDelta isnt 0
+      for each, i in itemsDepths
+        itemsDepths[i] += depthDelta
+
+    @outline.removeItems(items)
+    @outline.insertItemsAtDepthsBefore(items, itemsDepths, referenceItem)
+
+    expandItems = []
+    disposable = @outline.onDidChange (mutations) ->
+      for each in mutations
+        if each.target.hasChildren
+          expandItems.push each.target
+
+    @outline.endUpdates =>
+      @setExpanded(expandItems)
+      disposable.dispose()
+
+  ###
   Section: Delete
   ###
 
-  deleteBackward: ->
+  deleteCharacterBackward: ->
     @delete('backward', 'character')
 
-  deleteBackwardByDecomposingPreviousCharacter: ->
+  deleteCharacterBackwardByDecomposingPreviousCharacter: ->
     @delete('backward', 'character')
+
+  deleteCharacterForward: ->
+    @delete('forward', 'character')
 
   deleteWordBackward: ->
     @delete('backward', 'word')
 
-  deleteToBeginningOfLine: ->
-    @delete('backward', 'lineboundary')
-
-  deleteToEndOfParagraph: ->
-    @delete('forward', 'paragraphboundary')
-
-  deleteForward: ->
-    @delete('forward', 'character')
-
   deleteWordForward: ->
     @delete('forward', 'word')
+
+  deleteLineBoundaryBackward: ->
+    @delete('backward', 'lineboundary')
+
+  deleteLineBoundaryForward: ->
+    @delete('forward', 'lineboundary')
+
+  deleteParagraphBoundaryBackward: ->
+    @delete('backward', 'paragraphboundary')
+
+  deleteParagraphBoundaryForward: ->
+    @delete('forward', 'paragraphboundary')
+
+  deleteParagraphsBackward: ->
+    #@delete('backward', 'paragraph')
+
+    items = @selection.items
+    if items.length
+      parentWasExpandedItemIDs = {}
+      for each in items
+        if @isExpanded(each)
+          for eachChild in each.children
+            parentWasExpandedItemIDs[eachChild.id] = true
+
+      expandItems = []
+      disposable = @outline.onDidChange (mutations) ->
+        for eachMutation in mutations
+          if eachMutation.type is Mutation.CHILDREN_CHANGED
+            for each in eachMutation.addedItems
+              if parentWasExpandedItemIDs[each.id]
+                expandItems.push(each.parent)
+
+      #undoManager = @outline.undoManager
+      #undoManager.beginUndoGrouping()
+      @outline.beginUpdates()
+      @outline.removeItems(items)
+      @outline.endUpdates =>
+        @setExpanded(expandItems)
+        disposable.dispose()
+      #undoManager.endUndoGrouping()
+      #undoManager.setActionName('Delete Lines')
+
+  deleteParagraphsForward: ->
+    @delete('forward', 'paragraph')
 
   deleteItemsBackward: ->
     @delete('backward', 'item')
@@ -1603,7 +1705,8 @@ class OutlineEditor
             startItem.replaceBodyTextInRange('', startOffset, endOffset - startOffset)
           else
             startItem.replaceBodyTextInRange(endItem.getAttributedBodyTextSubstring(endOffset, -1), startOffset, -1)
-            startItem.appendChildren(endItem.children)
+            if endItem.hasChildren
+              startItem.appendChildren(endItem.children)
             for each in selectionRange.items[1...]
               each.removeFromParent()
 

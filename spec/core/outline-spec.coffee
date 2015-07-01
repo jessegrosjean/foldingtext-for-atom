@@ -80,7 +80,9 @@ describe 'Outline', ->
       newItemChild.lastChild.should.equal(four)
 
     it 'remove item leaving children', ->
+      outline.undoManager.beginUndoGrouping()
       outline.removeItem(two)
+      outline.undoManager.endUndoGrouping()
       two.isInOutline.should.equal(false)
       three.isInOutline.should.equal(true)
       three.parent.should.equal(one)
@@ -88,6 +90,10 @@ describe 'Outline', ->
       four.isInOutline.should.equal(true)
       four.parent.should.equal(one)
       four.depth.should.equal(3)
+      outline.undoManager.undo()
+      two.isInOutline.should.equal(true)
+      two.firstChild.should.equal(three)
+      two.lastChild.should.equal(four)
 
   describe 'Search', ->
     it 'should find DOM using xpath', ->

@@ -374,7 +374,12 @@ class ItemRenderer
           else
             renderedChildrenUL.removeChild eachChildRenderedLI
 
-      if addedChildren.length
+      # Only render added children if they aren't already present in the
+      # outline. We are avoiding case where the update contains a number of
+      # mutations, first adding a parent node, and then adding its children.
+      # If we don't do this check the children end up getting added twice.
+      childrenAlreadyVisible = @renderedLIForItem(addedChildren[0])?
+      if addedChildren.length and not childrenAlreadyVisible
         childrenDepth = item.depth + 1
         nextVisibleSibling = nextSibling
         unless editor.isVisible nextSibling

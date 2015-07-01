@@ -285,6 +285,74 @@ describe 'OutlineEditor', ->
         editor.selection.focusOffset.should.eql(3)
         two.isInOutline.should.be.false
 
+    describe 'Lines', ->
+      describe 'Moving', ->
+        it 'should move lines up', ->
+          editor.setExpanded(one)
+          editor.setExpanded(two)
+          editor.moveSelectionRange(five)
+          editor.moveLinesUp()
+          editor.isExpanded(five).should.equal(true)
+          four.parent.should.equal(five)
+          six.parent.should.equal(five)
+          five.parent.should.equal(one)
+          five.previousSibling.should.equal(two)
+
+        it 'should move lines down', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(five)
+          editor.moveLinesDown()
+          six.parent.should.equal(two)
+          five.parent.should.equal(one)
+          five.previousSibling.should.equal(two)
+
+        it 'should move lines down and expand if capture children', ->
+          three.removeFromParent()
+          four.removeFromParent()
+          editor.setExpanded(one)
+          editor.setExpanded(five)
+          editor.moveSelectionRange(two)
+          editor.moveLinesDown()
+          six.parent.should.equal(two)
+          two.previousSibling.should.equal(five)
+          editor.isExpanded(two).should.equal(true)
+
+        it 'should move lines right', ->
+          editor.setExpanded(one)
+          editor.setExpanded(two)
+          editor.moveSelectionRange(five)
+          editor.moveLinesRight()
+          six.parent.should.equal(two)
+          five.parent.should.equal(two)
+          five.previousSibling.should.equal(four)
+          five.nextSibling.should.equal(six)
+
+        it 'should move lines left', ->
+          editor.setExpanded(one)
+          editor.setExpanded(two)
+          editor.moveSelectionRange(five)
+          editor.moveLinesLeft()
+          six.parent.should.equal(five)
+          six.indent.should.equal(2)
+          five.parent.should.equal(root)
+          five.previousSibling.should.equal(one)
+
+      describe 'Deleting', ->
+        it 'should delete lines and reparent children to previous sibling', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(five)
+          editor.deleteParagraphsBackward()
+          six.parent.should.equal(two)
+          six.indent.should.equal(1)
+
+        it 'should delete lines and reparent children to parent if no previous sibling', ->
+          editor.setExpanded(one)
+          editor.moveSelectionRange(two)
+          editor.deleteParagraphsBackward()
+          three.parent.should.equal(one)
+          three.indent.should.equal(2)
+          four.parent.should.equal(one)
+          four.indent.should.equal(2)
 
   describe 'Formatting', ->
     it 'should toggle formatting', ->
