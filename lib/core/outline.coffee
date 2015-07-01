@@ -452,7 +452,9 @@ class Outline
       itemParent = itemParent.parent
       itemParentDepth = itemParent.depth
 
-    # 3. Reparent trailing sub-branches to new item.
+    # 3. Record and remove trailing sub-branches.
+    reparentChildren = []
+    reparentChildrenIndents = []
     if nextBranch
       while nextBranch and (nextBranch.depth > depth)
         if nextBranch is itemNextSibling
@@ -460,13 +462,20 @@ class Outline
 
         nextNextBranch = nextBranch.nextBranch
         nextBranchOriginalDepth = nextBranch.depth
-        item.appendChild(nextBranch)
-        nextBranch.indent = nextBranchOriginalDepth - depth
+        nextBranch.removeFromParent()
+        reparentChildren.push(nextBranch)
+        reparentChildrenIndents.push(nextBranchOriginalDepth - depth)
         nextBranch = nextNextBranch
 
     # 4. Insert the item and update indent
     itemParent.insertChildBefore(item, itemNextSibling)
     item.indent += depth - item.depth
+
+    # 5. Re-insert any trailing sub-branches
+    if reparentChildren.length
+      item.appendChildren(reparentChildren)
+      for each, i in reparentChildren
+        each.indent = reparentChildrenIndents[i]
 
     @endUpdates()
 
@@ -491,7 +500,10 @@ class Outline
     previousItem = item.previousItem
     nextBranch = item.nextBranch
     children = item.children
-    childrenDepths = (each.depth for each in children)
+    childrenDepths = []
+    for each in children
+      childrenDepths.push(each.depth)
+      each.removeFromParent()
     item.removeFromParent()
     @insertItemsAtDepthsBefore(children, childrenDepths, nextBranch)
     @endUpdates()
