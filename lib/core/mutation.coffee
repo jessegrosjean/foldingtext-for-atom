@@ -68,12 +68,15 @@ class Mutation
   nextSibling: null
 
   @createAttributeMutation: (target, attributeName, attributeOldValue) ->
+    assert.ok(attributeName, 'Expect valid attribute name')
     mutation = new Mutation target, Mutation.ATTRIBUTE_CHANGED
     mutation.attributeName = attributeName
     mutation.attributeOldValue = attributeOldValue
     mutation
 
   @createBodyTextMutation: (target, insertedTextLocation, insertedTextLength, replacedText) ->
+    assert.ok(insertedTextLocation?, 'Expect valid insertedTextLocation')
+    assert.ok(insertedTextLength?, 'Expect valid insertedTextLength')
     mutation = new Mutation target, Mutation.BODT_TEXT_CHANGED
     mutation.insertedTextLocation = insertedTextLocation
     mutation.insertedTextLength = insertedTextLength
@@ -81,6 +84,7 @@ class Mutation
     mutation
 
   @createChildrenMutation: (target, addedItems, removedItems, previousSibling, nextSibling) ->
+    assert.ok(addedItems.length > 0 or removedItems.length > 0, 'Children added or removed')
     mutation = new Mutation target, Mutation.CHILDREN_CHANGED
     mutation.addedItems = addedItems or []
     mutation.removedItems = removedItems or []
