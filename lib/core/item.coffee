@@ -745,7 +745,7 @@ class Item
 
     childrenUL.insertBefore(documentFragment, referenceSiblingLI)
 
-    for each in children
+    for each in children by -1
       each.indent = childIndent
 
     if isInOutline
