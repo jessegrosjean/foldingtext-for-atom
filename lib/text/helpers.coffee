@@ -33,4 +33,33 @@ module.exports =
         pattern += pattern
       result + pattern
 
+  parents: (node) ->
+    nodes = [node]
+    while node = node.parent
+      nodes.unshift(node)
+    nodes
+
+  shortestPath: (node1, node2) ->
+    if node1 is node2
+      [node1]
+    else
+      parents1 = parents(node1)
+      parents2 = parents(node2)
+      commonDepth = 0
+      while parents1[commonDepth] is parents2[commonDepth]
+        commonDepth++
+      parents1.splice(0, commonDepth - 1)
+      parents2.splice(0, commonDepth)
+      parents1.concat(parents2)
+
+  commonAncestor: (node1, node2) ->
+    if node1 is node2
+      [node1]
+    else
+      parents1 = parents(node1)
+      parents2 = parents(node2)
+      while parents1[depth] is parents2[depth]
+        depth++
+      parents1[depth - 1]
+
   newlineRegex: /\r\n|\n|\r/g

@@ -154,7 +154,7 @@ class Range
   # Public: Get the number of rows in this range.
   #
   # Returns a {Number}.
-  getRowCount: ->
+  getLineCount: ->
     @end.row - @start.row + 1
 
   # Public: Returns an array of all rows in the range.

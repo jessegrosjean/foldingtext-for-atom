@@ -1,7 +1,16 @@
 class Line
 
+  @parent: null
+  @marks: null
+  @text: null
+
+  @data: null
+  @characterCount: null
+
   constructor: (@data, @characterCount) ->
-    @parent = null
+
+  getLineCount: ->
+    1
 
   getCharacterCount: ->
     @characterCount + 1 # \n
@@ -13,5 +22,14 @@ class Line
     while each
       each.characterCount += delta
       each = each.parent
+
+  addMark: (mark) ->
+    @marks ?= []
+    @marks.push(mark)
+
+  removeMark: (mark) ->
+    @marks.splice(@marks.indexOf(mark), 1)
+
+  replaceTextInRange: (insert, start, end) ->
 
 module.exports = Line

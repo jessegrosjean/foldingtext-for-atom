@@ -1,9 +1,9 @@
 {repeat, replace, leadingTabs} = require './helpers'
 {Emitter, CompositeDisposable} = require 'atom'
-TextBuffer = require './TextBuffer'
+Buffer = require './Buffer'
 Range = require './Range'
 
-class OutlineTextBuffer extends TextBuffer
+class OutlineBuffer extends Buffer
 
   hoistedItem: null
 
@@ -79,4 +79,4 @@ class OutlineTextBuffer extends TextBuffer
     item.indent = leadingTabs
     new Line(item, text.length)
 
-module.exports = OutlineTextBuffer
+module.exports = OutlineBuffer
