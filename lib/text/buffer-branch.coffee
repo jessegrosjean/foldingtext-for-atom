@@ -1,10 +1,7 @@
 BufferLeaf = require './buffer-leaf'
 Range = require './range'
-Mark = require './mark'
 
 class BufferBranch
-
-  marks: null
 
   constructor: (@children) ->
     @parent = null
@@ -115,73 +112,6 @@ class BufferBranch
         start -= childLineCount
       i++
     @maybeCollapse(deleteCount)
-
-  ###
-  Section: Marks
-  ###
-
-  getMarks: ->
-
-  iterateMarks: (range, operation) ->
-    if @marks
-      for each in @marks
-        if range.intersectsWith(new Range(each.start, each.end))
-          operation(each)
-
-    for child in @children
-      childLineCount = child.getLineCount()
-      if (start < childLineCount)
-        used = Math.min(count, childLineCount - start)
-        child.iterateMarkers(start, used, operation)
-        if (count -= used) is 0
-          break
-        start = 0
-      else
-        start -= childLineCount
-
-  markRange: (range, properties) ->
-    childStartRow = range.start.row
-    childEndRow = range.end.row
-
-    for child in @children
-      childLineCount = child.getLineCount()
-      if childStartRow < childLineCount
-        if childEndRow <= childLineCount
-          range.start.row = childStartRow
-          range.end.row = childEndRow
-          return child.markRange(range, properties)
-        else
-          return new Mark(this, range, properties)
-      else
-        childStartRow -= childLineCount
-        childEndRow -= childLineCount
-
-  _getMarksRange: (mark) ->
-    row = @getRow()
-    range = mark.range
-    new Range([row + range.start.row, range.start.column], [row + range.end.row, range.end.column])
-
-  iterateBufferContents: (start, count, markContext, markStack=[], operation) ->
-    # push mark
-    # pop mark
-    # begin line, with number and offset
-    # end line
-    # emit text
-    #
-    # operation(line, marks, row, column, text)
-
-    markContext.pushMarks(@marks)
-
-    for child in @children
-      childLineCount = child.getLineCount()
-      if start < childLineCount
-        used = Math.min(count, childLineCount - start)
-        child.iterateBufferContents(start, used, markStack, operation)
-        if (count -= used) is 0
-          break
-        start = 0
-      else
-        start -= childLineCount
 
   ###
   Section: Tree Balance

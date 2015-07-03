@@ -1,6 +1,6 @@
-{replace, newlineRegex} = require './helpers'
 BufferBranch = require './buffer-branch'
 BufferLeaf = require './buffer-leaf'
+{newlineRegex} = require './helpers'
 Range = require './range'
 Point = require './point'
 Line = require './line'
@@ -19,8 +19,8 @@ class Buffer extends BufferBranch
       @cachedText
     else
       textLines = []
-      @iterateLines 0, @getLineCount(), (line) =>
-        textLines.push(@getLineText(line))
+      @iterateLines 0, @getLineCount(), (line) ->
+        textLines.push(line.getText())
       @cachedText = textLines.join('\n')
       @cachedText
 
@@ -30,13 +30,13 @@ class Buffer extends BufferBranch
     endRow = range.end.row
 
     if startRow is endRow
-      @getLineText(@getLine(startRow))[range.start.column...range.end.column]
+      @getLine(startRow).getText()[range.start.column...range.end.column]
     else
       text = ''
       lines = []
       row = startRow
-      @iterateLines startRow, (endRow - startRow) + 1, (line) =>
-        lineText = @getLineText(line)
+      @iterateLines startRow, (endRow - startRow) + 1, (line) ->
+        lineText = line.getText()
         if row is startRow
           lines.push lineText[range.start.column...]
         else if row is endRow
@@ -59,13 +59,13 @@ class Buffer extends BufferBranch
     endLine = @getLine(endRow)
 
     if newLines.length is 1 and effectsSingleLine
-      @replaceLineTextInRange(startLine, startColumn, endColumn - startColumn, newLines.shift())
+      startLine.setTextInRange(newLines.shift(), startColumn, endColumn)
     else
       # 1. Save end suffix
-      endSuffix = @getLineText(endLine).substr(endColumn)
+      endSuffix = endLine.substr(endColumn)
 
       # 2. Replace in first line
-      @replaceLineTextInRange(startLine, startColumn, @getLineText(startLine).length - startColumn, newLines.shift())
+      startLine.setTextInRange(newLines.shift(), startColumn, startLine.getText().length)
 
       # 3. Remove all trialing effected lines
       removeLineCount = endRow - startRow
@@ -81,8 +81,8 @@ class Buffer extends BufferBranch
 
       # 5. Append end suffix to last inserted line
       if endSuffix
-        lastLine = if insertLines then insertLines[insertLines.length - 1] else startLine
-        @replaceLineTextInRange(lastLine, @getLineText(lastLine).length, 0, endSuffix)
+        lastLine = insertLines?[insertLines.length - 1] ? startLine
+        lastLine.append(endSuffix)
 
     @cachedText = null
 
@@ -123,16 +123,6 @@ class Buffer extends BufferBranch
     @cachedText = null
 
   ###
-  Section: Marks
-  ###
-
-  markRange: (range, properties) ->
-    super(@clipRange(Range.fromObject(range)), properties)
-
-  getMarksInRange: (range) ->
-    super(@clipRange(Range.fromObject(range)), properties)
-
-  ###
   Section: Range Details
   ###
 
@@ -150,7 +140,7 @@ class Buffer extends BufferBranch
 
   getEndPosition: ->
     lastRow = @getLastRow()
-    new Point(lastRow, @getLineText(@getLine(lastRow)).length)
+    new Point(lastRow, @getLine(lastRow).getText().length)
 
   getCharacterCount: ->
     if @getLineCount() > 0
@@ -178,7 +168,7 @@ class Buffer extends BufferBranch
     else if row > @getLastRow()
       @getEndPosition()
     else
-      column = Math.min(Math.max(column, 0), @getLineText(@getLine(row)).length)
+      column = Math.min(Math.max(column, 0), @getLine(row).getText().length)
       if column is position.column
         position
       else
@@ -188,14 +178,7 @@ class Buffer extends BufferBranch
   Section: Text Line Overrides
   ###
 
-  getLineText: (line) ->
-    line.data
-
-  replaceLineTextInRange: (line, start, length, text) ->
-    line.data = replace(line.data, start, start + length, text)
-    line.setCharacterCount(line.data.length)
-
   createLineFromText: (text) ->
-    new Line(text, text.length)
+    new Line(text)
 
 module.exports = Buffer
