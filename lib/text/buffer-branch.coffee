@@ -1,6 +1,8 @@
-LinesLeaf = require './lines-leaf'
+BufferLeaf = require './buffer-leaf'
+Range = require './range'
+Mark = require './mark'
 
-class LinesBranch
+class BufferBranch
 
   marks: null
 
@@ -33,6 +35,24 @@ class LinesBranch
       else
         return each.getLine(row)
 
+  getRow: (child) ->
+    row = @parent?.getRow(this) or 0
+    if child
+      for each in @children
+        if each is child
+          break
+        row += each.getLineCount()
+    row
+
+  getCharacterOffset: (child) ->
+    characterOffset = @parent?.getCharacterOffset(this) or 0
+    if child
+      for each in @children
+        if each is child
+          break
+        characterOffset += each.getCharacterCount()
+    characterOffset
+
   getLineRowColumn: (characterOffset, row=0) ->
     for each in @children
       childCharacterCount = each.getCharacterCount()
@@ -64,10 +84,10 @@ class LinesBranch
       childLineCount = child.getLineCount()
       if start <= childLineCount
         child.insertLines(start, lines)
-        if child instanceof LinesLeaf and child.children.length > 50
+        if child instanceof BufferLeaf and child.children.length > 50
           while child.children.length > 50
             spilled = child.children.splice(child.children.length - 25, 25)
-            newleaf = new LinesLeaf(spilled)
+            newleaf = new BufferLeaf(spilled)
             child.characterCount -= newleaf.characterCount
             @children.splice(i + 1, 0, newleaf)
             newleaf.parent = this
@@ -100,25 +120,12 @@ class LinesBranch
   Section: Marks
   ###
 
-  markLines: (startPoint, endPoint, properties) ->
-    childStart = startPoint.row
-    childEnd = endPoint.row
+  getMarks: ->
 
-    for child in @children
-      childLineCount = child.getLineCount()
-      if childStart < childLineCount
-        if (childStart + count) <= childLineCount
-          return child.markLines(childStart, count, operation)
-        else
-          return @addMark(new Mark(this, startPoint, endPoint, properties))
-      else
-        childStart -= childLineCount
-        childEnd -= childLineCount
-
-  iterateMarks: (startPoint, endPoint, operation) ->
+  iterateMarks: (range, operation) ->
     if @marks
       for each in @marks
-        if each.startLine <= endLine and each.endLine >= startLine
+        if range.intersectsWith(new Range(each.start, each.end))
           operation(each)
 
     for child in @children
@@ -126,6 +133,50 @@ class LinesBranch
       if (start < childLineCount)
         used = Math.min(count, childLineCount - start)
         child.iterateMarkers(start, used, operation)
+        if (count -= used) is 0
+          break
+        start = 0
+      else
+        start -= childLineCount
+
+  markRange: (range, properties) ->
+    childStartRow = range.start.row
+    childEndRow = range.end.row
+
+    for child in @children
+      childLineCount = child.getLineCount()
+      if childStartRow < childLineCount
+        if childEndRow <= childLineCount
+          range.start.row = childStartRow
+          range.end.row = childEndRow
+          return child.markRange(range, properties)
+        else
+          return new Mark(this, range, properties)
+      else
+        childStartRow -= childLineCount
+        childEndRow -= childLineCount
+
+  _getMarksRange: (mark) ->
+    row = @getRow()
+    range = mark.range
+    new Range([row + range.start.row, range.start.column], [row + range.end.row, range.end.column])
+
+  iterateBufferContents: (start, count, markContext, markStack=[], operation) ->
+    # push mark
+    # pop mark
+    # begin line, with number and offset
+    # end line
+    # emit text
+    #
+    # operation(line, marks, row, column, text)
+
+    markContext.pushMarks(@marks)
+
+    for child in @children
+      childLineCount = child.getLineCount()
+      if start < childLineCount
+        used = Math.min(count, childLineCount - start)
+        child.iterateBufferContents(start, used, markStack, operation)
         if (count -= used) is 0
           break
         start = 0
@@ -143,14 +194,14 @@ class LinesBranch
     current = this
     while current.children.length > 10
       spilled = current.children.splice(current.children.length - 5, 5)
-      sibling = new LinesBranch(spilled)
+      sibling = new BufferBranch(spilled)
       if current.parent
         current.lineCount -= sibling.lineCount
         current.characterCount -= sibling.characterCount
         index = current.parent.children.indexOf(current)
         current.parent.children.splice(index + 1, 0, sibling)
       else
-        copy = new LinesBranch(current.children)
+        copy = new BufferBranch(current.children)
         copy.parent = current
         current.children = [copy, sibling]
         current = copy
@@ -161,14 +212,14 @@ class LinesBranch
     if (@lineCount - deleteCount) > 25
       return
 
-    if @children.length > 1 or not (@children[0] instanceof LinesLeaf)
+    if @children.length > 1 or not (@children[0] instanceof BufferLeaf)
       lines = []
       @collapse(lines)
-      @children = [new LinesLeaf(lines)]
+      @children = [new BufferLeaf(lines)]
       @children[0].parent = this
 
   collapse: (lines) ->
     for each in @children
       each.collapse(lines)
 
-module.exports = LinesBranch
+module.exports = BufferBranch

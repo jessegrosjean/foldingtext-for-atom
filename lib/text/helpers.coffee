@@ -1,6 +1,7 @@
 SpliceArrayChunkSize = 100000
 
 module.exports =
+
   spliceArray: (originalArray, start, length, insertedArray=[]) ->
     if insertedArray.length < SpliceArrayChunkSize
       originalArray.splice(start, length, insertedArray...)

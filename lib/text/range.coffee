@@ -1,5 +1,5 @@
-Point = require './point'
 {newlineRegex} = require './helpers'
+Point = require './point'
 
 # Public: Represents a region in a buffer in row/column coordinates.
 #
