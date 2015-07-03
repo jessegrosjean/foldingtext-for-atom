@@ -87,8 +87,8 @@ fdescribe 'Buffer', ->
 
     it 'updates line character counts', ->
       buffer.insertLines(0, lines)
-      lines[0].setCharacterCount(0) # -5
-      lines[241].setCharacterCount(10) # +5
+      lines[0].setTextInRange('', 0, 5) # -5
+      lines[241].setTextInRange('12345', 5, 5) # +5
       expect(buffer.getText().length).toBe((500 * 6) - 1)
       expect(buffer.getCharacterCount()).toBe((500 * 6) - 1)
 
@@ -150,24 +150,3 @@ fdescribe 'Buffer', ->
       expect(buffer.getLineRowColumn(buffer.getCharacterCount() - 6)).toEqual({line: lines[498], row: 498, column: 5})
       expect(buffer.getLineRowColumn(buffer.getCharacterCount() - 1)).toEqual({line: lines[499], row: 499, column: 4})
       expect(buffer.getLineRowColumn(buffer.getCharacterCount())).toEqual({line: lines[499], row: 499, column: 5})
-
-  describe 'Marks', ->
-
-    it 'marks range in single line', ->
-      buffer.insertLines(0, lines)
-      mark = buffer.markRange([[0, 0], [0, 1]], {})
-      expect(mark.getRange().isEqual([[0, 0], [0, 1]])).toBe(true)
-      mark = buffer.markRange([[299, 3], [299, 2]], {})
-      expect(mark.getRange().isEqual([[299, 3], [299, 2]])).toBe(true)
-
-    it 'marks range in single leaf spanning multiple lines', ->
-      buffer.insertLines(0, lines)
-      mark = buffer.markRange([[0, 0], [1, 1]], {})
-      expect(mark.getRange().isEqual([[0, 0], [1, 1]])).toBe(true)
-      mark = buffer.markRange([[23, 4], [4, 1]], {})
-      expect(mark.getRange().isEqual([[23, 4], [4, 1]])).toBe(true)
-
-    it 'marks range in single branch spanning multiple leaves', ->
-      buffer.insertLines(0, lines)
-      mark = buffer.markRange([[0, 0], [499, 5]], {})
-      expect(mark.getRange().isEqual([[0, 0], [499, 5]])).toBe(true)
