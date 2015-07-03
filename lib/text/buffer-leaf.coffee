@@ -1,4 +1,7 @@
-class LinesLeaf
+Range = require './range'
+Mark = require './mark'
+
+class BufferLeaf
 
   marks: null
 
@@ -22,6 +25,21 @@ class LinesLeaf
 
   getLine: (row) ->
     @children[row]
+
+  getRow: (child) ->
+    row = @parent?.getRow(this) or 0
+    if child
+      row += @children.indexOf(child)
+    row
+
+  getCharacterOffset: (child) ->
+    characterOffset = @parent?.getCharacterOffset(this) or 0
+    if child
+      for each in @children
+        if each is child
+          break
+        characterOffset += each.getCharacterCount()
+    characterOffset
 
   getLineRowColumn: (characterOffset, row=0) ->
     for each in @children
@@ -65,13 +83,17 @@ class LinesLeaf
   Section: Marks
   ###
 
-  markLines: (startLine, startColumn, endLine, endColumn, properties) ->
-    if start is end
-      line = @children[start]
-      line.addMark(new Mark(line, 0, startColumn, 0, endColumn))
+  markRange: (range, properties) ->
+    if range.isSingleLine()
+      line = @children[range.start.row]
+      line.markRange(range.start.column, range.end.column, properties)
     else
-      @marks ?= []
-      @marks.push(new Mark(this, startLine, startColumn, endLine, endColumn, properties))
+      new Mark(this, range, properties)
+
+  _getMarksRange: (mark) ->
+    row = @getRow()
+    range = mark.range
+    new Range([row + range.start.row, range.start.column], [row + range.end.row, range.end.column])
 
   iterateMarks: (startLine, startColumn, endLine, endColumn, operation) ->
     if start is end
@@ -90,18 +112,10 @@ class LinesLeaf
           @children[i].iterateMarks(0, null, 0, null, operation)
 
   ###
-  Section: Tree Balance
+  Section: Util
   ###
-
-  maybeSpill: ->
-    while @children.length > 50
-      spilled = @children.splice(@children.length - 25, 25)
-      newleaf = new LinesLeaf(spilled)
-      @characterCount -= newleaf.characterCount
-      @parent.children.splice(i + 1, 0, newleaf)
-      newleaf.parent = @parent
 
   collapse: (lines) ->
     @children.push.apply(lines, @children)
 
-module.exports = LinesLeaf
+module.exports = BufferLeaf

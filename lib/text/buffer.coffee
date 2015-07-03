@@ -1,14 +1,14 @@
 {replace, newlineRegex} = require './helpers'
-LinesBranch = require './lines-branch'
-LinesLeaf = require './lines-leaf'
+BufferBranch = require './buffer-branch'
+BufferLeaf = require './buffer-leaf'
 Range = require './range'
 Point = require './point'
 Line = require './line'
 
-class Buffer extends LinesBranch
+class Buffer extends BufferBranch
 
   constructor: ->
-    super([new LinesLeaf([])])
+    super([new BufferLeaf([])])
 
   ###
   Section: Text
@@ -97,30 +97,10 @@ class Buffer extends LinesBranch
       throw new Error("Invalide line number: #{row}");
     super(row)
 
-  getRow: (lineOrNode) ->
-    row = 0
-    while parent = lineOrNode.parent
-      for each in parent.children
-        if each is lineOrNode
-          break
-        row += each.getLineCount()
-      lineOrNode = parent
-    row
-
   getLineRowColumn: (characterOffset) ->
     if characterOffset < 0 or characterOffset > @getCharacterCount()
       throw new Error("Invalide character offset: #{characterOffset}");
     super(characterOffset)
-
-  getCharacterOffset: (lineOrNode) ->
-    character = 0
-    while parent = lineOrNode.parent
-      for each in parent.children
-        if each is lineOrNode
-          break
-        character += each.getCharacterCount()
-      lineOrNode = parent
-    character
 
   iterateLines: (row, count, operation) ->
     end = row + count
@@ -147,13 +127,10 @@ class Buffer extends LinesBranch
   ###
 
   markRange: (range, properties) ->
-    startLine = @getLine(range.start.row)
-    startColumn = range.start.column
-    endLine = if range.isSingleLine then startLine else @getLine(range.end.row)
-    endColumn = range.end.column
-    new Mark(this, startLine, startColumn, endLine, endColumn, properties)
+    super(@clipRange(Range.fromObject(range)), properties)
 
   getMarksInRange: (range) ->
+    super(@clipRange(Range.fromObject(range)), properties)
 
   ###
   Section: Range Details

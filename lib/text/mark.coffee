@@ -1,18 +1,18 @@
 class Mark
 
   parent: null
-  startCharacter: null
-  endCharacter: null
+  range: null
   properties: null
 
-  constructor: (@parent, @startCharacter, @endCharacter, @properties) ->
+  constructor: (@parent, @range, @properties) ->
+    @parent.marks ?= []
+    @parent.marks.push(this)
 
   destroy: ->
-    parent.removeMark(this)
+    marks = @parent.marks
+    marks.splice(marks.indexOf(this), 1)
 
   getRange: ->
-    anchorRow = @buffer.getRow(@anchorLine)
-    headRow = if @anchorLine is @headLine then anchorRow else @buffer.getRow(@headLine)
-    new Range([anchorRow, @anchorColumn], [headRow, @headColumn])
+    @parent._getMarksRange(this)
 
 module.exports = Mark
