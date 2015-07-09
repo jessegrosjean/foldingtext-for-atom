@@ -73,7 +73,7 @@ editTags = (editor) ->
           tokens = null unless tokens.length > 0
           selectedItems[0].setAttribute('data-tags', tokens)
         else if selectedItems.length > 1
-          editor.outline.beginUpdates()
+          editor.outline.beginChanges()
           for each in selectedItems
             eachTags = each.getAttribute('data-tags', true) or []
             changed = false
@@ -89,7 +89,7 @@ editTags = (editor) ->
               eachTags = null unless eachTags.length > 0
               each.setAttribute('data-tags', eachTags)
 
-          editor.outline.endUpdates()
+          editor.outline.endChanges()
 
         tokenInputPanel.destroy()
         @restoreFocus()
@@ -109,11 +109,11 @@ clearTags = (editor) ->
   selectedItems = editor.selection.items
 
   if selectedItems.length
-    outline.beginUpdates()
+    outline.beginChanges()
     undoManager.beginUndoGrouping()
     for each in selectedItems
       each.removeAttribute 'data-tags'
-    outline.endUpdates()
+    outline.endChanges()
     undoManager.endUndoGrouping()
 
 atom.commands.add 'ft-outline-editor',

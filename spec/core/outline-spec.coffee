@@ -46,7 +46,7 @@ describe 'Outline', ->
   describe 'Insert & Remove Items', ->
     it 'insert items at indent level 1 by default', ->
       newItem = outline.createItem('new')
-      outline.insertItemAtDepthBefore(newItem, undefined, two)
+      outline.insertItemBefore(newItem, two)
       newItem.depth.should.equal(1)
       newItem.previousSibling.should.equal(one)
       newItem.firstChild.should.equal(two)
@@ -56,7 +56,8 @@ describe 'Outline', ->
       three.indent = 3
       four.indent = 2
       newItem = outline.createItem('new')
-      outline.insertItemAtDepthBefore(newItem, 3, three)
+      newItem.indent = 3
+      outline.insertItemBefore(newItem, three)
       newItem.depth.should.equal(3)
       three.depth.should.equal(5)
       four.depth.should.equal(4)
@@ -70,7 +71,8 @@ describe 'Outline', ->
       newItem = outline.createItem('new')
       newItemChild = outline.createItem('new child')
       newItem.appendChild(newItemChild)
-      outline.insertItemAtDepthBefore(newItem, 3, three)
+      newItem.indent = 3
+      outline.insertItemBefore(newItem, three)
       newItem.depth.should.equal(3)
       newItemChild.depth.should.equal(4)
       three.depth.should.equal(6)
@@ -94,6 +96,7 @@ describe 'Outline', ->
       two.isInOutline.should.equal(true)
       two.firstChild.should.equal(three)
       two.lastChild.should.equal(four)
+      outline.undoManager.redo()
 
   describe 'Search', ->
     it 'should find DOM using xpath', ->

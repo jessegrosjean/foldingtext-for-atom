@@ -2,7 +2,7 @@ Buffer = require '../../lib/text/buffer'
 Range = require '../../lib/text/range'
 Line = require '../../lib/text/line'
 
-fdescribe 'Buffer', ->
+describe 'Buffer', ->
   [buffer, lines] = []
 
   beforeEach ->

@@ -12,12 +12,12 @@ toggleStatus = (editor, status) ->
     if firstItem.getAttribute('data-status') is status
       status = undefined
 
-    outline.beginUpdates()
+    outline.beginChanges()
     undoManager.beginUndoGrouping()
     for each in selectedItems
       each.setAttribute('data-status', status)
     undoManager.endUndoGrouping()
-    outline.endUpdates()
+    outline.endChanges()
 
 FoldingTextService.eventRegistery.listen '.bstatus',
   click: (e) ->

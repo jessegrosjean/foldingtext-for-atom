@@ -1,5 +1,18 @@
 # ChangeLog
 
+## Future
+
+- Mutations are no longer grouped before being emmited as events. Otherwise could make it impossible to know what happended in a case like:
+
+beginUpdates
+addItem
+mutatateItemText
+endUpdates
+
+Because if we do grouping that at the point that we recive the item the fist time it's text has alreayd been mutated... and sop it's impossible to correclty interpurt the next mutate text evetn
+
+- Changed how items are handled when added/removed directly from outline. Now whne removed depth is encoded in item.indent. And when added indent is used to dtermine depth location.
+
 ## 0.8.0
 
 - Tags are now more readable in dark themes.

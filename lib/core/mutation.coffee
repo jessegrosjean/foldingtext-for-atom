@@ -49,8 +49,8 @@ class Mutation
   # {Item}, or null.
   insertedTextLength: null
 
-  # Public: Read-only value of replaced body text in the target {Item}, or
-  # null.
+  # Public: Read-only {AttributedString} of replaced body text in the target
+  # {Item}, or null.
   replacedText: null
 
   # Public: Read-only {Array} of child {Item}s added to the target.
@@ -93,6 +93,8 @@ class Mutation
     mutation
 
   constructor: (@target, @type) ->
+    @flattendedAddedItems = null
+    @flattenedRemovedItems = null
 
   copy: ->
     mutation = new Mutation @target, @type
@@ -107,6 +109,24 @@ class Mutation
     mutation.previousSibling = @previousSibling
     mutation.nextSibling = @nextSibling
     mutation
+
+  getFlattendedAddedItems: ->
+    unless @flattendedAddedItems
+      @flattendedAddedItems = []
+      for each in @addedItems
+        @flattendedAddedItems.push each
+        if each.hasChildren
+          Array.prototype.push.apply(@flattendedAddedItems, each.descendants)
+    @flattendedAddedItems
+
+  getFlattendedRemovedItems: ->
+    unless @flattenedRemovedItems
+      @flattenedRemovedItems = []
+      for each in @removedItems
+        @flattenedRemovedItems.push each
+        if each.hasChildren
+          Array.prototype.push.apply(@flattenedRemovedItems, each.descendants)
+    @flattenedRemovedItems
 
   performUndoOperation: ->
     switch @type

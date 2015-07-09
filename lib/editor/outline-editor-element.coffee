@@ -872,7 +872,7 @@ EventRegistery.listen '.ft-item-content',
     outline = item.outline
     location = 0
 
-    outline.beginUpdates()
+    outline.beginChanges()
 
     # Insert marker into old body text to ensure diffs get generated in
     # correct locations. For example if user has cursor at position "tw^o"
@@ -910,7 +910,7 @@ EventRegistery.listen '.ft-item-content',
     editorRange.selectionAffinity = Selection.SelectionAffinityUpstream
     editor.moveSelectionRange editorRange
 
-    outline.endUpdates()
+    outline.endChanges()
 
 #
 # Handle clicking on handle

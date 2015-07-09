@@ -1,4 +1,4 @@
-Range = require './range'
+Range = require '../range'
 
 class BufferLeaf
 

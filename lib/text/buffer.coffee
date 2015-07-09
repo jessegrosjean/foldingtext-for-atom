@@ -1,5 +1,5 @@
-BufferBranch = require './buffer-branch'
-BufferLeaf = require './buffer-leaf'
+BufferBranch = require './datastructures/buffer-branch'
+BufferLeaf = require './datastructures/buffer-leaf'
 {newlineRegex} = require './helpers'
 Range = require './range'
 Point = require './point'
@@ -94,12 +94,12 @@ class Buffer extends BufferBranch
 
   getLine: (row) ->
     if row < 0 or row >= @lineCount
-      throw new Error("Invalide line number: #{row}");
+      return undefined
     super(row)
 
   getLineRowColumn: (characterOffset) ->
     if characterOffset < 0 or characterOffset > @getCharacterCount()
-      throw new Error("Invalide character offset: #{characterOffset}");
+      return undefined
     super(characterOffset)
 
   iterateLines: (row, count, operation) ->

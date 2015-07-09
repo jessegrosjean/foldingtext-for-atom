@@ -169,8 +169,8 @@ class Item
     if isInOutline
       mutation = Mutation.createAttributeMutation this, name, oldValue
       outline.emitter.emit 'will-change', mutation
-      outline.beginUpdates()
-      outline.recoredUpdateMutation mutation
+      outline.beginChanges()
+      outline.recordChange mutation
 
     if value?
       @_liOrRootUL.setAttribute name, value
@@ -178,7 +178,8 @@ class Item
       @_liOrRootUL.removeAttribute name
 
     if isInOutline
-      outline.endUpdates()
+      outline.emitter.emit 'did-change', mutation
+      outline.endChanges()
 
   # Public: Removes an attribute from the specified item. Attempting to remove
   # an attribute that is not on the item doesn't raise an exception.
@@ -393,8 +394,8 @@ class Item
 
       mutation = Mutation.createBodyTextMutation this, location, insertedString.length, replacedText
       outline.emitter.emit 'will-change', mutation
-      outline.beginUpdates()
-      outline.recoredUpdateMutation mutation
+      outline.beginChanges()
+      outline.recordChange mutation
 
     li = @_liOrRootUL
     bodyP = _bodyP(li)
@@ -407,7 +408,8 @@ class Item
     li.replaceChild(newBodyP, bodyP)
 
     if isInOutline
-      outline.endUpdates()
+      outline.emitter.emit 'did-change', mutation
+      outline.endChanges()
 
   # Public: Append body text.
   #
@@ -487,9 +489,6 @@ class Item
         0
 
     set: (indent) ->
-      if indent?
-        assert.ok(@parent, 'Can only set indent on an item with a parent')
-
       indent = 1 if indent < 1
 
       if previousSibling = @previousSibling
@@ -498,7 +497,10 @@ class Item
       if nextSibling = @nextSibling
         assert.ok(indent >= nextSibling.indent, 'item indent must be greater then or equal to nextSibling indent')
 
-      indent = null if indent <= 1
+      if @parent and indent is 1
+        indent = null
+      else if indent < 1
+        indent = null
 
       @setAttribute('indent', indent)
 
@@ -730,8 +732,8 @@ class Item
     if isInOutline
       mutation = Mutation.createChildrenMutation this, children, [], previousSibling, referenceSibling
       outline.emitter.emit 'will-change', mutation
-      outline.beginUpdates()
-      outline.recoredUpdateMutation mutation
+      outline.beginChanges()
+      outline.recordChange mutation
 
     ownerDocument = @_liOrRootUL.ownerDocument
     documentFragment = ownerDocument.createDocumentFragment()
@@ -749,7 +751,8 @@ class Item
       each.indent = childIndent
 
     if isInOutline
-      outline.endUpdates()
+      outline.emitter.emit 'did-change', mutation
+      outline.endChanges()
 
   # Public: Append the new children to this item's list of children.
   #
@@ -778,14 +781,15 @@ class Item
       nextSibling = lastChild.nextSibling
       mutation = Mutation.createChildrenMutation this, [], children, children[0].previousSibling, nextSibling
       outline.emitter.emit 'will-change', mutation
-      outline.beginUpdates()
-      outline.recoredUpdateMutation mutation
+      outline.beginChanges()
+      outline.recordChange mutation
 
     for each in children
       each._liOrRootUL.parentNode.removeChild(each._liOrRootUL)
 
     if isInOutline
-      outline.endUpdates()
+      outline.emitter.emit 'did-change', mutation
+      outline.endChanges()
 
   # Public: Remove the given child from this item's list of children.
   #
