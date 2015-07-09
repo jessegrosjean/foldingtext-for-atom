@@ -128,7 +128,9 @@ class OutlineEditor
 
     outline.retain()
 
+    @subscriptions.add outline.onDidBeginChanges @outlineDidBeginChanges.bind(this)
     @subscriptions.add outline.onDidChange @outlineDidChange.bind(this)
+    @subscriptions.add outline.onDidEndChanges @outlineDidEndChanges.bind(this)
 
     @subscriptions.add outline.onDidChangePath =>
       unless atom.project.getPaths()[0]?
@@ -168,28 +170,31 @@ class OutlineEditor
         @moveSelectionRange(selectionRange)
       @_overrideIsFocused = false
 
-  outlineDidChange: (mutations) ->
+  outlineDidBeginChanges: ->
+    @_savedSelection = @selection
+    @_overrideIsFocused = @isFocused()
+
+  outlineDidChange: (mutation) ->
     if @getSearch()?.query
       hoistedItem = @getHoistedItem()
-      for eachMutation in mutations
-        if eachMutation.type is Mutation.CHILDREN_CHANGED
-          for eachItem in eachMutation.addedItems
-            if hoistedItem.contains(eachItem)
-              @_addSearchResult(eachItem)
+      if mutation.type is Mutation.CHILDREN_CHANGED
+        for eachItem in mutation.addedItems
+          if hoistedItem.contains(eachItem)
+            @_addSearchResult(eachItem)
 
-    selectionRange = @selection
-    @_overrideIsFocused = @isFocused()
-    @outlineEditorElement.outlineDidChange(mutations)
-    @moveSelectionRange(selectionRange)
+    @outlineEditorElement.outlineDidChange(mutation)
+
+    if mutation.type is Mutation.CHILDREN_CHANGED
+      targetItem = mutation.target
+      if not targetItem.hasChildren
+        @setCollapsed targetItem
+
+  outlineDidEndChanges: ->
     @_overrideIsFocused = false
-
-    for eachMutation in mutations
-      if eachMutation.type is Mutation.CHILDREN_CHANGED
-        targetItem = eachMutation.target
-        if not targetItem.hasChildren
-          @setCollapsed targetItem
-
     @_updateBackgroundMessage()
+    if @_savedSelection
+      @moveSelectionRange(@_savedSelection)
+      @_savedSelection = null
 
   destroy: ->
     unless @destroyed
@@ -238,7 +243,7 @@ class OutlineEditor
   # See {Outline} Examples for an example of subscribing to these events.
   #
   # - `callback` {Function} to be called when the outline changes.
-  #   - `mutations` {Array} of {Mutation}s describing the changes.
+  #   - `mutation` {Mutation} describing the change.
   #
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidChange: (callback) ->
@@ -1187,6 +1192,7 @@ class OutlineEditor
     @_updateSelectionIfNeeded(@_selection.selectionByRevalidating())
 
   _updateSelectionIfNeeded: (newSelection, checkForTextModeSnapback) ->
+    @_savedSelection = null
     currentSelection = @selection
     outlineEditorElement = @outlineEditorElement
     isFocused = @isFocused()
@@ -1519,14 +1525,14 @@ class OutlineEditor
 
         undoManager = @outline.undoManager
         undoManager.beginUndoGrouping()
-        @outline.beginUpdates()
+        @outline.beginChanges()
 
         for each in toJoin
           joinTo.insertChildrenBefore(each.children, insertToJoinsBefore)
           joinTo.appendBodyText(new AttributedString(' '))
           joinTo.appendBodyText(each.attributedBodyText)
 
-        @outline.endUpdates()
+        @outline.endChanges()
         @moveSelectionRange(joinTo, joinToOriginalTextLength)
         undoManager.endUndoGrouping()
         undoManager.setActionName('Join Items')
@@ -1564,7 +1570,6 @@ class OutlineEditor
     items ?= @selection.items
     if items.length
       firstItem = items[0]
-      itemsDepths = (each.depth for each in items)
       endItem = items[items.length - 1]
       referenceItem = null
       depthDelta = 0
@@ -1583,22 +1588,22 @@ class OutlineEditor
           depthDelta = 1
           referenceItem = endItem.nextItem
 
-    @outline.beginUpdates()
-
-    if depthDelta isnt 0
-      for each, i in itemsDepths
-        itemsDepths[i] += depthDelta
-
-    @outline.removeItems(items)
-    @outline.insertItemsAtDepthsBefore(items, itemsDepths, referenceItem)
+    @outline.beginChanges()
 
     expandItems = []
-    disposable = @outline.onDidChange (mutations) ->
-      for each in mutations
-        if each.target.hasChildren
-          expandItems.push each.target
+    disposable = @outline.onDidChange (mutation) ->
+      if mutation.target.hasChildren
+        expandItems.push mutation.target
 
-    @outline.endUpdates =>
+    @outline.removeItems(items)
+
+    if depthDelta isnt 0
+      for each in items
+        each.indent += depthDelta
+
+    @outline.insertItemsBefore(items, referenceItem)
+
+    @outline.endChanges =>
       @setExpanded(expandItems)
       disposable.dispose()
 
@@ -1645,18 +1650,17 @@ class OutlineEditor
             parentWasExpandedItemIDs[eachChild.id] = true
 
       expandItems = []
-      disposable = @outline.onDidChange (mutations) ->
-        for eachMutation in mutations
-          if eachMutation.type is Mutation.CHILDREN_CHANGED
-            for each in eachMutation.addedItems
-              if parentWasExpandedItemIDs[each.id]
-                expandItems.push(each.parent)
+      disposable = @outline.onDidChange (mutation) ->
+        if mutation.type is Mutation.CHILDREN_CHANGED
+          for each in mutation.addedItems
+            if parentWasExpandedItemIDs[each.id]
+              expandItems.push(each.parent)
 
       #undoManager = @outline.undoManager
       #undoManager.beginUndoGrouping()
-      @outline.beginUpdates()
+      @outline.beginChanges()
       @outline.removeItems(items)
-      @outline.endUpdates =>
+      @outline.endChanges =>
         @setExpanded(expandItems)
         disposable.dispose()
       #undoManager.endUndoGrouping()
@@ -1692,7 +1696,7 @@ class OutlineEditor
 
       if not selectionRange.isCollapsed
         undoManager.beginUndoGrouping()
-        outline.beginUpdates()
+        outline.beginChanges()
 
         if 0 is startOffset and startItem isnt endItem and startItem is endItem.previousSibling and startItem.bodyText.length is 0
           @moveSelectionRange(endItem, 0)
@@ -1710,7 +1714,7 @@ class OutlineEditor
             for each in selectionRange.items[1...]
               each.removeFromParent()
 
-        outline.endUpdates()
+        outline.endChanges()
         undoManager.endUndoGrouping()
         undoManager.setActionName('Delete')
     else if selectionRange.isOutlineMode
@@ -1729,13 +1733,13 @@ class OutlineEditor
           nextSelection = nextSibling or previousSibling or parent
 
         undoManager.beginUndoGrouping()
-        outline.beginUpdates()
+        outline.beginChanges()
 
         if nextSelection
           @moveSelectionRange(nextSelection)
 
         outline.removeItemsFromParents(selectedItems)
-        outline.endUpdates()
+        outline.endChanges()
         undoManager.endUndoGrouping()
         undoManager.setActionName('Delete')
 
@@ -1790,11 +1794,11 @@ class OutlineEditor
           parent = endItem.parent
           insertBefore = endItem.nextSibling
 
-      @outline.beginUpdates()
+      @outline.beginChanges()
       parent.insertChildrenBefore(items, insertBefore)
       if items.loadOptions?.expanded?
         @setExpanded(@outline.getItemsForIDs(items.loadOptions.expanded))
-      @outline.endUpdates =>
+      @outline.endChanges =>
         @moveSelectionRange(items[0], undefined, items[items.length - 1], undefined)
 
   ###
@@ -1868,7 +1872,7 @@ class OutlineEditor
     selectionRange = @selection
     outline = @outline
     undoManager = outline.undoManager
-    outline.beginUpdates()
+    outline.beginChanges()
     undoManager.beginUndoGrouping()
 
     if selectionRange.isTextMode
@@ -1878,7 +1882,7 @@ class OutlineEditor
         transform(each, 0, each.bodyText.length)
 
     undoManager.endUndoGrouping()
-    outline.endUpdates()
+    outline.endChanges()
 
   ###
   Section: Drag and Drop

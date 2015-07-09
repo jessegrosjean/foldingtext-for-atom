@@ -12,12 +12,12 @@ togglePriority = (editor, priority) ->
     if firstItem.getAttribute('data-priority') is priority
       priority = undefined
 
-    outline.beginUpdates()
+    outline.beginChanges()
     undoManager.beginUndoGrouping()
     for each in selectedItems
       each.setAttribute('data-priority', priority)
     undoManager.endUndoGrouping()
-    outline.endUpdates()
+    outline.endChanges()
 
 FoldingTextService.observeOutlineEditors (editor) ->
   editor.addItemBadgeRenderer (item, addBadgeElement) ->

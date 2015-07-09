@@ -13,7 +13,7 @@ module.exports =
         originalArray.splice(start + chunkStart, 0, chunk...)
       removedValues
 
-  leadingTabs: (tabs) ->
+  leadingTabs: (text) ->
     tabCount = 0
     while text[tabCount] is '\t'
       tabCount++

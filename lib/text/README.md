@@ -5,7 +5,7 @@ Stop writing own editor. Instead use existing editor such as Atom, CodeMirror, o
 To make this work will need to:
 
 1. Load .ftml into Outline.
-2. Generate "flat" view of all visible items using line manager
+2. Generate "flat" view of all visible items using buffer
 3. Map from this flat item view to editor using:
   - Tabs to represent indentation level past hoisted item
   - Marked ranges for formatting, bold, italic, links
@@ -18,3 +18,5 @@ Replace existing OutlineEditor folder with new OutlineEdtor that maps an outline
 2. Create OutlineEditor from Outline
 3. Map OutlineEditor TextBuffer to Atom TextBuffer
 4. Ignoring Attributes, display that TextBuffer and Edit the Outline by editing the buffer
+
+Outline is a pure tree structure. To edit, select, etc need to present in a buffer.

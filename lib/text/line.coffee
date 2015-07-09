@@ -27,14 +27,12 @@ class Line
     @text.substr(index)
 
   append: (content) ->
-    end = @getCharacterCount()
+    end = @getCharacterCount() - 1
     @setTextInRange(content, end, end)
 
   setTextInRange: (text, start, end) ->
-    oldCount = @text.length
     @text = replace(@text, start, end, text)
-    newCount = @text.length
-    if delta = (newCount - oldCount)
+    if delta = (text.length - (end - start))
       each = @parent
       while each
         each.characterCount += delta

@@ -31,28 +31,27 @@ Q = require 'q'
 # Group multiple changes:
 #
 # ```coffeescript
-# outline.beginUpdates()
+# outline.beginChanges()
 # root = outline.root
 # root.appendChild outline.createItem()
 # root.appendChild outline.createItem()
 # root.firstChild.bodyText = 'first'
 # root.lastChild.bodyText = 'last'
-# outline.endUpdates()
+# outline.endChanges()
 # ```
 #
 # Watch for outline changes:
 #
 # ```coffeescript
-# disposable = outline.onDidChange (mutations) ->
-#   for mutation in mutations
-#     switch mutation.type
-#       when Mutation.ATTRIBUTE_CHANGED
-#         console.log mutation.attributeName
-#       when Mutation.BODT_TEXT_CHANGED
-#         console.log mutation.target.bodyText
-#       when Mutation.CHILDREN_CHANGED
-#         console.log mutation.addedItems
-#         console.log mutation.removedItems
+# disposable = outline.onDidChange (mutation) ->
+#   switch mutation.type
+#     when Mutation.ATTRIBUTE_CHANGED
+#       console.log mutation.attributeName
+#     when Mutation.BODT_TEXT_CHANGED
+#       console.log mutation.target.bodyText
+#     when Mutation.CHILDREN_CHANGED
+#       console.log mutation.addedItems
+#       console.log mutation.removedItems
 # ```
 #
 # Use XPath to list all items with bold text:
@@ -67,9 +66,8 @@ class Outline
   refcount: 0
   changeCount: 0
   undoSubscriptions: null
-  updateCount: 0
-  updateCallbacks: null
-  updateMutations: null
+  changingCount: 0
+  changesCallbacks: null
   coalescingMutation: null
   stoppedChangingDelay: 300
   stoppedChangingTimeout: null
@@ -226,11 +224,16 @@ class Outline
   Section: Event Subscription
   ###
 
-  # Public: Invoke the given callback synchronously _before_ the outline
+  # Public: Invoke the given callback when the outline begins a series of
   # changes.
   #
-  # Because observers are invoked synchronously, it's important not to perform
-  # any expensive operations via this method.
+  # * `callback` {Function} to be called when the outline begins updating.
+  #
+  # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
+  onDidBeginChanges: (callback) ->
+    @emitter.on 'did-begin-changes', callback
+
+  # Public: Invoke the given callback _before_ the outline changes.
   #
   # * `callback` {Function} to be called when the outline will change.
   #   * `mutation` {Mutation} describing the change.
@@ -244,14 +247,20 @@ class Outline
   # See {Outline} Examples for an example of subscribing to this event.
   #
   # - `callback` {Function} to be called when the outline changes.
-  #   - `mutations` {Array} of {Mutation}s describing the changes.
+  #   - `mutation` {Mutation} describing the changes.
   #
   # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
   onDidChange: (callback) ->
     @emitter.on 'did-change', callback
 
-  onDidStopChanging: (callback) ->
-    @emitter.on 'did-stop-changing', callback
+  # Public: Invoke the given callback when the outline ends a series of
+  # changes.
+  #
+  # * `callback` {Function} to be called when the outline begins updating.
+  #
+  # Returns a {Disposable} on which `.dispose()` can be called to unsubscribe.
+  onDidEndChanges: (callback) ->
+    @emitter.on 'did-end-changes', callback
 
   # Public: Invoke the given callback when the in-memory contents of the
   # outline become in conflict with the contents of the file on disk.
@@ -420,24 +429,25 @@ class Outline
   # Public: Insert the item before the given `referenceItem`. If the reference
   # item isn't defined insert at the end of the outline.
   #
-  # Unlike {Item::insertChildBefore} this method uses `depth` to determine
-  # where in the outline structure to insert the item. Depending on the depth
-  # value this item may become referenceItem's parent, previous sibling, or
-  # unrelated.
+  # Unlike {Item::insertChildBefore} this method uses {Item::indent} to
+  # determine where in the outline structure to insert the item. Depending on
+  # the indent value this item may become referenceItem's parent, previous
+  # sibling, or unrelated.
   #
   # - `item` {Item} to insert.
-  # - `depth` {Number} depth to insert at.
   # - `referenceItem` Reference {Item} to insert before.
-  insertItemAtDepthBefore: (item, depth, referenceItem) ->
-    depth ?= 1
+  insertItemBefore: (item, referenceItem) ->
+    depth = item.indent
     depth = 1 if depth < 1
 
-    @beginUpdates()
+    @beginChanges()
 
     item.removeFromParent()
 
     while lastChild = item.lastChild
-      @insertItemAtDepthBefore(lastChild, depth + 1, referenceItem)
+      lastChild.removeFromParent()
+      lastChild.indent = depth + 1
+      @insertItemBefore(lastChild, referenceItem)
       referenceItem = lastChild
 
     # 1. Start values
@@ -477,45 +487,46 @@ class Outline
       for each, i in reparentChildren
         each.indent = reparentChildrenIndents[i]
 
-    @endUpdates()
+    @endChanges()
 
   # Public: Insert the items before the given `referenceItem`. See
-  # {Outline::insertItemAtDepthBefore} for more implementation details. This
-  # method works differently then {Item::insertChildrenBefore}.
+  # {Outline::insertItemBefore} for more implementation details. This method
+  # works differently then {Item::insertChildrenBefore}.
   #
   # - `items` {Array} of {Item}s to insert.
-  # - `depths` {Array} of {Numbers}s of depths to insert at.
   # - `referenceItem` Reference {Item} to insert before.
-  insertItemsAtDepthsBefore: (items, depths, referenceItem) ->
-    @beginUpdates()
-    for each, i in items
-      @insertItemAtDepthBefore(each, depths?[i], referenceItem)
-    @endUpdates()
+  insertItemsBefore: (items, referenceItem) ->
+    @beginChanges()
+    for each in items
+      @insertItemBefore(each, referenceItem)
+    @endChanges()
 
   # Public: Remove the item but leave it's child items in the outline.
   #
   # - `item` {Item} to remove.
   removeItem: (item) ->
-    @beginUpdates()
+    @beginChanges()
+    depth = item.depth
     previousItem = item.previousItem
     nextBranch = item.nextBranch
     children = item.children
-    childrenDepths = []
     for each in children
-      childrenDepths.push(each.depth)
+      eachDepth = each.depth
       each.removeFromParent()
+      each.indent = eachDepth
     item.removeFromParent()
-    @insertItemsAtDepthsBefore(children, childrenDepths, nextBranch)
-    @endUpdates()
+    item.indent = depth
+    @insertItemsBefore(children, nextBranch)
+    @endChanges()
 
   # Public: Remove the items but leave there child items in the outline.
   #
   # - `items` {Item}s to remove.
   removeItems: (items) ->
-    @beginUpdates()
+    @beginChanges()
     for each in items
       @removeItem(each)
-    @endUpdates()
+    @endChanges()
 
   # Not sure about this method... I think they are being used to handle moving
   # items from one outline to another... is that needed? TODO
@@ -551,18 +562,19 @@ class Outline
       if undoManager.isUndoRegistrationEnabled()
         undoManager.registerUndoOperation ->
           # This seems especially wrong? should now only have mutations on the
-          # undo stack
+          # undo stack... I guess reason must be because mutations don't fire
+          # for items that are not inOutline... but this still doesn't seem right FIXME
           parent.insertChildrenBefore(siblings, nextSibling)
 
       undoManager.disableUndoRegistration()
-      outline.beginUpdates()
+      outline.beginChanges()
 
     for each in siblings
       parent.removeChild each
 
     if isInOutline
       undoManager.enableUndoRegistration()
-      outline.endUpdates()
+      outline.endChanges()
 
   ###
   Section: Querying Items
@@ -650,21 +662,20 @@ class Outline
   ###
 
   # Public: Returns {Boolean} true if outline is updating.
-  isUpdating: -> @updateCount isnt 0
+  isChanging: -> @changingCount isnt 0
+  isUpdating: -> @isChanging()
 
-  # Public: Begin grouping changes. Must later call {::endUpdates} to balance
+  # Public: Begin grouping changes. Must later call {::endChanges} to balance
   # this call.
-  beginUpdates: ->
-    if ++@updateCount is 1
-      @updateCallbacks = []
-      @updateMutations = []
+  beginChanges: ->
+    if ++@changingCount is 1
+      @changesCallbacks = []
+      @emitter.emit('did-begin-changes')
 
   breakUndoCoalescing: ->
     @coalescingMutation = null
 
-  recoredUpdateMutation: (mutation) ->
-    @updateMutations.push mutation.copy()
-
+  recordChange: (mutation) ->
     if @undoManager.isUndoing or @undoManager.isUndoing
       @breakUndoCoalescing()
 
@@ -682,22 +693,19 @@ class Outline
       @coalescingMutation = mutation
 
   # Public: End grouping changes. Must call to balance a previous
-  # {::beginUpdates} call.
+  # {::beginChanges} call.
   #
   # - `callback` (optional) Callback is called when outline finishes updating.
-  endUpdates: (callback) ->
-    @updateCallbacks.push(callback) if callback
-    if --@updateCount is 0
-      updateMutations = @updateMutations
-      @updateMutations = null
-      if updateMutations.length > 0
-        @conflict = false if @conflict and not @isModified()
-        @emitter.emit('did-change', updateMutations)
-        @scheduleModifiedEvents()
+  endChanges: (callback) ->
+    @changesCallbacks.push(callback) if callback
+    if --@changingCount is 0
+      @conflict = false if @conflict and not @isModified()
+      @emitter.emit('did-end-changes')
+      @scheduleModifiedEvents()
 
-      updateCallbacks = @updateCallbacks
-      @updateCallbacks = null
-      for each in updateCallbacks
+      changesCallbacks = @changesCallbacks
+      @changesCallbacks = null
+      for each in changesCallbacks
         each()
 
   ###
@@ -860,14 +868,14 @@ class Outline
   # Sets the outline's content to the cached disk contents.
   reload: ->
     @emitter.emit 'will-reload'
-    @beginUpdates()
+    @beginChanges()
     @root.removeChildren(@root.children)
     if @cachedDiskContents
       items = ItemSerializer.deserializeItems(@cachedDiskContents, this, @getMimeType())
       @loadOptions = items.loadOptions
       for each in items
         @root.appendChild(each)
-    @endUpdates()
+    @endChanges()
     @changeCount = 0
     @emitModifiedStatusChanged(false)
     @emitter.emit 'did-reload'
@@ -882,6 +890,14 @@ class Outline
     Q(@file?.read(flushCache) ? "").then (contents) =>
       @cachedDiskContents = contents
       callback?()
+
+  ###
+  Section: Debug
+  ###
+
+  # Extended: Returns debug string for this item.
+  toString: ->
+    this.root.branchToString()
 
   ###
   Section: Private Utility Methods
@@ -990,7 +1006,6 @@ class Outline
     stoppedChangingCallback = =>
       @stoppedChangingTimeout = null
       modifiedStatus = @isModified()
-      @emitter.emit 'did-stop-changing'
       @emitModifiedStatusChanged(modifiedStatus)
     @stoppedChangingTimeout = setTimeout(
       stoppedChangingCallback,

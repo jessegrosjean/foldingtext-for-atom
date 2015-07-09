@@ -478,22 +478,21 @@ class ItemRenderer
         if animate
           @animateExpandRenderedChildrenUL item, renderedChildrenUL
 
-  outlineDidChange: (mutations) ->
-    for each in mutations
-      switch each.type
-        when Mutation.ATTRIBUTE_CHANGED
-          @updateItemAttribute each.target, each.attributeName
-        when Mutation.BODT_TEXT_CHANGED
-          @updateItemBodyContent each.target
-        when Mutation.CHILDREN_CHANGED
-          @updateItemChildren(
-            each.target,
-            each.removedItems,
-            each.addedItems,
-            each.nextSibling
-          )
-        else
-          throw new Error 'Unexpected Change Type'
+  outlineDidChange: (mutation) ->
+    switch mutation.type
+      when Mutation.ATTRIBUTE_CHANGED
+        @updateItemAttribute mutation.target, mutation.attributeName
+      when Mutation.BODT_TEXT_CHANGED
+        @updateItemBodyContent mutation.target
+      when Mutation.CHILDREN_CHANGED
+        @updateItemChildren(
+          mutation.target,
+          mutation.removedItems,
+          mutation.addedItems,
+          mutation.nextSibling
+        )
+      else
+        throw new Error 'Unexpected Change Type'
 
   ###
   Section: Animations
@@ -582,10 +581,10 @@ class ItemRenderer
     if disableAnimation
       @editorElement.disableAnimation()
 
-    outline.beginUpdates()
+    outline.beginChanges()
     outline.removeItemsFromParents items
     newParent.insertChildrenBefore items, newNextSibling
-    outline.endUpdates()
+    outline.endChanges()
 
     if newParentNeedsExpand
       editor.setExpanded newParent
