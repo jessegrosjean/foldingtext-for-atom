@@ -1,7 +1,7 @@
-'body':
+'.platform-linux body':
   'ctrl-alt-n': 'outline-editor:new-outline'
 
-'ft-outline-editor':
+'.platform-linux ft-outline-editor':
   # Platform Bindings
   'ctrl-left': 'editor:move-to-beginning-of-word'
   'ctrl-right': 'editor:move-to-end-of-word'
