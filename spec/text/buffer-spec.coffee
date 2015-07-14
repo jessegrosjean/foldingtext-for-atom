@@ -1,9 +1,7 @@
-
 Buffer = require '../../lib/text/buffer'
 Range = require '../../lib/text/range'
 {CompositeDisposable} = require 'atom'
 Line = require '../../lib/text/line'
-
 
 describe 'Buffer', ->
   [buffer, lines] = []
