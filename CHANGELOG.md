@@ -1,5 +1,12 @@
 # ChangeLog
 
+## 0.8.0
+
+- Tags are now more readable in dark themes.
+- Fix platform keybindings #69, thanks @chibicode
+- Fix resize errors in search field that appear in recent Atom releases.
+- Version numbers... I'm going to switch away from semantic versioning for this and future releases until version 1.0. So no matter what the changes are I'll just keep incrementing the middle number for each version. I think version 1.0 is still a ways off, and probable a few rounds of significant API changes in between.
+
 ## 0.7.1
 
 - Fix error when inserting link on empty line.
@@ -37,7 +44,7 @@
 
 ## 0.5.0
 
-- Set type indentifier for .ftml (OS X)
+- Set type identifier for .ftml (OS X)
 - Added QuickLook support for .ftml (OS X)
 - Renamed `btag` CSS class to `ft-tag`
 - Renamed `outlineMode` CSS class to `outline-mode`
