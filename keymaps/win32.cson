@@ -1,7 +1,7 @@
-'body':
+'.platform-win32 body':
   'ctrl-alt-n': 'outline-editor:new-outline'
 
-'ft-outline-editor':
+'.platform-win32 ft-outline-editor':
   # Platform Bindings
   'ctrl-left': 'editor:move-to-beginning-of-word'
   'ctrl-right': 'editor:move-to-end-of-word'

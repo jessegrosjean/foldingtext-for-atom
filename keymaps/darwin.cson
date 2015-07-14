@@ -1,7 +1,7 @@
-'body':
+'.platform-darwin body':
   'alt-cmd-n': 'outline-editor:new-outline'
 
-'ft-outline-editor':
+'.platform-darwin ft-outline-editor':
   # Platform Bindings
   'alt-left': 'editor:move-to-beginning-of-word'
   'alt-right': 'editor:move-to-end-of-word'
