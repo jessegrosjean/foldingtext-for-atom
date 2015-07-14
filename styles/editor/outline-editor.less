@@ -182,7 +182,7 @@ input[is="ft-outline-editor-focus"] {
   border-radius: 2px;
   margin-right: @ft-item-badge-spacing;
   color: @syntax-background-color;
-  background: @syntax-invisible-character-color;
+  background: mix(@syntax-text-color, @syntax-background-color, 50%);
   text-decoration:none;
   &:hover {
     color: @syntax-background-color;
