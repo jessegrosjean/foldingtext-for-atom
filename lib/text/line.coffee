@@ -21,7 +21,7 @@ class Line
     @text
 
   getCharacterCount: ->
-    @text.length + 1 # \n
+    @getText().length + 1 # \n
 
   substr: (index) ->
     @text.substr(index)

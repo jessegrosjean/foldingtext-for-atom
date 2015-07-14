@@ -1,6 +1,7 @@
-BufferBranch = require './datastructures/buffer-branch'
-BufferLeaf = require './datastructures/buffer-leaf'
+BufferBranch = require './b-tree/buffer-branch'
+BufferLeaf = require './b-tree/buffer-leaf'
 {newlineRegex} = require './helpers'
+{Emitter} = require 'atom'
 Range = require './range'
 Point = require './point'
 Line = require './line'
@@ -9,6 +10,32 @@ class Buffer extends BufferBranch
 
   constructor: ->
     super([new BufferLeaf([])])
+    @changing = 0
+    @emitter = new Emitter()
+
+  destroy: ->
+    unless @destroyed
+      @destroyed = true
+      @emitter.emit 'did-destroy'
+
+  ###
+  Section: Events
+  ###
+
+  onDidBeginChanges: (callback) ->
+    @emitter.on 'did-begin-changes', callback
+
+  onWillChange: (callback) ->
+    @emitter.on 'will-change', callback
+
+  onDidChange: (callback) ->
+    @emitter.on 'did-change', callback
+
+  onDidEndChanges: (callback) ->
+    @emitter.on 'did-end-changes', callback
+
+  onDidDestroy: (callback) ->
+    @emitter.on 'did-destroy', callback
 
   ###
   Section: Text
@@ -58,6 +85,16 @@ class Buffer extends BufferBranch
     startLine = @getLine(startRow)
     endLine = @getLine(endRow)
 
+    unless @changing
+      changeEvent =
+        oldRange: oldRange.copy()
+        oldText: @getTextInRange(oldRange)
+        newRange: newRange.copy()
+        newText: newText
+      @emitter.emit 'will-change', changeEvent
+
+    @changing++
+
     if newLines.length is 1 and effectsSingleLine
       startLine.setTextInRange(newLines.shift(), startColumn, endColumn)
     else
@@ -80,11 +117,16 @@ class Buffer extends BufferBranch
         @insertLines(startRow + 1, insertLines)
 
       # 5. Append end suffix to last inserted line
-      if endSuffix
+      if endSuffix.length
         lastLine = insertLines?[insertLines.length - 1] ? startLine
         lastLine.append(endSuffix)
 
     @cachedText = null
+
+    @changing--
+
+    unless @changing
+      @emitter.emit 'did-change', changeEvent
 
     newRange
 
@@ -112,15 +154,58 @@ class Buffer extends BufferBranch
     end = row
     if row < 0 or end > @lineCount
       throw new Error("Invalide line range: #{row}-#{end}");
+
+    unless @changing
+      newText = (each.getText() for each in lines).join('\n')
+
+      if row is @lineCount
+        if row is 0
+          lastLineIndex = row + lines.length - 1
+          lastLine = lines[lastLineIndex]
+          newRange = new Range([row, 0], [lastLineIndex, lastLine.getText().length - 1])
+        else
+          newRange = new Range([row, 0], [row + lines.length, 0])
+          newText = '\n' + newText
+      else
+        newRange = new Range([row, 0], [row + lines.length, 0])
+        newText += '\n'
+
+      changeEvent =
+        oldRange: new Range([row, 0], [row, 0])
+        oldText: ''
+        newRange: newRange
+        newText: newText
+      @emitter.emit 'will-change', changeEvent
+
+    @changing++
     super(row, lines)
     @cachedText = null
+    @changing--
+
+    unless @changing
+      @emitter.emit 'did-change', changeEvent
 
   removeLines: (row, count) ->
     end = row + count
     if row < 0 or end > @lineCount
       throw new Error("Invalide line range: #{row}-#{end}");
+
+    unless @changing
+      oldRange = new Range([row, 0], [end, 0])
+      changeEvent =
+        oldRange: oldRange
+        oldText: @getTextInRange(oldRange)
+        newRange: new Range([row, 0], [row, 0])
+        newText: ''
+      @emitter.emit 'will-change', changeEvent
+
+    @changing++
     super(row, count)
     @cachedText = null
+    @changing--
+
+    unless @changing
+      @emitter.emit 'did-change', changeEvent
 
   ###
   Section: Range Details

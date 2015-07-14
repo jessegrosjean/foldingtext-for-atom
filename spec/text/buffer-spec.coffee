@@ -1,6 +1,9 @@
+
 Buffer = require '../../lib/text/buffer'
 Range = require '../../lib/text/range'
+{CompositeDisposable} = require 'atom'
 Line = require '../../lib/text/line'
+
 
 describe 'Buffer', ->
   [buffer, lines] = []
@@ -10,6 +13,9 @@ describe 'Buffer', ->
     for each in [0...500]
       lines.push new Line('12345', 5)
     buffer = new Buffer()
+
+  afterEach ->
+    buffer.destroy()
 
   describe 'Init', ->
 
@@ -54,6 +60,11 @@ describe 'Buffer', ->
       expect(buffer.getLineCount()).toBe(496)
       expect(buffer.getCharacterCount()).toBe(2977)
       expect(buffer.getText().length).toBe(2977)
+
+    it 'iterate over all characters', ->
+      buffer.insertLines(0, lines)
+      for i in [0...buffer.getCharacterCount()]
+        expect(buffer.getLineRowColumn(i).line.getText()).toBe('12345')
 
   describe 'Lines', ->
 
@@ -113,6 +124,9 @@ describe 'Buffer', ->
         count++
       expect(count).toBe(100)
 
+      for i in [0...buffer.getLineCount()]
+        expect(buffer.getLine(i).getText()).toBe('12345')
+
     it 'gets line at row', ->
       buffer.insertLines(0, lines)
       expect(buffer.getLine(0)).toEqual(lines[0])
@@ -150,3 +164,41 @@ describe 'Buffer', ->
       expect(buffer.getLineRowColumn(buffer.getCharacterCount() - 6)).toEqual({line: lines[498], row: 498, column: 5})
       expect(buffer.getLineRowColumn(buffer.getCharacterCount() - 1)).toEqual({line: lines[499], row: 499, column: 4})
       expect(buffer.getLineRowColumn(buffer.getCharacterCount())).toEqual({line: lines[499], row: 499, column: 5})
+
+  describe 'Events', ->
+
+    [subscriptions] = []
+
+    beforeEach ->
+      subscriptions = new CompositeDisposable
+
+    afterEach ->
+      subscriptions.dispose()
+
+    it 'posts change events when setting text in range', ->
+      buffer.insertLines(0, lines)
+      subscriptions.add buffer.onDidChange (e) ->
+        expect(e.oldText).toEqual('12')
+        expect(e.oldRange.toString()).toEqual('[(0, 0) - (0, 2)]')
+        expect(e.newText).toEqual('one\ntwo')
+        expect(e.newRange.toString()).toEqual('[(0, 0) - (1, 3)]')
+      buffer.setTextInRange('one\ntwo', [[0, 0], [0, 2]])
+
+    it 'posts change events when inserting lines', ->
+      buffer.insertLines(0, lines)
+      lines = [new Line('hello', 5)]
+      subscriptions.add buffer.onDidChange (e) ->
+        expect(e.oldText).toEqual('')
+        expect(e.oldRange.toString()).toEqual('[(3, 0) - (3, 0)]')
+        expect(e.newText).toEqual('hello\n')
+        expect(e.newRange.toString()).toEqual('[(3, 0) - (4, 0)]')
+      buffer.insertLines(3, lines)
+
+    it 'posts change events when removing lines', ->
+      buffer.insertLines(0, lines)
+      subscriptions.add buffer.onDidChange (e) ->
+        expect(e.oldText).toEqual('12345\n12345\n')
+        expect(e.oldRange.toString()).toEqual('[(3, 0) - (5, 0)]')
+        expect(e.newText).toEqual('')
+        expect(e.newRange.toString()).toEqual('[(3, 0) - (3, 0)]')
+      buffer.removeLines(3, 2)

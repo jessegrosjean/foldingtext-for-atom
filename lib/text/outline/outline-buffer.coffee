@@ -1,5 +1,5 @@
-{Emitter, CompositeDisposable} = require 'atom'
 Mutation = require '../../core/mutation'
+{CompositeDisposable} = require 'atom'
 OutlineLine = require './outline-line'
 Outline = require '../../core/outline'
 {replace} = require '../helpers'
@@ -8,6 +8,7 @@ Range = require '../range'
 
 class OutlineBuffer extends Buffer
 
+  outline: null
   hoistedItem: null
   isUpdatingOutlineFromBuffer: 0
   isUpdatingBufferFromOutline: 0
@@ -15,7 +16,6 @@ class OutlineBuffer extends Buffer
 
   constructor: (outline) ->
     super()
-    @emitter = new Emitter()
     @subscriptions = new CompositeDisposable
     @outline = outline or Outline.buildOutlineSync()
     @hoistedItem = @outline.root
@@ -77,10 +77,9 @@ class OutlineBuffer extends Buffer
 
   destroy: ->
     unless @destroyed
-      @destroyed = true
       @subscriptions.dispose()
       @outline.release
-      @emitter.emit 'did-destroy'
+      super()
 
   ###
   Section: Lines
@@ -92,8 +91,6 @@ class OutlineBuffer extends Buffer
   insertLines: (row, lines) ->
     insertBefore = @getLine(row)?.item
 
-    super(row, lines)
-
     for each in lines
       @itemsToLinesMap.set(each.item, each)
 
@@ -103,18 +100,21 @@ class OutlineBuffer extends Buffer
       @outline.insertItemsBefore(items, insertBefore)
       @isUpdatingOutlineFromBuffer--
 
+    super(row, lines)
+
   removeLines: (row, count) ->
     lines = []
     @iterateLines row, count, (each) =>
       @itemsToLinesMap.delete(each)
       lines.push(each)
-    super(row, count)
 
     unless @isUpdatingBufferFromOutline
       @isUpdatingOutlineFromBuffer++
       for each in lines
         @outline.removeItem(each.item)
       @isUpdatingOutlineFromBuffer--
+
+    super(row, count)
 
   setTextInRange: (newText, range) ->
     super(newText, range)

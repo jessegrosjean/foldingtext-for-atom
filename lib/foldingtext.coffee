@@ -80,6 +80,8 @@ module.exports =
           lsregister = '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
           exec "#{lsregister} #{FoldingTextHelperPath}"
 
+    require './text/init'
+
     @subscriptions.add @monkeyPatchWorkspaceOpen()
 
   monkeyPatchWorkspaceOpen: ->

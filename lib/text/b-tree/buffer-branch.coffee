@@ -27,7 +27,7 @@ class BufferBranch
   getLine: (row) ->
     for each in @children
       childLineCount = each.getLineCount()
-      if row > childLineCount
+      if row >= childLineCount
         row -= childLineCount
       else
         return each.getLine(row)
@@ -53,7 +53,7 @@ class BufferBranch
   getLineRowColumn: (characterOffset, row=0) ->
     for each in @children
       childCharacterCount = each.getCharacterCount()
-      if characterOffset > childCharacterCount
+      if characterOffset >= childCharacterCount
         characterOffset -= childCharacterCount
         row += each.getLineCount()
       else

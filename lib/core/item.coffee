@@ -243,7 +243,7 @@ class Item
       # highlighting will call this method for each displayed node, so try
       # to make it fast.
       if @_bodyAttributedString
-        @_bodyAttributedString.string()
+        @_bodyAttributedString.getString()
       else
         AttributedString.inlineFTMLToText _bodyP(@_liOrRootUL)
     set: (text) ->
@@ -274,7 +274,7 @@ class Item
   # - `location` Substring's strart location.
   # - `length` Length of substring to extract.
   getAttributedBodyTextSubstring: (location, length) ->
-    @attributedBodyText.attributedSubstring(location, length)
+    @attributedBodyText.getAttributedSubstring(location, length)
 
   # Public: Looks to see if there's an element with the given `tagName` at the
   # given index. If there is then that element's attributes are returned and
@@ -374,7 +374,7 @@ class Item
     insertedString
 
     if insertedText instanceof AttributedString
-      insertedString = insertedText.string()
+      insertedString = insertedText.getString()
     else
       insertedString = insertedText
 
@@ -388,7 +388,7 @@ class Item
       replacedText
 
       if length
-        replacedText = attributedBodyText.attributedSubstring(location, length)
+        replacedText = attributedBodyText.getAttributedSubstring(location, length)
       else
         replacedText = new AttributedString
 

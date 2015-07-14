@@ -71,7 +71,7 @@ class AttributedString
   # Section: String
   #
 
-  string: (location, length) ->
+  getString: (location, length) ->
     if location isnt undefined
       if length is -1
         length = @_string.length - location
@@ -149,7 +149,7 @@ class AttributedString
 
     if insertedString instanceof AttributedString
       insertedAttributedString = insertedString
-      insertedString = insertedAttributedString.string()
+      insertedString = insertedAttributedString.getString()
 
     if insertedString.length is 0
       return
@@ -422,7 +422,7 @@ class AttributedString
   # Section: Extract Substring
   #
 
-  attributedSubstring: (location, length) ->
+  getAttributedSubstring: (location, length) ->
     if location isnt undefined
       if length is -1
         length = @_string.length - location
@@ -433,7 +433,7 @@ class AttributedString
     runs = @attributeRuns()
     startRunIndex = @_indexOfAttributeRunWithCharacterIndex(location)
     endRunIndex = @_indexOfAttributeRunWithCharacterIndex(location + length)
-    substring = new AttributedString(@string(location, length))
+    substring = new AttributedString(@getString(location, length))
 
     if endRunIndex is -1
       endRunIndex = runs.length - 1
@@ -485,7 +485,7 @@ class AttributedString
     # For each attribute run create element nodes for each attribute and text node
     # for the text content. Store node along with range over which is should be
     # applied. Return sorted node ranages.
-    string = attributedString.string()
+    string = attributedString.getString()
     tagsToRanges = {}
     nodeRanges = []
     runIndex = 0
