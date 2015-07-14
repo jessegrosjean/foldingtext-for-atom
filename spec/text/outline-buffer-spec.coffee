@@ -4,13 +4,18 @@ Range = require '../../lib/text/range'
 Line = require '../../lib/text/line'
 
 describe 'OutlineBuffer', ->
-  [outline, buffer, lines] = []
+  [outline, subscription, mutationExpects, buffer, lines] = []
 
   beforeEach ->
     buffer = new OutlineBuffer()
     outline = buffer.outline
+    subscription = outline.onDidChange (mutation) ->
+      if mutationExpects?.length
+        exp = mutationExpects.shift()
+        exp(mutation)
 
   afterEach ->
+    subscription.dispose()
     buffer.destroy()
     outline.destroy()
 
@@ -76,14 +81,6 @@ describe 'OutlineBuffer', ->
 
   describe 'Buffer Changes', ->
 
-    [subscriptions] = []
-
-    beforeEach ->
-      subscriptions = new CompositeDisposable
-
-    afterEach ->
-      subscriptions.dispose()
-
     it 'updates item text when buffer changes', ->
       item = outline.createItem('one')
       outline.root.appendChild(item)
@@ -142,21 +139,25 @@ describe 'OutlineBuffer', ->
         expect(item.depth).toBe(4)
 
       it 'should delete text fully in body range', ->
-        subscriptions.add outline.onDidChange (mutation) ->
-          expect(mutation.type).toBe('bodyText')
-          expect(mutation.replacedText.getString()).toBe('ne')
-          expect(mutation.insertedTextLocation).toBe(1)
-          expect(mutation.insertedTextLength).toBe(0)
+        mutationExpects = [
+          (mutation) ->
+            expect(mutation.type).toBe('bodyText')
+            expect(mutation.replacedText.getString()).toBe('ne')
+            expect(mutation.insertedTextLocation).toBe(1)
+            expect(mutation.insertedTextLength).toBe(0)
+        ]
         buffer.setTextInRange('', [[0, 3], [0, 5]])
         expect(item.bodyText).toBe('o')
         expect(item.depth).toBe(3)
 
       it 'should delete text bordering body range', ->
-        subscriptions.add outline.onDidChange (mutation) ->
-          expect(mutation.type).toBe('bodyText')
-          expect(mutation.replacedText.getString()).toBe('on')
-          expect(mutation.insertedTextLocation).toBe(0)
-          expect(mutation.insertedTextLength).toBe(0)
+        mutationExpects = [
+          (mutation) ->
+            expect(mutation.type).toBe('bodyText')
+            expect(mutation.replacedText.getString()).toBe('on')
+            expect(mutation.insertedTextLocation).toBe(0)
+            expect(mutation.insertedTextLength).toBe(0)
+        ]
         buffer.setTextInRange('', [[0, 2], [0, 4]])
         expect(item.bodyText).toBe('e')
         expect(item.depth).toBe(3)
@@ -167,7 +168,7 @@ describe 'OutlineBuffer', ->
         expect(item.bodyText).toBe('e')
         expect(item.depth).toBe(4)
 
-    fdescribe 'Insert Text in Buffer Line', ->
+    describe 'Insert Text in Buffer Line', ->
       [item] = []
 
       beforeEach ->
@@ -193,44 +194,39 @@ describe 'OutlineBuffer', ->
         outline.root.appendChild(item)
 
       it 'should generate mutation for simple text replace', ->
-        subscriptions.add outline.onDidChange (mutation) ->
-          expect(mutation.type).toBe('bodyText')
-          expect(mutation.replacedText.getString()).toBe('o')
-          expect(mutation.insertedTextLocation).toBe(0)
-          expect(mutation.insertedTextLength).toBe(1)
+        mutationExpects = [
+          (mutation) ->
+            expect(mutation.type).toBe('bodyText')
+            expect(mutation.replacedText.getString()).toBe('o')
+            expect(mutation.insertedTextLocation).toBe(0)
+            expect(mutation.insertedTextLength).toBe(0)
+          (mutation) ->
+            expect(mutation.type).toBe('bodyText')
+            expect(mutation.replacedText.getString()).toBe('')
+            expect(mutation.insertedTextLocation).toBe(0)
+            expect(mutation.insertedTextLength).toBe(1)
+        ]
         buffer.setTextInRange('b', [[0, 0], [0, 1]])
         expect(item.bodyText).toBe('bne')
         expect(item.depth).toBe(1)
 
       it 'should generate mutation for insert tab in front', ->
-        mutationIndex = 0
-        subscriptions.add outline.onDidChange (mutation) ->
-          expect(mutation.replacedText).toBeNull()
-          expect(mutation.insertedTextLocation).toBeNull()
-          expect(mutation.insertedTextLength).toBeNull()
-
-          if mutationIndex is 0
+        mutationExpects = [
+          (mutation) ->
             expect(mutation.type).toBe('children')
             expect(mutation.removedItems[0]).toBe(item)
-
-          if mutationIndex is 1
+          (mutation) ->
             expect(mutation.type).toBe('attribute')
             expect(mutation.attributeName).toBe('indent')
             expect(mutation.attributeOldValue).toBe('2')
-
-          if mutationIndex is 2
+          (mutation) ->
             expect(mutation.type).toBe('children')
             expect(mutation.addedItems[0]).toBe(item)
-
-          if mutationIndex is 3
+          (mutation) ->
             expect(mutation.type).toBe('attribute')
             expect(mutation.attributeOldValue).toBeNull()
             expect(mutation.target.getAttribute(mutation.attributeName)).toBe('2')
-
-          expect(mutationIndex).toBeLessThan(4)
-
-          mutationIndex++
-
+        ]
         buffer.setTextInRange('\t', [[0, 0], [0, 0]])
         expect(item.bodyText).toBe('one')
         expect(item.depth).toBe(2)
@@ -241,14 +237,3 @@ describe 'OutlineBuffer', ->
         buffer.setTextInRange('', [[0, 0], [0, 1]])
         expect(item.bodyText).toBe('one')
         expect(item.depth).toBe(1)
-
-
-      ###
-      it 'generates minimal outline change events when buffer text changes ', ->
-        subscriptions.add outline.onDidChange (mutation) ->
-          expect(mutation.type).toBe('bodyText')
-          expect(mutation.replacedText.getString()).toBe('o')
-          expect(mutation.insertedTextLocation).toBe(0)
-          expect(mutation.insertedTextLength).toBe(1)
-        buffer.setTextInRange('b', [[0, 0], [0, 1]])
-      ###

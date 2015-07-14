@@ -274,7 +274,7 @@ class Item
   # - `location` Substring's strart location.
   # - `length` Length of substring to extract.
   getAttributedBodyTextSubstring: (location, length) ->
-    @attributedBodyText.getAttributedSubstring(location, length)
+    @attributedBodyText.getAttributedString(location, length)
 
   # Public: Looks to see if there's an element with the given `tagName` at the
   # given index. If there is then that element's attributes are returned and
@@ -388,7 +388,7 @@ class Item
       replacedText
 
       if length
-        replacedText = attributedBodyText.getAttributedSubstring(location, length)
+        replacedText = attributedBodyText.getAttributedString(location, length)
       else
         replacedText = new AttributedString
 

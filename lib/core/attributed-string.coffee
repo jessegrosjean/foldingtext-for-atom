@@ -89,7 +89,7 @@ class AttributedString
     @_validateRange(location, length)
 
     if length is 0
-      return
+      return this
 
     string = @_string
     deleteStart = location
@@ -136,6 +136,7 @@ class AttributedString
 
     @_clean = false
     @_validateAttributeRuns()
+    this
 
   insertStringAtLocation: (insertedString, location) ->
     @_validateAttributeRuns()
@@ -152,7 +153,7 @@ class AttributedString
       insertedString = insertedAttributedString.getString()
 
     if insertedString.length is 0
-      return
+      return this
 
     string = @_string
     attributeRuns = @attributeRuns()
@@ -202,9 +203,11 @@ class AttributedString
 
     @_clean = false
     @_validateAttributeRuns()
+    this
 
   appendString: (insertedString) ->
     @insertStringAtLocation(insertedString, @length)
+    this
 
   replaceCharactersInRange: (insertedString, location, length) ->
     @_validateAttributeRuns()
@@ -422,7 +425,7 @@ class AttributedString
   # Section: Extract Substring
   #
 
-  getAttributedSubstring: (location, length) ->
+  getAttributedString: (location, length) ->
     if location isnt undefined
       if length is -1
         length = @_string.length - location

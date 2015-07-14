@@ -2,6 +2,18 @@ AttributedString = require '../../core/attributed-string'
 {repeat, replace, leadingTabs} = require '../helpers'
 Line = require '../line'
 
+unless String.prototype.getString
+  String.prototype.getString = ->
+    @toString()
+
+unless String.prototype.appendString
+  String.prototype.appendString = (string) ->
+    @toString() + string
+
+unless String.prototype.deleteCharactersInRange
+  String.prototype.deleteCharactersInRange = (location, length) ->
+    this.substr(0, location) + this.substr(location + length)
+
 class OutlineLine extends Line
 
   @parent: null
@@ -32,12 +44,22 @@ class OutlineLine extends Line
   getTabCount: ->
     (@item.depth - @buffer.hoistedItem.depth) - 1
 
+  updateItemIndent: (indentDelta) ->
+    if indentDelta
+      nextItem = @item.nextItem
+      if @item.parent
+        @item.outline.removeItem(@item)
+        @item.indent += indentDelta
+        @item.outline.insertItemBefore(@item, nextItem)
+      else
+        @item.indent += indentDelta
+
   deleteText: (start, end) ->
     if start is end
       return
 
-    startText = @getText()
-    startTabs = leadingTabs(startText)
+    startString = @getText()
+    startTabs = leadingTabs(startString)
     itemIndentDelta = 0
 
     if start > startTabs
@@ -49,11 +71,11 @@ class OutlineLine extends Line
       itemIndentDelta -= (end - start)
       start = end
     else
-      while startText[end] is '\t'
+      while startString[end] is '\t'
         itemIndentDelta++
         end++
 
-      while start <= end and startText[start] is '\t'
+      while start <= end and startString[start] is '\t'
         itemIndentDelta--
         start++
 
@@ -63,112 +85,44 @@ class OutlineLine extends Line
     if deleteLength = (end - start)
       @item.replaceBodyTextInRange('', start, deleteLength)
 
-    if itemIndentDelta
-      nextItem = @item.nextItem
-      if @item.parent
-        @item.outline.removeItem(@item)
-        @item.indent += itemIndentDelta
-        @item.outline.insertItemBefore(@item, nextItem)
-      else
-        @item.indent += itemIndentDelta
+    @updateItemIndent(itemIndentDelta)
 
   insertText: (text, location) ->
-    if text.getString
-      insertString = text.getString()
-    else
-      insertString = text
-
-    if insertString.length is 0
+    if text.length is 0
       return
 
-    startText = @getText()
-    startTabs = leadingTabs(startText)
-    insertText = insertString
+    startString = @getText()
+    startTabs = leadingTabs(startString)
     itemIndentDelta = 0
 
     if location > startTabs
       location -= startTabs
     else
-      insertStart = 0
-      insertEnd = insertString.length
-      appendAfterInsert = ''
+      # Remove startString tabs that trail the insert location and append them
+      # to the inserted text.
+      trimStartTabs = 0
+      while startString[location + trimStartTabs] is '\t'
+        itemIndentDelta--
+        trimStartTabs++
+      if trimStartTabs
+        text = text.appendString(repeat('\t', trimStartTabs))
 
-      # Trim tabs from front of inserted text accounting for them in indent delta
-      while insertText[trimLength] is '\t'
+      # Trim tabs from front of inserted text and account for them in ident.
+      insertString = text.getString()
+      trimInsertTabs = 0
+      while insertString[trimInsertTabs] is '\t'
         itemIndentDelta++
-        insertStart++
+        trimInsertTabs++
+      if trimInsertTabs
+        text = text.deleteCharactersInRange(0, trimInsertTabs)
 
-      # Collect original tabs trailing start
+    if text.length
+      @item.replaceBodyTextInRange(text, location, 0)
 
-
-      # Append tabs to end of insert text
-      if location < startTabs
-        diff = startTabs - location
-        itemIndentDelta -= diff
-        appendAfterInsert = repeat('\t', diff)
-
-      while startText[location] is '\t'
-        location--
-
-
-      if insertStart isnt insertEnd
-        @item.replaceBodyTextInRange(text, location, 0)
-
-      if appendAfterInsert
-        @item.replaceBodyTextInRange(appendAfterInsert, location, 0)
-
-  ###
-  insertText: (text, location) ->
-    unless @buffer.isUpdatingBufferFromOutline
-
-    if insertString.length is 0
-      return
-
-    @buffer.isUpdatingOutlineFromBuffer++
-
-    startText = @getText()
-    startTabs = leadingTabs(startText)
-    insertText = insertString
-    insertTabs = leadingTabs(insertText)
-
-    if location > startTabs
-      location -= startTabs
-    else
-      # Trim tabs from front of inserted text
-      trimStart = 0
-      while insertText[trimStart] is '\t'
-        indentDelta++
-        location++
-        trimStart++
-
-      # Append tabs to end of inserted text
-      if location < startTabs
-        diff = startTabs - location
-        indentDelta -= diff
-        repeat('\t', diff)
-
-
-      if location is startTabs
-        # Trim tabs from front of text
-      trimStart = 0
-      while insertText[trimStart] is '\t'
-        indentDelta++
-        location++
-        trimStart++
-    else
-
-
-
-
-    @buffer.isUpdatingOutlineFromBuffer--
-
-  ###
+    @updateItemIndent(itemIndentDelta)
 
   setTextInRange: (text, start, end) ->
-    if text.getString
-      textString = text.getString()
-    else
-      textString = text
+    textString = text.getString()
 
     if delta = (textString.length - (end - start))
       each = @parent
@@ -183,248 +137,8 @@ class OutlineLine extends Line
         @deleteText(start, end)
 
       if textString.length
-        @insertText(text, end)
+        @insertText(text, start)
 
       @buffer.isUpdatingOutlineFromBuffer--
-
-
-
-    ###
-    unless @buffer.isUpdatingBufferFromOutline
-      if text.getString
-        textString = text.getString()
-      else
-        textString = text
-
-    @buffer.isUpdatingOutlineFromBuffer++
-
-    # 1. Update line character count
-    if delta = (text.length - (end - start))
-      each = @parent
-      while each
-        each.characterCount += delta
-        each = each.parent
-
-    # 2. Count tabs calc final text
-    startText = @getText()
-    startTabs = leadingTabs(startText)
-    insertedText = textString
-    insertTabs = leadingTabs(insertedText)
-    replacedText = startText.substr(start, end)
-    replaceTabs = leadingTabs(replacedText)
-    finalText = replace(startText, start, end, insertedText)
-    finalTabs = leadingTabs(finalText)
-
-    itemLocation = start
-    itemReplaceLength = end - start
-
-    if itemReplaceLength
-
-
-    # 3. Determine item indent delta, insertText, and replace range
-    itemIndentDelta = 0
-    itemInsertText = textString
-    itemStart = start
-    itemEnd = end
-    itemReplaceLength = end - start
-
-    if itemStart > startTabs
-      # OK
-    else if itemStart is startTabs
-    else if itemStart < startTabs
-
-
-    # 4. Update item body text if needed
-    if itemInsertText or itemReplaceLength
-      @item.replaceBodyTextInRange(itemInsertText, itemStart, itemReplaceLength)
-
-    # 5. Update item indent if changed
-    if itemIndentDelta
-      nextItem = @item.nextItem
-      if @item.parent
-        @item.outline.removeItem(@item)
-        @item.indent += indentDelta
-        @item.outline.insertItemBefore(@item, nextItem)
-      else
-        @item.indent += indentDelta
-
-    @buffer.isUpdatingOutlineFromBuffer--
-    ###
-
-    ###
-    # 2.
-    startText = @getText()
-    startTabs = leadingTabs(startText)
-
-    insertedText = textString
-    insertTabs = leadingTabs(insertedText)
-
-    replacedText = startText.substr(start, end)
-    replaceTabs = leadingTabs(replacedText)
-
-    finalText = replace(startText, start, end, insertedText)
-    finalTabs = leadingTabs(finalText)
-
-    indentDelta = 0
-
-    if start > startTabs
-      # good to go, no level change
-    else if start is startTabs
-      if replacedText
-      else
-
-        if insertTabs
-        else
-          insertedText = (startText.substr()) + insertedText
-
-    else if start < startTabs
-
-      if replacedText.length
-      else
-        if insertTabs
-
-        else
-          insertedText = (startText.substr()) + insertedText
-
-      # Level can change if insert text has tabs
-      # Level can change if replacedText.length and
-
-
-
-
-
-    if start.indent is end.indent is 0
-      # good to go
-    else if
-
-
-
-    indentDelta = 0
-
-    if insertTabs
-      indentDelta += insertTabs
-      text = text.substr(insertTabs)
-
-    if
-
-    if indentDelta
-      nextItem = @item.nextItem
-      if @item.parent
-        @item.outline.removeItem(@item)
-        @item.indent += indentDelta
-        @item.outline.insertItemBefore(@item, nextItem)
-      else
-        @item.indent += indentDelta
-
-
-    # Need to extend/contract start/end and text as needed
-
-    if text.length or (end - start)
-      @item.replaceBodyTextInRange(text, start, end - start)
-
-    @buffer.isUpdatingOutlineFromBuffer--
-    ###
-
-  OLDsetTextInRange: (text, start, end) ->
-    unless @buffer.isUpdatingBufferFromOutline
-      if text.getString
-        textString = text.getString()
-      else
-        textString = text
-
-      @buffer.isUpdatingOutlineFromBuffer++
-
-      oldText = @getText()
-      oldLeadingTabs = leadingTabs(oldText)
-      newText = replace(oldText, start, end, textString)
-      newLeadingTabs = leadingTabs(newText)
-
-
-
-      # minimal
-      oldDeleteBodyTextStart = Math.max(0, oldLeadingTabs - start)
-      oldDeleteBodyTextEnd = Math.max(0, oldLeadingTabs - end)
-      if start <= oldLeadingTabs
-        leadingTabs(textString)
-
-
-
-      bodyText = newText.substr(newLeadingTabs)
-      if @item.bodyText isnt bodyText
-        @item.bodyText = bodyText
-
-      if delta = (newLeadingTabs - oldLeadingTabs)
-        nextItem = @item.nextItem
-        if @item.parent
-          @item.outline.removeItem(@item)
-          @item.indent += delta
-          @item.outline.insertItemBefore(@item, nextItem)
-        else
-          @item.indent += delta
-
-      #@item.replaceBodyTextInRange(text, start, end - start)
-      @buffer.isUpdatingOutlineFromBuffer--
-
-    if delta = (text.length - (end - start))
-      each = @parent
-      while each
-        each.characterCount += delta
-        each = each.parent
 
 module.exports = OutlineLine
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-###
-replaceLineTextInRange: (line, start, length, text) ->
-  # Update Item state based on text change. Need to calcuate item body text
-  # range to replace and items new indent level.
-  oldText = @getLineText(line)
-  oldLeadingTabs = leadingTabs(oldText)
-  newText = replace(oldText, start, length, text)
-  newLeadingTabs = leadingTabs(newText)
-  depthDelta = newLeadingTabs - oldLeadingTabs
-
-  item = line.data
-  outline = item.outline
-  outline.beginChanges()
-
-
-  if start <= oldLeadingTabs
-    start = oldLeadingTabs
-
-  # Replace item body text if changed
-  item.replaceBodyTextInRange(insertedText, start, length)
-
-  # Reinsert item if depth changed
-  if depthDelta
-    depth = item.depth
-    referenceItem = item.nextItem
-    outline.removeItem(item)
-    outline.insertItemBefore(item, depth + depthDelta, referenceItem)
-
-  line.setCharacterCount(newText.length)
-  outline.endChanges()
-###

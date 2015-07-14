@@ -23,37 +23,37 @@ describe 'AttributedString', ->
       attributedString.getString(6, 6).should.equal('world!')
 
     it 'should get attributed substring from start', ->
-      substring = attributedString.getAttributedSubstring(0, 5)
+      substring = attributedString.getAttributedString(0, 5)
       substring.toString().should.equal('(Hello/)')
 
     it 'should get attributed substring from end', ->
-      substring = attributedString.getAttributedSubstring(6, 6)
+      substring = attributedString.getAttributedString(6, 6)
       substring.toString().should.equal('(world!/)')
 
     it 'should get full attributed substring', ->
-      substring = attributedString.getAttributedSubstring()
+      substring = attributedString.getAttributedString()
       substring.toString().should.equal(attributedString.toString())
 
-      substring = attributedString.getAttributedSubstring(0, 12)
+      substring = attributedString.getAttributedString(0, 12)
       substring.toString().should.equal(attributedString.toString())
 
     it 'should get empty attributed substring', ->
-      attributedString.getAttributedSubstring(1, 0).toString().should.equal('(/)')
+      attributedString.getAttributedString(1, 0).toString().should.equal('(/)')
 
     it 'should get attributed substring with attributes', ->
       attributedString.addAttributeInRange('name', 'jesse', 0, 5)
 
-      substring = attributedString.getAttributedSubstring(0, 12)
+      substring = attributedString.getAttributedString(0, 12)
       substring.toString().should.equal(attributedString.toString())
 
-      substring = attributedString.getAttributedSubstring(0, 5)
+      substring = attributedString.getAttributedString(0, 5)
       substring.toString().should.equal('(Hello/name)')
 
     it 'should get attributed substring with overlapping attributes', ->
       attributedString.addAttributeInRange('i', null, 0, 12)
       attributedString.addAttributeInRange('b', null, 4, 3)
       attributedString.toString().should.equal('(Hell/i)(o w/b, i)(orld!/i)')
-      substring = attributedString.getAttributedSubstring(6, 6)
+      substring = attributedString.getAttributedString(6, 6)
       substring.toString().should.equal('(w/b, i)(orld!/i)')
 
   describe 'Delete Characters', ->
