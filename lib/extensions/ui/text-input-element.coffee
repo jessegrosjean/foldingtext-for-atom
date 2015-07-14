@@ -200,6 +200,7 @@ class TextInputElement extends HTMLElement
   setSizeToFit: (@sizeToFit) ->
     if @sizeToFit
       # Hack so that mini editor can never scroll backwards.
+      @textEditorElement.getModel().setSoftWrapped(false)
       @textEditorElement.component?.presenter?.constrainScrollLeft = -> 0
       @textEditorElement.component?.presenter?.setScrollLeft = -> 0
     else
