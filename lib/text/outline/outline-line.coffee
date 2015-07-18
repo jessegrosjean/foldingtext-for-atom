@@ -116,6 +116,9 @@ class OutlineLine extends Line
       if trimInsertTabs
         text = text.deleteCharactersInRange(0, trimInsertTabs)
 
+      # Final insert location in body text
+      location = 0
+
     if text.length
       @item.replaceBodyTextInRange(text, location, 0)
 

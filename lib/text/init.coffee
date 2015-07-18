@@ -11,4 +11,3 @@ atom.workspace.observeTextEditors (textEditor) ->
 
   textBuffer.onDidChange (e) ->
     outlineBuffer.setTextInRange(e.newText, e.oldRange)
-    console.log(outlineBuffer.outline.toString())

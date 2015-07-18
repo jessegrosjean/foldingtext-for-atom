@@ -15,6 +15,7 @@ describe 'OutlineBuffer', ->
         exp(mutation)
 
   afterEach ->
+    mutationExpects = null
     subscription.dispose()
     buffer.destroy()
     outline.destroy()
@@ -185,6 +186,13 @@ describe 'OutlineBuffer', ->
         buffer.setTextInRange('new', [[0, 3], [0, 3]])
         expect(item.bodyText).toBe('onewne')
         expect(item.depth).toBe(3)
+
+      it 'should insert text in empty line with single tab', ->
+        item.indent = 2
+        item.bodyText = ''
+        buffer.setTextInRange('a', [[0, 1], [0, 1]])
+        expect(item.bodyText).toBe('a')
+        expect(item.depth).toBe(2)
 
     describe 'Generate Minimal Outline Mutations', ->
       [item] = []
