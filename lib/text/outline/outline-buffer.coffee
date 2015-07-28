@@ -105,6 +105,62 @@ class OutlineBuffer extends Buffer
     @isUpdatingBufferFromOutline--
 
   ###
+  Section: Expanding Items
+  ###
+
+  isExpanded: (item) ->
+    return item and @getItemBufferState(item).expanded
+
+  isCollapsed: (item) ->
+    return item and not @getItemBufferState(item).expanded
+
+  setExpanded: (items) ->
+    @_setExpandedState items, true
+
+  setCollapsed: (items) ->
+    @_setExpandedState items, false
+
+  _setExpandedState: (items, expanded) ->
+    if not _.isArray(items)
+      items = [items]
+
+    for each in items
+      if @isExpanded(each) isnt expanded
+        @getItemBufferState(each).expanded = expanded
+
+        if expanded
+          # Insert lines for visible descendents of each
+        else
+          # Remove lines for descendents of each
+
+  ###
+  Section: Matched Items
+  ###
+
+  isMatched: (item) ->
+    return item and @getItemBufferState(item).matched
+
+  isMatchedAncestor: (item) ->
+    return item and @getItemBufferState(item).matchedAncestor
+
+  setQuery: (query) ->
+    # Remove old state
+    @iterateLines 0, @getLineCount(), (line) ->
+      item = line.item
+      itemState = @getItemBufferState(item)
+      itemState.matched = false
+      itemState.matchedAncestor = false
+
+    # Remove old lines
+    @isUpdatingBufferFromOutline++
+    @removeLines(0, @getLineCount())
+    @isUpdatingBufferFromOutline--
+
+    if query
+      # Set matched state for each result
+      # Add lines for all expanded items below hoisted item that match query
+    else
+      # Add lines for all expanded items below hoisted item
 
   ###
   Section: Item State
