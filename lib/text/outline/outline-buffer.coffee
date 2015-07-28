@@ -2,6 +2,7 @@ Mutation = require '../../core/mutation'
 {CompositeDisposable} = require 'atom'
 OutlineLine = require './outline-line'
 Outline = require '../../core/outline'
+shortid = require '../../core/shortid'
 {replace} = require '../helpers'
 Buffer = require '../buffer'
 Range = require '../range'
@@ -16,6 +17,7 @@ class OutlineBuffer extends Buffer
 
   constructor: (outline) ->
     super()
+    @id = shortid()
     @subscriptions = new CompositeDisposable
     @outline = outline or Outline.buildOutlineSync()
     @subscribeToOutline()
@@ -104,8 +106,24 @@ class OutlineBuffer extends Buffer
 
   ###
 
+  ###
+  Section: Item State
+  ###
+
   getLineForItem: (item) ->
     @itemsToLinesMap.get(item)
+
+  getItemBufferState: (item) ->
+    if item
+      key = @id + '-buffer-state'
+      unless state = item.getUserData(key)
+        state = new ItemBufferState
+        item.setUserData key, state
+      state
+
+  ###
+  Section: Line Overrides
+  ###
 
   insertLines: (row, lines) ->
     insertBefore = @getLine(row)?.item or @getHoistedItem().nextSibling
@@ -148,5 +166,13 @@ class OutlineBuffer extends Buffer
     outlineLine = new OutlineLine(this, item)
     outlineLine.setTextInRange(text, 0, 0)
     outlineLine
+
+class ItemBufferState
+  constructor: ->
+    @marked = false
+    @selected = false
+    @expanded = false
+    @matched = false
+    @matchedAncestor = false
 
 module.exports = OutlineBuffer
