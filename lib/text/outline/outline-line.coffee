@@ -42,7 +42,7 @@ class OutlineLine extends Line
     @setTextInRange(content, end, end)
 
   getTabCount: ->
-    (@item.depth - @buffer.hoistedItem.depth) - 1
+    (@item.depth - @buffer.getHoistedItem().depth) - 1
 
   updateItemIndent: (indentDelta) ->
     if indentDelta

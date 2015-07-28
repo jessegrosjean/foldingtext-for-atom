@@ -18,8 +18,8 @@ class OutlineBuffer extends Buffer
     super()
     @subscriptions = new CompositeDisposable
     @outline = outline or Outline.buildOutlineSync()
-    @hoistedItem = @outline.root
     @subscribeToOutline()
+    @setHoistedItem(@outline.root)
 
   subscribeToOutline: ->
     @outline.retain()
@@ -82,14 +82,33 @@ class OutlineBuffer extends Buffer
       super()
 
   ###
-  Section: Lines
+  Section: Hoisted Item
+  ###
+
+  getHoistedItem: ->
+    @hoistedItem or @outline.root
+
+  setHoistedItem: (item) ->
+    @hoistedItem = item
+
+    @isUpdatingBufferFromOutline++
+    @removeLines(0, @getLineCount())
+    @isUpdatingBufferFromOutline--
+
+    newLines = []
+    for each in @getHoistedItem().descendants
+      newLines.push(new OutlineLine(this, each))
+    @isUpdatingBufferFromOutline++
+    @insertLines(0, newLines)
+    @isUpdatingBufferFromOutline--
+
   ###
 
   getLineForItem: (item) ->
     @itemsToLinesMap.get(item)
 
   insertLines: (row, lines) ->
-    insertBefore = @getLine(row)?.item
+    insertBefore = @getLine(row)?.item or @getHoistedItem().nextSibling
 
     for each in lines
       @itemsToLinesMap.set(each.item, each)
@@ -125,7 +144,7 @@ class OutlineBuffer extends Buffer
 
   createLineFromText: (text) ->
     item = @outline.createItem()
-    item.indent = @hoistedItem.depth + 1
+    item.indent = @getHoistedItem().depth + 1
     outlineLine = new OutlineLine(this, item)
     outlineLine.setTextInRange(text, 0, 0)
     outlineLine
