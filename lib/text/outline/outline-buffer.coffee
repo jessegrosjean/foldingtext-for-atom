@@ -32,19 +32,20 @@ class OutlineBuffer extends Buffer
     if @isUpdatingOutlineFromBuffer
       return
 
+    target = mutation.target
+
     switch mutation.type
       when Mutation.BODT_TEXT_CHANGED
-        item = mutation.target
-        line = @getLineForItem(mutation.target)
-        start = mutation.insertedTextLocation
-        end = start + mutation.replacedText.length
-        row = line.getRow()
-        range = new Range([row, start], [row, end])
-        text = item.bodyText.substr(start, mutation.insertedTextLength)
+        if line = @getLineForItem(target)
+          start = mutation.insertedTextLocation
+          end = start + mutation.replacedText.length
+          row = line.getRow()
+          range = new Range([row, start], [row, end])
+          text = target.bodyText.substr(start, mutation.insertedTextLength)
 
-        @isUpdatingBufferFromOutline++
-        @setTextInRange(text, range)
-        @isUpdatingBufferFromOutline--
+          @isUpdatingBufferFromOutline++
+          @setTextInRange(text, range)
+          @isUpdatingBufferFromOutline--
 
       when Mutation.CHILDREN_CHANGED
         parentLine = @getLineForItem(mutation.target)
