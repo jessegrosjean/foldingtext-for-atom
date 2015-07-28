@@ -80,6 +80,27 @@ describe 'OutlineBuffer', ->
         expect(buffer.getLineCount()).toBe(1)
         expect(buffer.getCharacterCount()).toBe(5)
 
+    describe 'Hoisted Item', ->
+
+      it 'should hoist item', ->
+        outline.root.appendChild(outline.createItem(''))
+        buffer.setTextInRange('one\n\ttwo\nthree', [[0, 0], [0, 0]])
+        buffer.setHoistedItem(outline.root.firstChild)
+        expect(buffer.getText()).toBe('two')
+
+      it 'should hoist item with no children', ->
+        outline.root.appendChild(outline.createItem(''))
+        buffer.setTextInRange('one\n\ttwo\nthree', [[0, 0], [0, 0]])
+        buffer.setHoistedItem(outline.root.firstChild.firstChild)
+        expect(buffer.getText()).toBe('')
+
+      it 'should not update buffer when items are added outide hoisted item', ->
+        outline.root.appendChild(outline.createItem(''))
+        buffer.setTextInRange('one\n\ttwo\nthree', [[0, 0], [0, 0]])
+        buffer.setHoistedItem(outline.root.firstChild)
+        outline.root.appendChild(outline.createItem('not me!'))
+        expect(buffer.getText()).toBe('two')
+
   describe 'Buffer Changes', ->
 
     it 'updates item text when buffer changes', ->
