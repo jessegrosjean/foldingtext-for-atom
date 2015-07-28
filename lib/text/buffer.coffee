@@ -151,6 +151,8 @@ class Buffer extends BufferBranch
     super(row, count, operation)
 
   insertLines: (row, lines) ->
+    return unless lines.length
+
     end = row
     if row < 0 or end > @lineCount
       throw new Error("Invalide line range: #{row}-#{end}");
@@ -186,6 +188,8 @@ class Buffer extends BufferBranch
       @emitter.emit 'did-change', changeEvent
 
   removeLines: (row, count) ->
+    return unless count
+
     end = row + count
     if row < 0 or end > @lineCount
       throw new Error("Invalide line range: #{row}-#{end}");
