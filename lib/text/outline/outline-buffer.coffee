@@ -48,8 +48,11 @@ class OutlineBuffer extends Buffer
           @isUpdatingBufferFromOutline--
 
       when Mutation.CHILDREN_CHANGED
-        parentLine = @getLineForItem(mutation.target)
+        parentLine = @getLineForItem(target)
         nextSiblingLine = @getLineForItem(mutation.nextSibling)
+
+        unless target is @getHoistedItem() or parentLine
+          return
 
         # Remove lines
         if mutation.removedItems.length
