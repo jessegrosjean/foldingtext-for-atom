@@ -10,3 +10,4 @@ npm-debug.log
 debug.log
 _site
 .sass-cache
+lib-browser/dist/**/*
