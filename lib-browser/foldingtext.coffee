@@ -3,3 +3,4 @@ window.foldingtext = module.exports =
   Outline: require '../lib/core/outline'
   Mutation: require '../lib/core/mutation'
   OutlineBuffer: require '../lib/text/outline/outline-buffer'
+  OutlineEditor: require '../lib/text/outline/outline-editor'
