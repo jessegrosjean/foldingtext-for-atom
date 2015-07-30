@@ -1,3 +1,5 @@
+_ = require 'underscore-plus'
+
 module.exports =
 class Point
 
@@ -167,4 +169,4 @@ class Point
     "(#{@row}, #{@column})"
 
 isNumber = (value) ->
-  (typeof value is 'number') and (not Number.isNaN(value))
+  (typeof value is 'number') and (not _.isNaN(value))
