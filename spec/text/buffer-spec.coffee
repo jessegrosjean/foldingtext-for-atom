@@ -21,6 +21,8 @@ describe 'Buffer', ->
       expect(buffer.getText()).toBe('')
       expect(buffer.getLineCount()).toBe(0)
       expect(buffer.getCharacterCount()).toBe(0)
+      expect(buffer.getRange().toString()).toBe('[(0, 0) - (0, 0)]')
+      expect(buffer.getRangeFromCharacterRange(0, 0).toString()).toBe('[(0, 0) - (0, 0)]')
 
   describe 'Text', ->
 
@@ -36,6 +38,10 @@ describe 'Buffer', ->
       expect(buffer.getTextInRange([[0, 0], [1, 0]])).toBe('12345\n')
       expect(buffer.getTextInRange([[0, 5], [1, 0]])).toBe('\n')
       expect(buffer.getTextInRange([[0, 3], [1, 3]])).toBe('45\n123')
+
+    it 'replaces text in empty buffer', ->
+      buffer.setTextInRange('hello', [[0, 0], [0, 0]])
+      expect(buffer.getText()).toBe('hello')
 
     it 'replaces text in single line range', ->
       buffer.insertLines(0, lines)
@@ -76,6 +82,12 @@ describe 'Buffer', ->
       expect(buffer.children[1].children.length).toBe(5)
       expect(buffer.children[2].children.length).toBe(5)
 
+    it 'inserts lines at end', ->
+      buffer.insertLines(0, [new Line('12345', 5)])
+      buffer.insertLines(1, [new Line('12345', 5)])
+      buffer.insertLines(2, [new Line('12345', 5)])
+      expect(buffer.getText()).toEqual('12345\n12345\n12345')
+
     it 'removes lines', ->
       buffer.insertLines(0, lines)
       buffer.removeLines(0, 2)
@@ -93,6 +105,17 @@ describe 'Buffer', ->
       buffer.removeLines(0, 438)
       expect(buffer.children.length).toBe(1)
       expect(buffer.children[0].children.length).toBe(0)
+
+    it 'remove lines at end', ->
+      buffer.insertLines(0, [new Line('12345', 5)])
+      buffer.insertLines(1, [new Line('12345', 5)])
+      buffer.insertLines(2, [new Line('12345', 5)])
+      buffer.removeLines(2, 1)
+      expect(buffer.getText()).toEqual('12345\n12345')
+      buffer.removeLines(0, 1)
+      expect(buffer.getText()).toEqual('12345')
+      buffer.removeLines(0, 1)
+      expect(buffer.getText()).toEqual('')
 
     it 'updates line character counts', ->
       buffer.insertLines(0, lines)
@@ -178,8 +201,10 @@ describe 'Buffer', ->
       subscriptions.add buffer.onDidChange (e) ->
         expect(e.oldText).toEqual('12')
         expect(e.oldRange.toString()).toEqual('[(0, 0) - (0, 2)]')
+        expect(e.oldCharacterRange).toEqual(start: 0, end: 2)
         expect(e.newText).toEqual('one\ntwo')
         expect(e.newRange.toString()).toEqual('[(0, 0) - (1, 3)]')
+        expect(e.newCharacterRange).toEqual(start: 0, end: 7)
       buffer.setTextInRange('one\ntwo', [[0, 0], [0, 2]])
 
     it 'posts change events when inserting lines', ->
@@ -188,8 +213,10 @@ describe 'Buffer', ->
       subscriptions.add buffer.onDidChange (e) ->
         expect(e.oldText).toEqual('')
         expect(e.oldRange.toString()).toEqual('[(3, 0) - (3, 0)]')
+        expect(e.oldCharacterRange).toEqual(start: 18, end: 18)
         expect(e.newText).toEqual('hello\n')
         expect(e.newRange.toString()).toEqual('[(3, 0) - (4, 0)]')
+        expect(e.newCharacterRange).toEqual(start: 18, end: 24)
       buffer.insertLines(3, lines)
 
     it 'posts change events when removing lines', ->
@@ -197,6 +224,8 @@ describe 'Buffer', ->
       subscriptions.add buffer.onDidChange (e) ->
         expect(e.oldText).toEqual('12345\n12345\n')
         expect(e.oldRange.toString()).toEqual('[(3, 0) - (5, 0)]')
+        expect(e.oldCharacterRange).toEqual(start: 18, end: 30)
         expect(e.newText).toEqual('')
         expect(e.newRange.toString()).toEqual('[(3, 0) - (3, 0)]')
+        expect(e.newCharacterRange).toEqual(start: 18, end: 18)
       buffer.removeLines(3, 2)

@@ -74,6 +74,9 @@ class Buffer extends BufferBranch
       lines.join('\n')
 
   setTextInRange: (newText, range) ->
+    if @getLineCount() is 0
+      @insertLines(0, [@createLineFromText('')])
+
     oldRange = @clipRange(range)
     newRange = Range.fromText(oldRange.start, newText)
     startRow = oldRange.start.row
@@ -84,12 +87,15 @@ class Buffer extends BufferBranch
     effectsSingleLine = startRow is endRow
     startLine = @getLine(startRow)
     endLine = @getLine(endRow)
+    startOffset = startLine.getCharacterOffset()
 
     unless @changing
       changeEvent =
         oldRange: oldRange.copy()
+        oldCharacterRange: @getCharacterRangeFromRange(oldRange)
         oldText: @getTextInRange(oldRange)
         newRange: newRange.copy()
+        newCharacterRange: start: startOffset, end: startOffset + newText.length
         newText: newText
       @emitter.emit 'will-change', changeEvent
 
@@ -159,23 +165,38 @@ class Buffer extends BufferBranch
 
     unless @changing
       newText = (each.getText() for each in lines).join('\n')
+      oldRange = new Range([row, 0], [row, 0])
+      startOffset
+      newRange
 
       if row is @lineCount
         if row is 0
           lastLineIndex = row + lines.length - 1
           lastLine = lines[lastLineIndex]
-          newRange = new Range([row, 0], [lastLineIndex, lastLine.getText().length - 1])
+          newRange = new Range([row, 0], [lastLineIndex, lastLine.getCharacterCount() - 1])
+          startOffset = 0
         else
           newRange = new Range([row, 0], [row + lines.length, 0])
           newText = '\n' + newText
+          prevLine = @getLine(row - 1)
+          prevLineLength = prevLine.getCharacterCount()
+          startOffset = prevLine.getCharacterOffset() + prevLineLength - 1
+          oldRange = new Range([row - 1, prevLineLength - 1], [row - 1, prevLineLength - 1])
       else
-        newRange = new Range([row, 0], [row + lines.length, 0])
         newText += '\n'
+        newRange = new Range([row, 0], [row + lines.length, 0])
+        startOffset = @getCharacterOffsetFromPoint(newRange.start)
+
+      newCharacterRange =
+        start: startOffset
+        end: startOffset + newText.length
 
       changeEvent =
-        oldRange: new Range([row, 0], [row, 0])
+        oldRange: oldRange
+        oldCharacterRange: @getCharacterRangeFromRange(oldRange)
         oldText: ''
         newRange: newRange
+        newCharacterRange: newCharacterRange
         newText: newText
       @emitter.emit 'will-change', changeEvent
 
@@ -196,10 +217,18 @@ class Buffer extends BufferBranch
 
     unless @changing
       oldRange = new Range([row, 0], [end, 0])
+      newRange = new Range([row, 0], [row, 0])
+
+      if end is @lineCount
+        oldRange.end.row = end - 1
+        oldRange.end.column = this.getLine(end - 1).getCharacterCount() - 1
+
       changeEvent =
         oldRange: oldRange
+        oldCharacterRange: @getCharacterRangeFromRange(oldRange)
         oldText: @getTextInRange(oldRange)
-        newRange: new Range([row, 0], [row, 0])
+        newRange: newRange
+        newCharacterRange: @getCharacterRangeFromRange(newRange)
         newText: ''
       @emitter.emit 'will-change', changeEvent
 
@@ -218,6 +247,24 @@ class Buffer extends BufferBranch
   getRange: ->
     new Range(@getFirstPosition(), @getEndPosition())
 
+  getCharacterRangeFromRange: (range) ->
+    start = @getCharacterOffsetFromPoint(range.start)
+    if range.isSingleLine()
+      end = start + (range.end.column - range.start.column)
+    else
+      end = @getCharacterOffsetFromPoint(range.end)
+    start: start, end: end
+
+  getRangeFromCharacterRange: (startOffset, endOffset) ->
+    if endOffset is 0
+      return new Range()
+    start = @getLineRowColumn(startOffset)
+    if startOffset is endOffset
+      end = start
+    else
+      end = @getLineRowColumn(endOffset)
+    new Range([start.row, start.column], [end.row, end.column])
+
   getLineCount: ->
     super()
 
@@ -229,7 +276,16 @@ class Buffer extends BufferBranch
 
   getEndPosition: ->
     lastRow = @getLastRow()
-    new Point(lastRow, @getLine(lastRow).getText().length)
+    if lastRow is -1
+      @getFirstPosition()
+    else
+      new Point(lastRow, @getLine(lastRow).getText().length)
+
+  getCharacterOffsetFromPoint: (point) ->
+    if point.isZero()
+      0
+    else
+      @getLine(point.row).getCharacterOffset() + point.column
 
   getCharacterCount: ->
     if @getLineCount() > 0
