@@ -1,14 +1,15 @@
+###
 OutlineBuffer = require '../../lib/text/outline/outline-buffer'
 {CompositeDisposable} = require 'atom'
 Range = require '../../lib/text/range'
 Line = require '../../lib/text/line'
 
-describe 'OutlineBuffer', ->
+describe 'OutlineEditor', ->
   [outline, outlineSubscription, outlineDidChangeExpects, buffer, bufferSubscription, bufferDidChangeExpects, lines] = []
 
   beforeEach ->
-    buffer = new OutlineBuffer()
-    outline = buffer.outline
+    editor = new OutlineEditor()
+    outline = editor.outlineBuffer.outline
     outlineSubscription = outline.onDidChange (mutation) ->
       if outlineDidChangeExpects?.length
         exp = outlineDidChangeExpects.shift()
@@ -73,14 +74,6 @@ describe 'OutlineBuffer', ->
         expect(buffer.getLineCount()).toBe(2)
         expect(buffer.getCharacterCount()).toBe(8)
 
-      it 'updates buffer when outline inserts item children', ->
-        outline.root.appendChild(one = outline.createItem('one'))
-        outline.root.firstChild.appendChild(two = outline.createItem('two'))
-        outline.root.appendChild(three = outline.createItem('three'))
-        expect(buffer.getText()).toBe('one\n\ttwo\nthree')
-        expect(buffer.getLineCount()).toBe(3)
-        expect(buffer.getCharacterCount()).toBe(14)
-
       it 'updates buffer when outline removes items', ->
         outline.root.appendChild(outline.createItem(''))
         buffer.setTextInRange('one\n\ttwo\nthree', [[0, 0], [0, 0]])
@@ -96,6 +89,27 @@ describe 'OutlineBuffer', ->
         expect(buffer.getText()).toBe('three')
         expect(buffer.getLineCount()).toBe(1)
         expect(buffer.getCharacterCount()).toBe(5)
+
+    describe 'Hoisted Item', ->
+
+      it 'should hoist item', ->
+        outline.root.appendChild(outline.createItem(''))
+        buffer.setTextInRange('one\n\ttwo\nthree', [[0, 0], [0, 0]])
+        buffer.setHoistedItem(outline.root.firstChild)
+        expect(buffer.getText()).toBe('two')
+
+      it 'should hoist item with no children', ->
+        outline.root.appendChild(outline.createItem(''))
+        buffer.setTextInRange('one\n\ttwo\nthree', [[0, 0], [0, 0]])
+        buffer.setHoistedItem(outline.root.firstChild.firstChild)
+        expect(buffer.getText()).toBe('')
+
+      it 'should not update buffer when items are added outide hoisted item', ->
+        outline.root.appendChild(outline.createItem(''))
+        buffer.setTextInRange('one\n\ttwo\nthree', [[0, 0], [0, 0]])
+        buffer.setHoistedItem(outline.root.firstChild)
+        outline.root.appendChild(outline.createItem('not me!'))
+        expect(buffer.getText()).toBe('two')
 
     describe 'Generate Buffer Mutations', ->
       [one, two, three] = []
@@ -118,11 +132,13 @@ describe 'OutlineBuffer', ->
       it 'should generate mutation for item insert', ->
         bufferDidChangeExpects = [
           (e) ->
+            debugger
             expect(e.oldText).toEqual('')
-            expect(e.oldCharacterRange).toEqual(start: 9, end: 9)
+            expect(e.oldCharacterRange).toEqual(start: 0, end: 3)
             expect(e.newText).toEqual('\tnew!\n')
-            expect(e.newCharacterRange).toEqual(start: 9, end: 15)
+            expect(e.newCharacterRange).toEqual(start: 0, end: 5)
         ]
+        debugger
         one.appendChild(outline.createItem('new!'))
 
       it 'should generate mutation for item remove', ->
@@ -292,3 +308,4 @@ describe 'OutlineBuffer', ->
         buffer.setTextInRange('', [[0, 0], [0, 1]])
         expect(item.bodyText).toBe('one')
         expect(item.depth).toBe(1)
+###

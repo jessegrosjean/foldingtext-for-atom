@@ -150,6 +150,16 @@ class Buffer extends BufferBranch
       return undefined
     super(characterOffset)
 
+  getLinesInRange: (range) ->
+    range = @clipRange(Range.fromObject(range))
+    startRow = range.start.row
+    endRow = range.end.row
+
+    lines = []
+    @iterateLines startRow, (endRow - startRow) + 1, (line) ->
+      lines.push line
+    lines
+
   iterateLines: (row, count, operation) ->
     end = row + count
     if row < 0 or end > @lineCount

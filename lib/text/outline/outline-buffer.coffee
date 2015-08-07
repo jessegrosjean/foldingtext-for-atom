@@ -1,189 +1,140 @@
 Mutation = require '../../core/mutation'
+{repeat, replace} = require '../helpers'
 {CompositeDisposable} = require 'atom'
 OutlineLine = require './outline-line'
 Outline = require '../../core/outline'
-shortid = require '../../core/shortid'
-{replace} = require '../helpers'
 Buffer = require '../buffer'
 Range = require '../range'
 
 class OutlineBuffer extends Buffer
 
-  outline: null
-  hoistedItem: null
-  isUpdatingOutlineFromBuffer: 0
-  isUpdatingBufferFromOutline: 0
-  itemsToLinesMap: new Map
-
-  constructor: (outline) ->
+  constructor: (outline, @outlineEditor) ->
     super()
-    @id = shortid()
-    @subscriptions = new CompositeDisposable
+    @isUpdatingBuffer = 0
+    @isUpdatingOutline = 0
+    @itemsToLinesMap = new Map
+    @subscriptions = new CompositeDisposable()
     @outline = outline or Outline.buildOutlineSync()
-    @subscribeToOutline()
-    @setHoistedItem(@outline.root)
-
-  subscribeToOutline: ->
     @outline.retain()
     @subscriptions.add @outline.onDidChange @outlineDidChange.bind(this)
     @subscriptions.add @outline.onDidDestroy => @destroy()
 
   outlineDidChange: (mutation) ->
-    if @isUpdatingOutlineFromBuffer
+    if @isUpdatingOutline
       return
 
     target = mutation.target
 
     switch mutation.type
+      when Mutation.ATTRIBUTE_CHANGED
+        if mutation.attributeName is 'indent'
+          if line = @getLineForItem(target)
+            oldIndent = mutation.attributeOldValue or 1
+            newIndent = target.indent
+            row = line.getRow()
+            range = new Range([row, 0], [row, oldIndent - 1])
+            delta = newIndent - oldIndent
+            @isUpdatingBuffer++
+            @setTextInRange(repeat('\t', delta), range)
+            @isUpdatingBuffer--
+
       when Mutation.BODT_TEXT_CHANGED
         if line = @getLineForItem(target)
           start = mutation.insertedTextLocation
+          text = target.bodyText.substr(start, mutation.insertedTextLength)
+          indentTabs = line.getTabCount()
+          start += indentTabs
           end = start + mutation.replacedText.length
           row = line.getRow()
           range = new Range([row, start], [row, end])
-          text = target.bodyText.substr(start, mutation.insertedTextLength)
 
-          @isUpdatingBufferFromOutline++
+          @isUpdatingBuffer++
           @setTextInRange(text, range)
-          @isUpdatingBufferFromOutline--
+          @isUpdatingBuffer--
 
       when Mutation.CHILDREN_CHANGED
         parentLine = @getLineForItem(target)
-        nextSiblingLine = @getLineForItem(mutation.nextSibling)
 
         unless target is @getHoistedItem() or parentLine
           return
 
-        # Remove lines
         if mutation.removedItems.length
+          # Remove lines
           removeStart = undefined
           removeCount = 0
+
+          removeRangeIfDefined = =>
+            @isUpdatingBuffer++
+            @removeLines(removeStart, removeCount)
+            @isUpdatingBuffer--
+            removeStart = undefined
+            removeCount = 0
 
           for each in mutation.getFlattendedRemovedItems()
             if line = @getLineForItem(each)
               removeStart ?= line.getRow()
               removeCount++
-          if removeCount
-            @isUpdatingBufferFromOutline++
-            @removeLines(removeStart, removeCount)
-            @isUpdatingBufferFromOutline--
+            else if removeStart
+              removeRangeIfDefined()
+          removeRangeIfDefined()
 
-        # Insert lines
-        if mutation.addedItems.length
+        else if mutation.addedItems.length
+          # Insert lines
           addedLines = []
-          for each in mutation.getFlattendedAddedItems()
-            addedLines.push(new OutlineLine(this, each))
 
-          @isUpdatingBufferFromOutline++
-          if parentLine
-            @insertLines(parentLine.getRow() + 1, addedLines)
+          addLineForItemIfVisible = (item) =>
+            if @isVisible(item)
+              addedLines.push(new OutlineLine(this, item))
+              eachChild = item.firstChild
+              while eachChild
+                addLineForItemIfVisible(eachChild)
+                eachChild = eachChild.nextSibling
+
+          for each in mutation.addedItems
+            addLineForItemIfVisible(each)
+
+          insertBeforeItem = addedLines[addedLines.length - 1].item.nextItem
+          while insertBeforeItem and not (insertBeforeLine = @getLineForItem(insertBeforeItem))
+            insertBeforeItem = insertBeforeItem.nextItem
+
+          if insertBeforeLine
+            row = insertBeforeLine.getRow()
           else
-            @insertLines(nextSiblingLine?.getRow() ? @getLineCount(), addedLines)
-          @isUpdatingBufferFromOutline--
+            insertAfterItem = addedLines[0].item.previousItem
+            while insertAfterItem and not (insertAfterLine = @getLineForItem(insertAfterItem))
+              insertAfterItem = insertAfterItem.nextItem
+
+            if insertAfterLine
+              row = insertAfterLine.getRow() + 1
+            else
+              row = 0
+
+          @isUpdatingBuffer++
+          @insertLines(row, addedLines)
+          @isUpdatingBuffer--
 
   destroy: ->
     unless @destroyed
       @subscriptions.dispose()
-      @outline.release
+      @outline.release()
       super()
 
   ###
-  Section: Hoisted Item
+  Section: Outline Editor Cover
   ###
+
+  isVisible: (item) ->
+    @outlineEditor?.isVisible(item) or true
 
   getHoistedItem: ->
-    @hoistedItem or @outline.root
-
-  setHoistedItem: (item) ->
-    @hoistedItem = item
-
-    @isUpdatingBufferFromOutline++
-    @removeLines(0, @getLineCount())
-    @isUpdatingBufferFromOutline--
-
-    newLines = []
-    for each in @getHoistedItem().descendants
-      newLines.push(new OutlineLine(this, each))
-    @isUpdatingBufferFromOutline++
-    @insertLines(0, newLines)
-    @isUpdatingBufferFromOutline--
+    @outlineEditor?.getHoistedItem() or @outline.root
 
   ###
-  Section: Expanding Items
-  ###
-
-  isExpanded: (item) ->
-    return item and @getItemBufferState(item).expanded
-
-  isCollapsed: (item) ->
-    return item and not @getItemBufferState(item).expanded
-
-  setExpanded: (items) ->
-    @_setExpandedState items, true
-
-  setCollapsed: (items) ->
-    @_setExpandedState items, false
-
-  _setExpandedState: (items, expanded) ->
-    if not _.isArray(items)
-      items = [items]
-
-    for each in items
-      if @isExpanded(each) isnt expanded
-        @getItemBufferState(each).expanded = expanded
-
-        if expanded
-          # Insert lines for visible descendents of each
-        else
-          # Remove lines for descendents of each
-
-  ###
-  Section: Matched Items
-  ###
-
-  isMatched: (item) ->
-    return item and @getItemBufferState(item).matched
-
-  isMatchedAncestor: (item) ->
-    return item and @getItemBufferState(item).matchedAncestor
-
-  setQuery: (query) ->
-    # Remove old state
-    @iterateLines 0, @getLineCount(), (line) ->
-      item = line.item
-      itemState = @getItemBufferState(item)
-      itemState.matched = false
-      itemState.matchedAncestor = false
-
-    # Remove old lines
-    @isUpdatingBufferFromOutline++
-    @removeLines(0, @getLineCount())
-    @isUpdatingBufferFromOutline--
-
-    if query
-      # Set matched state for each result
-      # Add lines for all expanded items below hoisted item that match query
-    else
-      # Add lines for all expanded items below hoisted item
-
-  ###
-  Section: Item State
+  Section: Lines
   ###
 
   getLineForItem: (item) ->
     @itemsToLinesMap.get(item)
-
-  getItemBufferState: (item) ->
-    if item
-      key = @id + '-buffer-state'
-      unless state = item.getUserData(key)
-        state = new ItemBufferState
-        item.setUserData key, state
-      state
-
-  ###
-  Section: Line Overrides
-  ###
 
   insertLines: (row, lines) ->
     insertBefore = @getLine(row)?.item or @getHoistedItem().nextSibling
@@ -191,11 +142,11 @@ class OutlineBuffer extends Buffer
     for each in lines
       @itemsToLinesMap.set(each.item, each)
 
-    unless @isUpdatingBufferFromOutline
+    unless @isUpdatingBuffer
       items = (each.item for each in lines)
-      @isUpdatingOutlineFromBuffer++
+      @isUpdatingOutline++
       @outline.insertItemsBefore(items, insertBefore)
-      @isUpdatingOutlineFromBuffer--
+      @isUpdatingOutline--
 
     super(row, lines)
 
@@ -205,19 +156,16 @@ class OutlineBuffer extends Buffer
       @itemsToLinesMap.delete(each)
       lines.push(each)
 
-    unless @isUpdatingBufferFromOutline
-      @isUpdatingOutlineFromBuffer++
+    unless @isUpdatingBuffer
+      @isUpdatingOutline++
       for each in lines
         @outline.removeItem(each.item)
-      @isUpdatingOutlineFromBuffer--
+      @isUpdatingOutline--
 
     super(row, count)
 
-  setTextInRange: (newText, range) ->
-    super(newText, range)
-
   ###
-  Section: Text Line Overrides
+  Section: Text Line Override
   ###
 
   createLineFromText: (text) ->
@@ -226,13 +174,5 @@ class OutlineBuffer extends Buffer
     outlineLine = new OutlineLine(this, item)
     outlineLine.setTextInRange(text, 0, 0)
     outlineLine
-
-class ItemBufferState
-  constructor: ->
-    @marked = false
-    @selected = false
-    @expanded = false
-    @matched = false
-    @matchedAncestor = false
 
 module.exports = OutlineBuffer

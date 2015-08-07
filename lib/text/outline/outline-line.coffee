@@ -21,12 +21,16 @@ class OutlineLine extends Line
   @buffer: null
 
   constructor: (@buffer, @item) ->
-
-  getText: ->
     bodyText = @item.bodyText
     tabCount = @getTabCount()
     tabs = repeat('\t', tabCount)
-    tabs + bodyText
+    super(tabs + bodyText)
+
+  #getText: ->
+  #  bodyText = @item.bodyText
+  #  tabCount = @getTabCount()
+  #  tabs = repeat('\t', tabCount)
+  #  tabs + bodyText
 
   substr: (index) ->
     tabCount = @getTabCount()
@@ -127,14 +131,8 @@ class OutlineLine extends Line
   setTextInRange: (text, start, end) ->
     textString = text.getString()
 
-    if delta = (textString.length - (end - start))
-      each = @parent
-      while each
-        each.characterCount += delta
-        each = each.parent
-
-    unless @buffer.isUpdatingBufferFromOutline
-      @buffer.isUpdatingOutlineFromBuffer++
+    unless @buffer.isUpdatingBuffer
+      @buffer.isUpdatingOutline++
 
       if start isnt end
         @deleteText(start, end)
@@ -142,6 +140,8 @@ class OutlineLine extends Line
       if textString.length
         @insertText(text, start)
 
-      @buffer.isUpdatingOutlineFromBuffer--
+      @buffer.isUpdatingOutline--
+
+    super(textString, start, end)
 
 module.exports = OutlineLine
