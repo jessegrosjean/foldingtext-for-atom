@@ -267,6 +267,24 @@ class OutlineEditor
       @getNextVisibleBranch nextBranch, hoistedItem
 
   ###
+  Section: Scripting
+  ###
+
+  evaluateScript: (script, options) ->
+    result = '_wrappedValue': null
+    try
+      if options
+        options = JSON.parse(options)._wrappedValue
+      func = eval("(#{script})")
+      r = func(this, options)
+      if r is undefined
+        r = null # survive JSON round trip
+      result._wrappedValue = r
+    catch e
+      result._wrappedValue = "#{e.toString()}\n\tUse the Help > SDKRunner to debug"
+    JSON.stringify(result)
+
+  ###
   Section: Item Editor State
   ###
 
