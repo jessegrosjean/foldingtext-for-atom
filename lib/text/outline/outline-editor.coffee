@@ -2,6 +2,7 @@ OutlineBuffer = require './outline-buffer'
 {CompositeDisposable} = require 'atom'
 Outline = require '../../core/outline'
 shortid = require '../../core/shortid'
+OutlineLine = require './outline-line'
 
 class OutlineEditor
 
@@ -17,7 +18,7 @@ class OutlineEditor
         range = e.oldCharacterRange
         nsrange = location: range.start, length: range.end - range.start
         @isUpdatingNativeBuffer++
-        @nativeTextBuffer.nativeTextBufferReplaceCharactersInRangeWithString(nsrange, e.newText)
+        @nativeTextBuffer?.nativeTextBufferReplaceCharactersInRangeWithString(nsrange, e.newText)
         @isUpdatingNativeBuffer--
 
     @setHoistedItem(@outlineBuffer.outline.root)
@@ -46,14 +47,14 @@ class OutlineEditor
     @hoistedItem = item
 
     @outlineBuffer.isUpdatingBuffer++
-    @removeLines(0, @getLineCount())
+    @outlineBuffer.removeLines(0, @outlineBuffer.getLineCount())
     @outlineBuffer.isUpdatingBuffer--
 
     newLines = []
     for each in @getHoistedItem().descendants
       newLines.push(new OutlineLine(this, each))
     @outlineBuffer.isUpdatingBuffer++
-    @insertLines(0, newLines)
+    @outlineBuffer.insertLines(0, newLines)
     @outlineBuffer.isUpdatingBuffer--
 
   ###

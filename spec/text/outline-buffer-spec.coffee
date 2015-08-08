@@ -27,7 +27,6 @@ describe 'OutlineBuffer', ->
     bufferDidChangeExpects = null
     bufferSubscription.dispose()
     buffer.destroy()
-    outline.destroy()
 
   describe 'Init', ->
 
@@ -126,6 +125,14 @@ describe 'OutlineBuffer', ->
         one.appendChild(outline.createItem('new!'))
 
       it 'should generate mutation for item remove', ->
+        bufferDidChangeExpects = [
+          (e) ->
+            expect(e.oldText).toEqual('one\n\ttwo\n')
+            expect(e.oldCharacterRange).toEqual(start: 0, end: 9)
+            expect(e.newText).toEqual('')
+            expect(e.newCharacterRange).toEqual(start: 0, end: 0)
+        ]
+        one.removeFromParent()
 
   describe 'Buffer Changes', ->
 
