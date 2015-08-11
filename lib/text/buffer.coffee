@@ -230,8 +230,12 @@ class Buffer extends BufferBranch
       newRange = new Range([row, 0], [row, 0])
 
       if end is @lineCount
-        oldRange.end.row = end - 1
-        oldRange.end.column = this.getLine(end - 1).getCharacterCount() - 1
+        oldRange.end.row--
+        oldRange.end.column = @getLine(oldRange.end.row).getCharacterCount() - 1
+        unless row is 0
+          oldRange.start.row--
+          oldRange.start.column = @getLine(oldRange.start.row).getCharacterCount() - 1
+          newRange = new Range([oldRange.start.row, oldRange.start.column], [oldRange.start.row, oldRange.start.column])
 
       changeEvent =
         oldRange: oldRange
