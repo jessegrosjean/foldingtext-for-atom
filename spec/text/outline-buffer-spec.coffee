@@ -81,7 +81,6 @@ describe 'OutlineBuffer', ->
         expect(buffer.getCharacterCount()).toBe(14)
 
       it 'updates buffer when outline removes items', ->
-        outline.root.appendChild(outline.createItem(''))
         buffer.setTextInRange('one\n\ttwo\nthree', [[0, 0], [0, 0]])
         outline.root.firstChild.firstChild.removeFromParent()
         expect(buffer.getText()).toBe('one\nthree')
@@ -89,7 +88,6 @@ describe 'OutlineBuffer', ->
         expect(buffer.getCharacterCount()).toBe(9)
 
       it 'updates buffer when outline removes items with children', ->
-        outline.root.appendChild(outline.createItem(''))
         buffer.setTextInRange('one\n\ttwo\nthree', [[0, 0], [0, 0]])
         outline.root.firstChild.removeFromParent()
         expect(buffer.getText()).toBe('three')
