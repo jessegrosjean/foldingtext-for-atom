@@ -639,7 +639,10 @@ class Item
   #
   # Returns {Boolean}.
   contains: (item) ->
-    @_liOrRootUL.contains(item._liOrRootUL)
+    if item
+      @_liOrRootUL.contains(item._liOrRootUL)
+    else
+      false
 
   # Public: Compares the position of this item against another item in the
   # outline. See
