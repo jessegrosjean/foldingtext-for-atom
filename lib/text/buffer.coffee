@@ -74,6 +74,10 @@ class Buffer extends BufferBranch
       lines.join('\n')
 
   setTextInRange: (newText, range) ->
+    wasChanging = @changing
+
+    @changing++
+
     if @getLineCount() is 0
       @insertLines(0, [@createLineFromText('')])
 
@@ -89,7 +93,7 @@ class Buffer extends BufferBranch
     endLine = @getLine(endRow)
     startOffset = startLine.getCharacterOffset()
 
-    unless @changing
+    unless wasChanging
       changeEvent =
         oldRange: oldRange.copy()
         oldCharacterRange: @getCharacterRangeFromRange(oldRange)
@@ -98,8 +102,6 @@ class Buffer extends BufferBranch
         newCharacterRange: start: startOffset, end: startOffset + newText.length
         newText: newText
       @emitter.emit 'will-change', changeEvent
-
-    @changing++
 
     if newLines.length is 1 and effectsSingleLine
       startLine.setTextInRange(newLines.shift(), startColumn, endColumn)
