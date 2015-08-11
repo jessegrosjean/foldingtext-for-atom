@@ -23,7 +23,7 @@ module.exports =
     string.substring(0, start) + substitute + string.substring(end)
 
   repeat: (pattern, count) ->
-    if count is 0
+    if count <= 0
       ''
     else
       result = ''
