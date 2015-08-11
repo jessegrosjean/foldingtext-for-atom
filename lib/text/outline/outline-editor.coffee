@@ -151,7 +151,7 @@ class OutlineEditor
     if not _.isArray(items)
       items = [items]
 
-    selectedItemOffsets = @getSelectedItemOffsets()
+    selectedItemRange = @getSelectedItemRange()
 
     @outlineBuffer.isUpdatingBuffer++
     if expanded
@@ -173,7 +173,7 @@ class OutlineEditor
         @getItemEditorState(each).expanded = expanded
     @outlineBuffer.isUpdatingBuffer--
 
-    @setSelectedRangeFromItemOffsets(selectedItemOffsets)
+    @setSelectedItemRange(selectedItemRange)
 
   _insertVisibleDescendantLines: (item) ->
     if itemLine = @outlineBuffer.getLineForItem(item)
@@ -192,59 +192,6 @@ class OutlineEditor
       while item.contains(@outlineBuffer.getLine(end)?.item)
         end++
       @outlineBuffer.removeLines(start, end - start)
-
-
-  ###
-
-
-  foldItems: (items, fully) ->
-    @_foldItems items, false, fully
-
-  unfoldItems: (items, fully) ->
-    @_foldItems items, true, fully
-
-  toggleFoldItems: (items, fully) ->
-    @_foldItems items, undefined, fully
-
-
-
-
-  toggleFullyFoldItems: (items) ->
-    @toggleFoldItems items, true
-
-
-  _foldItems: (items, expand, fully) ->
-    items ?= @getSelectedItems()
-    unless _.isArray(items)
-      items = [items]
-    unless items.length
-      return
-
-    unless expand
-      first = items[0]
-      unless first.hasChildren
-        parent = first.parent
-        if @isVisible(parent)
-          @moveSelectionRange(parent)
-          @_foldItems(parent, expand, fully)
-          return
-
-    foldItems = []
-
-    if expand is undefined
-      expand = not @isExpanded((each for each in items when each.hasChildren)[0])
-
-    if fully
-      for each in Item.getCommonAncestors(items) when each.hasChildren and @isExpanded(each) isnt expand
-        foldItems.push each
-        foldItems.push each for each in each.descendants when each.hasChildren and @isExpanded(each) isnt expand
-    else
-      foldItems = (each for each in items when each.hasChildren and @isExpanded(each) isnt expand)
-
-    if foldItems.length
-      @_setExpandedState foldItems, expand
-
-  ###
 
   ###
   Section: Item Visibility
@@ -421,8 +368,8 @@ class OutlineEditor
       Array.prototype.push.apply(selectedItems, rangeItems)
     selectedItems
 
-  getSelectedItemOffsets: ->
-    @outlineBuffer.getItemOffsetsFromRange(@getSelectedRange())
+  getSelectedItemRange: ->
+    @outlineBuffer.getItemRangeFromRange(@getSelectedRange())
 
   # Public: Sets the selection.
   #
@@ -441,8 +388,8 @@ class OutlineEditor
     #@nativeEditor.setSelectedRanges(nsranges)
     @nativeEditor.nativeSelectedRange = nsranges[0]
 
-  setSelectedRangeFromItemOffsets: (startItem, startOffset, endItem, endOffset) ->
-    @setSelectedRange(@outlineBuffer.getRangeFromItemOffsets(startItem, startOffset, endItem, endOffset))
+  setSelectedItemRange: (startItem, startOffset, endItem, endOffset) ->
+    @setSelectedRange(@outlineBuffer.getRangeFromItemRange(startItem, startOffset, endItem, endOffset))
 
   ###
   Section: Insert
@@ -523,28 +470,86 @@ class OutlineEditor
     insertItem
 
   ###
-  Section: Move Items
+  Section: Move Lines
   ###
 
-  indentItems: ->
-    @moveItemsRight()
+  moveLinesUp: (items) ->
+    @_moveLinesInDirection(items, 'up')
 
-  outdentItems: ->
-    @moveItemsLeft()
+  moveLinesDown: (items) ->
+    @_moveLinesInDirection(items, 'down')
 
-  moveItemsUp: ->
-    @_moveItemsInDirection('up')
+  moveLinesLeft: (items) ->
+    @_moveLinesInDirection(items, 'left')
 
-  moveItemsDown: ->
-    @_moveItemsInDirection('down')
+  moveLinesRight: (items) ->
+    @_moveLinesInDirection(items, 'right')
 
-  moveItemsLeft: ->
-    @_moveItemsInDirection('left')
+  _moveLinesInDirection: (items, direction) ->
+    items ?= @getSelectedItems()
+    if items.length
+      selectedItemRange = @getSelectedItemRange()
+      minDepth = @getHoistedItem().depth + 1
+      outline = @outlineBuffer.outline
+      firstItem = items[0]
+      endItem = items[items.length - 1]
+      referenceItem = null
+      depthDelta = 0
 
-  moveItemsRight: ->
-    @_moveItemsInDirection('right')
+      switch direction
+        when 'up'
+          referenceItem = @getPreviousVisibleItem(firstItem)
+          unless referenceItem
+            return
+        when 'down'
+          unless nextVisibleItem = @getNextVisibleItem(endItem)
+            return
+          referenceItem = nextVisibleItem.nextItem
+        when 'left'
+          depthDelta = -1
+          referenceItem = endItem.nextItem
+        when 'right'
+          depthDelta = 1
+          referenceItem = endItem.nextItem
 
-  _moveItemsInDirection: (direction) ->
+      outline.beginChanges()
+
+      expandItems = []
+      disposable = outline.onDidChange (mutation) ->
+        if mutation.target.hasChildren and not (mutation.target in expandItems)
+          expandItems.push mutation.target
+
+      outline.removeItems(items)
+
+      if depthDelta
+        for each in items
+          each.indent = Math.max(minDepth, each.indent + depthDelta)
+
+      outline.insertItemsBefore(items, referenceItem)
+
+      outline.endChanges =>
+        @setExpanded(expandItems)
+        disposable.dispose()
+
+      @setSelectedItemRange(selectedItemRange)
+
+  ###
+  Section: Move Branches
+  ###
+
+  moveBranchesUp: ->
+    @_moveBranchesInDirection('up')
+
+  moveBranchesDown: ->
+    @_moveBranchesInDirection('down')
+
+  moveBranchesLeft: ->
+    @_moveBranchesInDirection('left')
+
+  moveBranchesRight: ->
+    @_moveBranchesInDirection('right')
+
+  _moveBranchesInDirection: (direction) ->
     selectedItems = Item.getCommonAncestors(@getSelectedItems())
     if selectedItems.length > 0
       startItem = selectedItems[0]
@@ -572,7 +577,7 @@ class OutlineEditor
         newParent = @getPreviousVisibleSibling(startItem)
 
       if newParent
-        @moveItems(selectedItems, newParent, newNextSibling)
+        @moveBranches(selectedItems, newParent, newNextSibling)
 
   promoteChildItems: ->
     selectedItems = Item.getCommonAncestors(@getSelectedItems())
@@ -580,7 +585,7 @@ class OutlineEditor
       undoManager = @outline.undoManager
       undoManager.beginUndoGrouping()
       for each in selectedItems
-        @moveItems(each.children, each.parent, each.nextSibling)
+        @moveBranches(each.children, each.parent, each.nextSibling)
       undoManager.endUndoGrouping()
       undoManager.setActionName('Promote Children')
 
@@ -597,7 +602,7 @@ class OutlineEditor
         each = each.nextSibling
 
       if trailingSiblings.length > 0
-        @moveItems(trailingSiblings, item, null)
+        @moveBranches(trailingSiblings, item, null)
         @outline.undoManager.setActionName('Demote Siblings')
 
   groupItems: ->
@@ -611,7 +616,7 @@ class OutlineEditor
 
       first.parent.insertChildBefore group, first
       @moveSelectionRange group, 0
-      @moveItems selectedItems, group
+      @moveBranches selectedItems, group
 
       undoManager.endUndoGrouping()
       undoManager.setActionName('Group Items')
@@ -651,13 +656,13 @@ class OutlineEditor
       undoManager.endUndoGrouping()
       undoManager.setActionName('Duplicate Items')
 
-  moveItems: (items, newParent, newNextSibling) ->
+  moveBranches: (items, newParent, newNextSibling) ->
     outline = @outlineBuffer.outline
 
     undoManager = outline.undoManager
     undoManager.beginUndoGrouping()
 
-    selectedItemOffsets = @getSelectedItemOffsets()
+    selectedItemRange = @getSelectedItemRange()
     newParentNeedsExpand =
       newParent isnt @getHoistedItem() and
       not @isExpanded(newParent) and
@@ -670,79 +675,10 @@ class OutlineEditor
 
     if newParentNeedsExpand
       @setExpanded(newParent)
-    @setSelectedRangeFromItemOffsets(selectedItemOffsets)
+    @setSelectedItemRange(selectedItemRange)
 
     undoManager.endUndoGrouping()
     undoManager.setActionName('Move Items')
-
-  ###
-  Section: Move Lines
-  ###
-
-  indentLines: ->
-    @moveLinesRight()
-
-  outdentLines: ->
-    @moveLinesLeft()
-
-  moveLinesUp: (items) ->
-    @_moveLinesInDirection(items, 'up')
-
-  moveLinesDown: (items) ->
-    @_moveLinesInDirection(items, 'down')
-
-  moveLinesLeft: (items) ->
-    @_moveLinesInDirection(items, 'left')
-
-  moveLinesRight: (items) ->
-    @_moveLinesInDirection(items, 'right')
-
-  _moveLinesInDirection: (items, direction) ->
-    items ?= @getSelectedItems()
-    if items.length
-      selectedItemOffsets = @getSelectedItemOffsets()
-      outline = @outlineBuffer.outline
-      firstItem = items[0]
-      endItem = items[items.length - 1]
-      referenceItem = null
-      depthDelta = 0
-
-      switch direction
-        when 'up'
-          referenceItem = @getPreviousVisibleItem(firstItem)
-          unless referenceItem
-            return
-        when 'down'
-          referenceItem = @getNextVisibleItem(@getNextVisibleItem(endItem))
-        when 'left'
-          depthDelta = -1
-          referenceItem = endItem.nextItem
-        when 'right'
-          depthDelta = 1
-          referenceItem = endItem.nextItem
-
-      outline.beginChanges()
-
-      expandItems = []
-      disposable = outline.onDidChange (mutation) ->
-        if mutation.target.hasChildren
-          expandItems.push mutation.target
-
-      outline.removeItems(items)
-
-      if depthDelta isnt 0
-        for each in items
-          each.indent += depthDelta
-
-      outline.insertItemsBefore(items, referenceItem)
-
-      outline.endChanges =>
-        @setExpanded(expandItems)
-        disposable.dispose()
-
-      @setSelectedRangeFromItemOffsets(selectedItemOffsets)
-
-
 
 
 

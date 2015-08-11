@@ -30,13 +30,19 @@ class OutlineBuffer extends Buffer
       when Mutation.ATTRIBUTE_CHANGED
         if mutation.attributeName is 'indent'
           if line = @getLineForItem(target)
-            oldIndent = mutation.attributeOldValue or 1
+            if mutation.attributeOldValue
+              oldIndent = parseInt(mutation.attributeOldValue, 10)
+            else
+              oldIndent = 1
             newIndent = target.indent
-            row = line.getRow()
-            range = new Range([row, 0], [row, oldIndent - 1])
             delta = newIndent - oldIndent
+            row = line.getRow()
+
             @isUpdatingBuffer++
-            @setTextInRange(repeat('\t', delta), range)
+            if delta > 0
+              @setTextInRange(repeat('\t', delta), new Range([row, oldIndent - 1], [row, oldIndent - 1]))
+            else if delta < 0
+              @setTextInRange('', new Range([row, oldIndent - 1 + delta], [row, oldIndent - 1]))
             @isUpdatingBuffer--
 
       when Mutation.BODT_TEXT_CHANGED
@@ -107,7 +113,7 @@ class OutlineBuffer extends Buffer
             if insertAfterLine
               row = insertAfterLine.getRow() + 1
             else
-              row = 0
+              row = @getLineCount()
 
           @isUpdatingBuffer++
           @insertLines(row, addedLines)
@@ -139,18 +145,20 @@ class OutlineBuffer extends Buffer
   getLineForItem: (item) ->
     @itemsToLinesMap.get(item)
 
-  getItemOffsetsFromRange: (range) ->
+  getItemRangeFromRange: (range) ->
     startItem = @getLine(range.start.row).item
     endItem = @getLine(range.end.row).item
     {} =
       startItem: startItem
+      _startItemOriginalDepth: startItem.depth
       startOffset: range.start.column
       endItem: endItem
+      _endItemOriginalDepth: endItem.depth
       endOffset: range.end.column
 
-  getRangeFromItemOffsets: (startItem, startOffset, endItem, endOffset) ->
+  getRangeFromItemRange: (startItem, startOffset, endItem, endOffset) ->
     unless startItem instanceof Item
-      {startItem, startOffset, endItem, endOffset} = startItem
+      {startItem, _startItemOriginalDepth, startOffset, endItem, _endItemOriginalDepth, endOffset} = startItem
 
     startLine = @getLineForItem(startItem)
     startRow = startLine.getRow()
@@ -160,8 +168,14 @@ class OutlineBuffer extends Buffer
       endRow = endLine.getRow()
       endOffset ?= 0
     else
+      endItem = startItem
       endRow = startRow
       endOffset = startOffset
+
+    if _startItemOriginalDepth? and _endItemOriginalDepth?
+      startOffset += startItem.depth - _startItemOriginalDepth
+      endOffset += endItem.depth - _endItemOriginalDepth
+
     new Range([startRow, startOffset], [endRow, endOffset])
 
   insertLines: (row, lines) ->
