@@ -1,7 +1,7 @@
 OutlineEditor = require '../../lib/text/outline/outline-editor'
 loadOutlineFixture = require '../load-outline-fixture'
 
-fdescribe 'OutlineEditor', ->
+describe 'OutlineEditor', ->
   [outline, root, one, two, three, four, five, six, editor, buffer, bufferSubscription, bufferDidChangeExpects] = []
 
   beforeEach ->

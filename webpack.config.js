@@ -1,5 +1,8 @@
+//
+// webpack --progress --colors --watch
+//
 var path = require("path");
-var webpack = require("webpack");
+//var webpack = require("webpack");
 module.exports = {
   cache: true,
   entry: {
