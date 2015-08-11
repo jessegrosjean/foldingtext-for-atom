@@ -9,10 +9,10 @@ class Line
   constructor: (@text) ->
 
   getRow: ->
-    @parent?.getRow(this) or 0
+    @parent.getRow(this)
 
   getCharacterOffset: ->
-    @parent?.getCharacterOffset(this) or 0
+    @parent.getCharacterOffset(this) or 0
 
   getLineCount: ->
     1
