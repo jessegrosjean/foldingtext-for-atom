@@ -3,23 +3,29 @@ OutlineBuffer = require './outline-buffer'
 Outline = require '../../core/outline'
 shortid = require '../../core/shortid'
 OutlineLine = require './outline-line'
+Item = require '../../core/item'
+_ = require 'underscore-plus'
+Range = require '../range'
+assert = require 'assert'
 
 class OutlineEditor
 
-  constructor: (outline, @nativeTextBuffer) ->
+  constructor: (outline, @nativeEditor) ->
     @id = shortid()
     @isUpdatingNativeBuffer = 0
     @isUpdatingOutlineBuffer = 0
     @subscriptions = new CompositeDisposable
     @outlineBuffer = new OutlineBuffer(outline, this)
+    @nativeEditor ?= new NativeEditor
 
     @subscriptions.add @outlineBuffer.onDidChange (e) =>
       if not @isUpdatingOutlineBuffer
         range = e.oldCharacterRange
         nsrange = location: range.start, length: range.end - range.start
         @isUpdatingNativeBuffer++
-        @nativeTextBuffer?.nativeTextBufferReplaceCharactersInRangeWithString(nsrange, e.newText)
+        @nativeEditor.nativeTextBufferReplaceCharactersInRangeWithString(nsrange, e.newText)
         @isUpdatingNativeBuffer--
+      assert(@nativeEditor.nativeTextContent is @outlineBuffer.getText(), 'Text Buffers are Equal')
 
     @setHoistedItem(@outlineBuffer.outline.root)
 
@@ -40,6 +46,13 @@ class OutlineEditor
   Section: Hoisted Item
   ###
 
+  hoist: ->
+    if item = @getSelectedItems()[0]
+      @setHoistedItem(item)
+
+  unhoist: ->
+    @setHoistedItem(@outlineBuffer.outline.root)
+
   getHoistedItem: ->
     @hoistedItem or @outline.root
 
@@ -51,11 +64,17 @@ class OutlineEditor
     @outlineBuffer.isUpdatingBuffer--
 
     newLines = []
-    for each in @getHoistedItem().descendants
-      newLines.push(new OutlineLine(this, each))
+    @_gatherLinesForVisibleDescendents(@getHoistedItem(), newLines)
     @outlineBuffer.isUpdatingBuffer++
     @outlineBuffer.insertLines(0, newLines)
     @outlineBuffer.isUpdatingBuffer--
+
+  _gatherLinesForVisibleDescendents: (item, lines) ->
+    each = @getFirstVisibleChild(item)
+    while each
+      lines.push(new OutlineLine(@outlineBuffer, each))
+      @_gatherLinesForVisibleDescendents(each, lines)
+      each = @getNextVisibleSibling(each)
 
   ###
   Section: Matched Items
@@ -102,20 +121,130 @@ class OutlineEditor
   setCollapsed: (items) ->
     @_setExpandedState items, false
 
+  toggleExpanded: -> (items) ->
+    @_setExpandedState item, undefined
+
+  expandAll: ->
+    @setExpanded(@getHoistedItem().descendants)
+
+  collapseAll: ->
+    @setCollapsed(@getHoistedItem().descendants)
+
+  expandToIndentLevel: (level) ->
+    collapseItems = []
+    expandItems = []
+
+    gather = (item, level) ->
+      if level >= 0
+        expandItems.push(item)
+      else
+        collapseItems.push(item)
+      for each in item.children
+        gather(each, level - 1)
+
+    gather(@getHoistedItem(), level)
+    @setCollapsed(collapseItems)
+    @setExpanded(expandItems)
+
   _setExpandedState: (items, expanded) ->
+    items ?= @getSelectedItems()
     if not _.isArray(items)
       items = [items]
 
-    for each in items
-      if @isExpanded(each) isnt expanded
-        @getItemEditorState(each).expanded = expanded
+    selectedItemOffsets = @getSelectedItemOffsets()
 
-        @outlineBuffer.isUpdatingBuffer++
-        if expanded
-          # Insert lines for visible descendents of each
-        else
-          # Remove lines for descendents of each
-        @outlineBuffer.isUpdatingBuffer--
+    @outlineBuffer.isUpdatingBuffer++
+    if expanded
+      # for better animations
+      for each in items
+        if not @isVisible(each)
+          @getItemEditorState(each).expanded = expanded
+      for each in items
+        if @isExpanded(each) isnt expanded
+          @getItemEditorState(each).expanded = expanded
+          @_insertVisibleDescendantLines(each)
+    else
+      # for better animations
+      for each in Item.getCommonAncestors(items)
+        if @isExpanded(each) isnt expanded
+          @getItemEditorState(each).expanded = expanded
+          @_removeDescendantLines(each)
+      for each in items
+        @getItemEditorState(each).expanded = expanded
+    @outlineBuffer.isUpdatingBuffer--
+
+    @setSelectedRangeFromItemOffsets(selectedItemOffsets)
+
+  _insertVisibleDescendantLines: (item) ->
+    if itemLine = @outlineBuffer.getLineForItem(item)
+      if each = @getFirstVisibleChild(item)
+        insertLines = []
+        end = @getNextVisibleItem(@getLastVisibleDescendantOrSelf(item))
+        while each isnt end
+          insertLines.push(new OutlineLine(@outlineBuffer, each))
+          each = @getNextVisibleItem(each)
+        @outlineBuffer.insertLines(itemLine.getRow() + 1, insertLines)
+
+  _removeDescendantLines: (item) ->
+    if itemLine = @outlineBuffer.getLineForItem(item)
+      start = itemLine.getRow() + 1
+      end = start
+      while item.contains(@outlineBuffer.getLine(end)?.item)
+        end++
+      @outlineBuffer.removeLines(start, end - start)
+
+
+  ###
+
+
+  foldItems: (items, fully) ->
+    @_foldItems items, false, fully
+
+  unfoldItems: (items, fully) ->
+    @_foldItems items, true, fully
+
+  toggleFoldItems: (items, fully) ->
+    @_foldItems items, undefined, fully
+
+
+
+
+  toggleFullyFoldItems: (items) ->
+    @toggleFoldItems items, true
+
+
+  _foldItems: (items, expand, fully) ->
+    items ?= @getSelectedItems()
+    unless _.isArray(items)
+      items = [items]
+    unless items.length
+      return
+
+    unless expand
+      first = items[0]
+      unless first.hasChildren
+        parent = first.parent
+        if @isVisible(parent)
+          @moveSelectionRange(parent)
+          @_foldItems(parent, expand, fully)
+          return
+
+    foldItems = []
+
+    if expand is undefined
+      expand = not @isExpanded((each for each in items when each.hasChildren)[0])
+
+    if fully
+      for each in Item.getCommonAncestors(items) when each.hasChildren and @isExpanded(each) isnt expand
+        foldItems.push each
+        foldItems.push each for each in each.descendants when each.hasChildren and @isExpanded(each) isnt expand
+    else
+      foldItems = (each for each in items when each.hasChildren and @isExpanded(each) isnt expand)
+
+    if foldItems.length
+      @_setExpandedState foldItems, expand
+
+  ###
 
   ###
   Section: Item Visibility
@@ -234,7 +363,7 @@ class OutlineEditor
   getLastVisibleDescendantOrSelf: (item, hoistedItem) ->
     return null unless item
 
-    lastChild = item.getLastVisibleChild item, hoistedItem
+    lastChild = @getLastVisibleChild item, hoistedItem
     if lastChild
       @getLastVisibleDescendantOrSelf lastChild, hoistedItem
     else
@@ -265,6 +394,378 @@ class OutlineEditor
       nextBranch
     else
       @getNextVisibleBranch nextBranch, hoistedItem
+
+  ###
+  Section: Selection
+  ###
+
+  # Public: Returns the selection {Range}.
+  getSelectedRange: ->
+    @getSelectedRanges()[0]
+
+  getSelectedRanges: ->
+    ranges = []
+    #nsranges = @nativeTextBuffer.selectedRanges()
+    nsranges = [@nativeEditor.nativeSelectedRange]
+    for each in nsranges
+      ranges.push @outlineBuffer.getRangeFromCharacterRange(each.location, each.location + each.length)
+    ranges
+
+  getSelectedItems: ->
+    selectedItems = []
+    for each in @getSelectedRanges()
+      rangeItems = (each.item for each in @outlineBuffer.getLinesInRange(each))
+      last = selectedItems[selectedItems.length - 1]
+      while rangeItems.length > 0 and rangeItems[0] is last
+        rangeItems.shift()
+      Array.prototype.push.apply(selectedItems, rangeItems)
+    selectedItems
+
+  getSelectedItemOffsets: ->
+    @outlineBuffer.getItemOffsetsFromRange(@getSelectedRange())
+
+  # Public: Sets the selection.
+  #
+  # - `range` {Range}
+  setSelectedRange: (range) ->
+    @setSelectedRanges([range])
+
+  setSelectedRanges: (ranges) ->
+    nsranges = []
+    ranges = (@outlineBuffer.clipRange(each) for each in ranges)
+    for each in ranges
+      characterRange = @outlineBuffer.getCharacterRangeFromRange(each)
+      nsranges.push
+        location: characterRange.start
+        length: characterRange.end - characterRange.start
+    #@nativeEditor.setSelectedRanges(nsranges)
+    @nativeEditor.nativeSelectedRange = nsranges[0]
+
+  setSelectedRangeFromItemOffsets: (startItem, startOffset, endItem, endOffset) ->
+    @setSelectedRange(@outlineBuffer.getRangeFromItemOffsets(startItem, startOffset, endItem, endOffset))
+
+  ###
+  Section: Insert
+  ###
+
+  insertNewline: ->
+    selectionRange = @selection
+    if selectionRange.isTextMode
+      if not selectionRange.isCollapsed
+        @delete()
+        selectionRange = @selection
+
+      focusItem = selectionRange.focusItem
+      focusOffset = selectionRange.focusOffset
+
+      if focusOffset is 0
+        @insertItem('', true)
+        @moveSelectionRange(focusItem, 0)
+      else
+        splitText = focusItem.getAttributedBodyTextSubstring(focusOffset, -1)
+        undoManager = @outline.undoManager
+        undoManager.beginUndoGrouping()
+        focusItem.replaceBodyTextInRange('', focusOffset, -1)
+        @insertItem(splitText)
+        undoManager.endUndoGrouping()
+    else
+      @insertItem()
+
+  insertNewlineAbove: (text) ->
+    @insertItem(text, true)
+
+  insertNewlineBelow: (text) ->
+    @insertItem(text)
+
+  # Public: Insert item at current selection.
+  #
+  # - `text` Text {String} or {AttributedString} for new item.
+  #
+  # Returns the new {Item}.
+  insertItem: (text, above=false) ->
+    text ?= ''
+    selectedItems = @selection.items
+    insertBefore
+    parent
+
+    if above
+      selectedItem = selectedItems[0]
+      if not selectedItem
+        parent = @getHoistedItem()
+        insertBefore = @getFirstVisibleChild parent
+      else
+        parent = selectedItem.parent
+        insertBefore = selectedItem
+    else
+      selectedItem = selectedItems[selectedItems.length - 1]
+      if not selectedItem
+        parent = @getHoistedItem()
+        insertBefore = @getFirstVisibleChild parent
+      else if @isExpanded(selectedItem)
+        parent = selectedItem
+        insertBefore = @getFirstVisibleChild parent
+      else
+        parent = selectedItem.parent
+        insertBefore = @getNextVisibleSibling selectedItem
+
+    outline = parent.outline
+    outlineEditorElement = @outlineEditorElement
+    insertItem = outline.createItem(text)
+    undoManager = outline.undoManager
+
+    undoManager.beginUndoGrouping()
+    parent.insertChildBefore(insertItem, insertBefore)
+    undoManager.endUndoGrouping()
+
+    undoManager.setActionName('Insert Item')
+    @moveSelectionRange(insertItem, 0)
+
+    insertItem
+
+  ###
+  Section: Move Items
+  ###
+
+  indentItems: ->
+    @moveItemsRight()
+
+  outdentItems: ->
+    @moveItemsLeft()
+
+  moveItemsUp: ->
+    @_moveItemsInDirection('up')
+
+  moveItemsDown: ->
+    @_moveItemsInDirection('down')
+
+  moveItemsLeft: ->
+    @_moveItemsInDirection('left')
+
+  moveItemsRight: ->
+    @_moveItemsInDirection('right')
+
+  _moveItemsInDirection: (direction) ->
+    selectedItems = Item.getCommonAncestors(@getSelectedItems())
+    if selectedItems.length > 0
+      startItem = selectedItems[0]
+      newNextSibling
+      newParent
+
+      if direction is 'up'
+        newNextSibling = @getPreviousVisibleSibling(startItem)
+        if newNextSibling
+          newParent = newNextSibling.parent
+      else if direction is 'down'
+        endItem = selectedItems[selectedItems.length - 1]
+        newPreviousSibling = @getNextVisibleSibling(endItem)
+        if newPreviousSibling
+          newParent = newPreviousSibling.parent
+          newNextSibling = @getNextVisibleSibling(newPreviousSibling)
+      else if direction is 'left'
+        startItemParent = startItem.parent
+        if startItemParent isnt @getHoistedItem()
+          newParent = startItemParent.parent
+          newNextSibling = @getNextVisibleSibling(startItemParent)
+          while newNextSibling and newNextSibling in selectedItems
+            newNextSibling = @getNextVisibleSibling(newNextSibling)
+      else if direction is 'right'
+        newParent = @getPreviousVisibleSibling(startItem)
+
+      if newParent
+        @moveItems(selectedItems, newParent, newNextSibling)
+
+  promoteChildItems: ->
+    selectedItems = Item.getCommonAncestors(@getSelectedItems())
+    if selectedItems.length > 0
+      undoManager = @outline.undoManager
+      undoManager.beginUndoGrouping()
+      for each in selectedItems
+        @moveItems(each.children, each.parent, each.nextSibling)
+      undoManager.endUndoGrouping()
+      undoManager.setActionName('Promote Children')
+
+  demoteTrailingSiblingItems: ->
+    selectedItems = Item.getCommonAncestors(@getSelectedItems())
+    item = selectedItems[0]
+
+    if item
+      trailingSiblings = []
+      each = item.nextSibling
+
+      while each
+        trailingSiblings.push(each)
+        each = each.nextSibling
+
+      if trailingSiblings.length > 0
+        @moveItems(trailingSiblings, item, null)
+        @outline.undoManager.setActionName('Demote Siblings')
+
+  groupItems: ->
+    selectedItems = Item.getCommonAncestors(@getSelectedItems())
+    if selectedItems.length > 0
+      first = selectedItems[0]
+      group = @outline.createItem ''
+
+      undoManager = @outline.undoManager
+      undoManager.beginUndoGrouping()
+
+      first.parent.insertChildBefore group, first
+      @moveSelectionRange group, 0
+      @moveItems selectedItems, group
+
+      undoManager.endUndoGrouping()
+      undoManager.setActionName('Group Items')
+
+  duplicateItems: ->
+    selectedItems = Item.getCommonAncestors(@getSelectedItems())
+    if selectedItems.length > 0
+      anchorItem = @selection.anchorItem
+      nextAnchorItem = null
+      focusItem = @selection.focusItem
+      nextFocusItem = null
+      outline = @outline
+      outlineEditor = this
+      expandedClones = []
+      clonedItems = []
+      oldToClonedIDs = {}
+
+      for each in selectedItems
+        clonedItems.push each.cloneItem (oldID, cloneID, cloneItem) ->
+          oldItem = outline.getItemForID(oldID)
+          if oldItem is anchorItem
+            nextAnchorItem = cloneItem
+          if oldItem is focusItem
+            nextFocusItem = cloneItem
+          if outlineEditor.isExpanded(oldItem)
+            expandedClones.push(cloneItem)
+
+      last = selectedItems[selectedItems.length - 1]
+      insertBefore = last.nextSibling
+      parent = insertBefore?.parent ? selectedItems[0].parent
+      undoManager = @outline.undoManager
+
+      undoManager.beginUndoGrouping()
+      @setExpanded(expandedClones)
+      parent.insertChildrenBefore(clonedItems, insertBefore)
+      @moveSelectionRange(nextFocusItem, @selection.focusOffset, nextAnchorItem, @selection.anchorOffset)
+      undoManager.endUndoGrouping()
+      undoManager.setActionName('Duplicate Items')
+
+  moveItems: (items, newParent, newNextSibling) ->
+    outline = @outlineBuffer.outline
+
+    undoManager = outline.undoManager
+    undoManager.beginUndoGrouping()
+
+    selectedItemOffsets = @getSelectedItemOffsets()
+    newParentNeedsExpand =
+      newParent isnt @getHoistedItem() and
+      not @isExpanded(newParent) and
+      @isVisible(newParent)
+
+    outline.beginChanges()
+    outline.removeItemsFromParents items
+    newParent.insertChildrenBefore items, newNextSibling
+    outline.endChanges()
+
+    if newParentNeedsExpand
+      @setExpanded(newParent)
+    @setSelectedRangeFromItemOffsets(selectedItemOffsets)
+
+    undoManager.endUndoGrouping()
+    undoManager.setActionName('Move Items')
+
+  ###
+  Section: Move Lines
+  ###
+
+  indentLines: ->
+    @moveLinesRight()
+
+  outdentLines: ->
+    @moveLinesLeft()
+
+  moveLinesUp: (items) ->
+    @_moveLinesInDirection(items, 'up')
+
+  moveLinesDown: (items) ->
+    @_moveLinesInDirection(items, 'down')
+
+  moveLinesLeft: (items) ->
+    @_moveLinesInDirection(items, 'left')
+
+  moveLinesRight: (items) ->
+    @_moveLinesInDirection(items, 'right')
+
+  _moveLinesInDirection: (items, direction) ->
+    items ?= @getSelectedItems()
+    if items.length
+      selectedItemOffsets = @getSelectedItemOffsets()
+      outline = @outlineBuffer.outline
+      firstItem = items[0]
+      endItem = items[items.length - 1]
+      referenceItem = null
+      depthDelta = 0
+
+      switch direction
+        when 'up'
+          referenceItem = @getPreviousVisibleItem(firstItem)
+          unless referenceItem
+            return
+        when 'down'
+          referenceItem = @getNextVisibleItem(@getNextVisibleItem(endItem))
+        when 'left'
+          depthDelta = -1
+          referenceItem = endItem.nextItem
+        when 'right'
+          depthDelta = 1
+          referenceItem = endItem.nextItem
+
+      outline.beginChanges()
+
+      expandItems = []
+      disposable = outline.onDidChange (mutation) ->
+        if mutation.target.hasChildren
+          expandItems.push mutation.target
+
+      outline.removeItems(items)
+
+      if depthDelta isnt 0
+        for each in items
+          each.indent += depthDelta
+
+      outline.insertItemsBefore(items, referenceItem)
+
+      outline.endChanges =>
+        @setExpanded(expandItems)
+        disposable.dispose()
+
+      @setSelectedRangeFromItemOffsets(selectedItemOffsets)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   ###
   Section: Scripting
@@ -300,8 +801,29 @@ class ItemEditorState
   constructor: ->
     @marked = false
     @selected = false
-    @expanded = false
+    @expanded = true
     @matched = false
     @matchedAncestor = false
+
+class NativeEditor
+  constructor: ->
+    @text = ''
+    @selectedRange =
+      location: 0
+      length: 0
+
+  Object.defineProperty @::, 'nativeSelectedRange',
+    get: ->
+      @selectedRange.location = Math.min(@selectedRange.location, @text.length)
+      @selectedRange.length = Math.min(@selectedRange.length, @text.length - @selectedRange.location)
+      @selectedRange
+
+    set: (@selectedRange) ->
+
+  Object.defineProperty @::, 'nativeTextContent',
+    get: -> @text
+
+  nativeTextBufferReplaceCharactersInRangeWithString: (range, text) ->
+    @text = @text.substring(0, range.location) + text + @text.substring(range.location + range.length)
 
 module.exports = OutlineEditor

@@ -3,6 +3,7 @@ Mutation = require '../../core/mutation'
 {CompositeDisposable} = require 'atom'
 OutlineLine = require './outline-line'
 Outline = require '../../core/outline'
+Item = require '../../core/item'
 Buffer = require '../buffer'
 Range = require '../range'
 
@@ -53,10 +54,9 @@ class OutlineBuffer extends Buffer
           @isUpdatingBuffer--
 
       when Mutation.CHILDREN_CHANGED
-        parentLine = @getLineForItem(target)
-
-        unless target is @getHoistedItem() or parentLine
-          return
+        if target isnt @getHoistedItem()
+          if not @isVisible(target) or not @isExpanded(target)
+            return
 
         if mutation.removedItems.length
           # Remove lines
@@ -124,10 +124,13 @@ class OutlineBuffer extends Buffer
   ###
 
   isVisible: (item) ->
-    @outlineEditor?.isVisible(item) or true
+    @outlineEditor?.isVisible(item) ? true
+
+  isExpanded: (item) ->
+    @outlineEditor?.isExpanded(item) ? true
 
   getHoistedItem: ->
-    @outlineEditor?.getHoistedItem() or @outline.root
+    @outlineEditor?.getHoistedItem() ? @outline.root
 
   ###
   Section: Lines
@@ -135,6 +138,31 @@ class OutlineBuffer extends Buffer
 
   getLineForItem: (item) ->
     @itemsToLinesMap.get(item)
+
+  getItemOffsetsFromRange: (range) ->
+    startItem = @getLine(range.start.row).item
+    endItem = @getLine(range.end.row).item
+    {} =
+      startItem: startItem
+      startOffset: range.start.column
+      endItem: endItem
+      endOffset: range.end.column
+
+  getRangeFromItemOffsets: (startItem, startOffset, endItem, endOffset) ->
+    unless startItem instanceof Item
+      {startItem, startOffset, endItem, endOffset} = startItem
+
+    startLine = @getLineForItem(startItem)
+    startRow = startLine.getRow()
+    startOffset ?= 0
+    if endItem
+      endLine = @getLineForItem(endItem)
+      endRow = endLine.getRow()
+      endOffset ?= 0
+    else
+      endRow = startRow
+      endOffset = startOffset
+    new Range([startRow, startOffset], [endRow, endOffset])
 
   insertLines: (row, lines) ->
     insertBefore = @getLine(row)?.item or @getHoistedItem().nextSibling
@@ -153,7 +181,7 @@ class OutlineBuffer extends Buffer
   removeLines: (row, count) ->
     lines = []
     @iterateLines row, count, (each) =>
-      @itemsToLinesMap.delete(each)
+      @itemsToLinesMap.delete(each.item)
       lines.push(each)
 
     unless @isUpdatingBuffer

@@ -9,7 +9,7 @@ describe 'Buffer', ->
   beforeEach ->
     lines = []
     for each in [0...500]
-      lines.push new Line('12345', 5)
+      lines.push new Line('12345')
     buffer = new Buffer()
 
   afterEach ->
@@ -83,9 +83,9 @@ describe 'Buffer', ->
       expect(buffer.children[2].children.length).toBe(5)
 
     it 'inserts lines at end', ->
-      buffer.insertLines(0, [new Line('12345', 5)])
-      buffer.insertLines(1, [new Line('12345', 5)])
-      buffer.insertLines(2, [new Line('12345', 5)])
+      buffer.insertLines(0, [new Line('12345')])
+      buffer.insertLines(1, [new Line('12345')])
+      buffer.insertLines(2, [new Line('12345')])
       expect(buffer.getText()).toEqual('12345\n12345\n12345')
 
     it 'removes lines', ->
@@ -107,9 +107,9 @@ describe 'Buffer', ->
       expect(buffer.children[0].children.length).toBe(0)
 
     it 'remove lines at end', ->
-      buffer.insertLines(0, [new Line('12345', 5)])
-      buffer.insertLines(1, [new Line('12345', 5)])
-      buffer.insertLines(2, [new Line('12345', 5)])
+      buffer.insertLines(0, [new Line('12345')])
+      buffer.insertLines(1, [new Line('12345')])
+      buffer.insertLines(2, [new Line('12345')])
       buffer.removeLines(2, 1)
       expect(buffer.getText()).toEqual('12345\n12345')
       buffer.removeLines(0, 1)
@@ -209,7 +209,7 @@ describe 'Buffer', ->
 
     it 'posts change events when inserting lines', ->
       buffer.insertLines(0, lines)
-      lines = [new Line('hello', 5)]
+      lines = [new Line('hello')]
       subscriptions.add buffer.onDidChange (e) ->
         expect(e.oldText).toEqual('')
         expect(e.oldRange.toString()).toEqual('[(3, 0) - (3, 0)]')
@@ -229,3 +229,25 @@ describe 'Buffer', ->
         expect(e.newRange.toString()).toEqual('[(3, 0) - (3, 0)]')
         expect(e.newCharacterRange).toEqual(start: 18, end: 18)
       buffer.removeLines(3, 2)
+
+    it 'posts change events when removing last line', ->
+      buffer.insertLines(0, [new Line('one'), new Line('two')])
+      subscriptions.add buffer.onDidChange (e) ->
+        expect(e.oldText).toEqual('\ntwo')
+        expect(e.oldRange.toString()).toEqual('[(0, 3) - (1, 3)]')
+        expect(e.oldCharacterRange).toEqual(start: 3, end: 7)
+        expect(e.newText).toEqual('')
+        expect(e.newRange.toString()).toEqual('[(0, 3) - (0, 3)]')
+        expect(e.newCharacterRange).toEqual(start: 3, end: 3)
+      buffer.removeLines(1, 1)
+
+    it 'posts change events when removing all lines', ->
+      buffer.insertLines(0, [new Line('one'), new Line('two')])
+      subscriptions.add buffer.onDidChange (e) ->
+        expect(e.oldText).toEqual('one\ntwo')
+        expect(e.oldRange.toString()).toEqual('[(0, 0) - (1, 3)]')
+        expect(e.oldCharacterRange).toEqual(start: 0, end: 7)
+        expect(e.newText).toEqual('')
+        expect(e.newRange.toString()).toEqual('[(0, 0) - (0, 0)]')
+        expect(e.newCharacterRange).toEqual(start: 0, end: 0)
+      buffer.removeLines(0, 2)
