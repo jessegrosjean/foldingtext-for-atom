@@ -20,60 +20,64 @@ describe 'OutlineEditor', ->
     bufferSubscription.dispose()
     editor.destroy()
 
-  describe 'Hoisted Item', ->
+  describe 'View', ->
 
-    it 'should hoist root by default', ->
-      expect(editor.getHoistedItem()).toBe(root)
-      expect(editor.isVisible(root)).toBeFalsy()
+    describe 'Hoisted Item', ->
 
-    it 'should make children of hoisted item visible', ->
-      editor.setHoistedItem(two)
-      expect(editor.isVisible(editor.getHoistedItem())).toBeFalsy()
-      expect(editor.isVisible(three)).toBeTruthy()
-      expect(editor.isVisible(four)).toBeTruthy()
-      expect(buffer.getText()).toBe('three\nfour')
+      it 'should hoist root by default', ->
+        expect(editor.getHoistedItem()).toBe(root)
+        expect(editor.isVisible(root)).toBeFalsy()
 
-    it 'should hoist item with no children', ->
-      editor.setHoistedItem(three)
-      expect(buffer.getText()).toBe('')
+      it 'should make children of hoisted item visible', ->
+        editor.setHoistedItem(two)
+        expect(editor.isVisible(editor.getHoistedItem())).toBeFalsy()
+        expect(editor.isVisible(three)).toBeTruthy()
+        expect(editor.isVisible(four)).toBeTruthy()
+        expect(buffer.getText()).toBe('three\nfour')
 
-    it 'should not update buffer when items are added outide hoisted item', ->
-      editor.setHoistedItem(two)
-      outline.root.appendChild(outline.createItem('not me!'))
-      expect(buffer.getText()).toBe('three\nfour')
+      it 'should hoist item with no children', ->
+        editor.setHoistedItem(three)
+        expect(buffer.getText()).toBe('')
 
-  describe 'Expand & Collapse Items', ->
+      it 'should not update buffer when items are added outide hoisted item', ->
+        editor.setHoistedItem(two)
+        outline.root.appendChild(outline.createItem('not me!'))
+        expect(buffer.getText()).toBe('three\nfour')
 
-    it 'items should be expanded by default', ->
-      expect(buffer.getText()).toEqual('one\n\ttwo\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix')
-      expect(editor.isExpanded(one)).toBeTruthy()
+    describe 'Expand & Collapse Items', ->
 
-    it 'should hide children when item is collapsed', ->
-      editor.setCollapsed(one)
-      expect(editor.isExpanded(one)).toBeFalsy()
-      expect(editor.isVisible(two)).toBeFalsy()
-      expect(editor.isVisible(five)).toBeFalsy()
-      expect(buffer.getText()).toEqual('one')
+      it 'items should be expanded by default', ->
+        expect(buffer.getText()).toEqual('one\n\ttwo\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix')
+        expect(editor.isExpanded(one)).toBeTruthy()
 
-    it 'should show children when visible item is expanded', ->
-      editor.setCollapsed(one)
-      editor.setExpanded(one)
-      expect(editor.isExpanded(one)).toBeTruthy()
-      expect(editor.isVisible(two)).toBeTruthy()
-      expect(editor.isVisible(five)).toBeTruthy()
-      expect(buffer.getText()).toEqual('one\n\ttwo\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix')
+      it 'should hide children when item is collapsed', ->
+        editor.setCollapsed(one)
+        expect(editor.isExpanded(one)).toBeFalsy()
+        expect(editor.isVisible(two)).toBeFalsy()
+        expect(editor.isVisible(five)).toBeFalsy()
+        expect(buffer.getText()).toEqual('one')
 
-    it 'should expand mutliple items at once', ->
-      editor.setCollapsed([one, two, five])
-      editor.setExpanded([one, two, five])
-      expect(buffer.getText()).toEqual('one\n\ttwo\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix')
+      it 'should show children when visible item is expanded', ->
+        editor.setCollapsed(one)
+        editor.setExpanded(one)
+        expect(editor.isExpanded(one)).toBeTruthy()
+        expect(editor.isVisible(two)).toBeTruthy()
+        expect(editor.isVisible(five)).toBeTruthy()
+        expect(buffer.getText()).toEqual('one\n\ttwo\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix')
 
-    it 'should expand selected items ', ->
-      editor.setCollapsed([two, five])
-      editor.setSelectedItemRange(two, 1, five, 2)
-      expect(buffer.getText()).toEqual('one\n\ttwo\n\tfive')
-      editor.setExpanded()
-      expect(buffer.getText()).toEqual('one\n\ttwo\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix')
+      it 'should expand mutliple items at once', ->
+        editor.setCollapsed([one, two, five])
+        editor.setExpanded([one, two, five])
+        expect(buffer.getText()).toEqual('one\n\ttwo\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix')
+
+      it 'should expand selected items ', ->
+        editor.setCollapsed([two, five])
+        editor.setSelectedItemRange(two, 1, five, 2)
+        expect(buffer.getText()).toEqual('one\n\ttwo\n\tfive')
+        editor.setExpanded()
+        expect(buffer.getText()).toEqual('one\n\ttwo\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix')
+
+  describe 'Organize', ->
 
     describe 'Move Lines', ->
       it 'should move lines up', ->
@@ -163,73 +167,105 @@ describe 'OutlineEditor', ->
         expect(editor.getSelectedRange().toString()).toEqual('[(1, 1) - (1, 1)]')
         expect(buffer.getText()).toEqual('three\nfour')
 
-  xdescribe 'Move Branches', ->
-    it 'should move items up', ->
-      editor.setCollapsed([two, five])
-      editor.moveSelectionRange(five)
-      editor.moveItemsUp()
-      one.firstChild.should.equal(five)
-      one.lastChild.should.equal(two)
-      editor.moveItemsUp() # should do nothing
-      one.firstChild.should.equal(five)
+    xdescribe 'Move Branches', ->
+      it 'should move items up', ->
+        editor.setCollapsed([two, five])
+        editor.moveSelectionRange(five)
+        editor.moveItemsUp()
+        one.firstChild.should.equal(five)
+        one.lastChild.should.equal(two)
+        editor.moveItemsUp() # should do nothing
+        one.firstChild.should.equal(five)
 
-    it 'should move items down', ->
-      editor.setExpanded(one)
-      editor.moveSelectionRange(two)
-      editor.moveItemsDown()
-      one.firstChild.should.equal(five)
-      one.lastChild.should.equal(two)
-      editor.moveItemsDown() # should do nothing
-      one.lastChild.should.equal(two)
+      it 'should move items down', ->
+        editor.setExpanded(one)
+        editor.moveSelectionRange(two)
+        editor.moveItemsDown()
+        one.firstChild.should.equal(five)
+        one.lastChild.should.equal(two)
+        editor.moveItemsDown() # should do nothing
+        one.lastChild.should.equal(two)
 
-    it 'should move items left', ->
-      editor.setExpanded(one)
-      editor.moveSelectionRange(two)
-      editor.moveItemsLeft()
-      one.firstChild.should.equal(five)
-      one.nextSibling.should.equal(two)
-      editor.moveItemsLeft() # should do nothing
-      one.nextSibling.should.equal(two)
+      it 'should move items left', ->
+        editor.setExpanded(one)
+        editor.moveSelectionRange(two)
+        editor.moveItemsLeft()
+        one.firstChild.should.equal(five)
+        one.nextSibling.should.equal(two)
+        editor.moveItemsLeft() # should do nothing
+        one.nextSibling.should.equal(two)
 
-    it 'should move items left with prev sibling children selected', ->
-      editor.setExpanded(one)
-      editor.setExpanded(two)
-      editor.moveSelectionRange(four, undefined, five)
-      editor.moveItemsLeft()
-      two.nextSibling.should.equal(four)
-      four.nextSibling.should.equal(five)
+      it 'should move items left with prev sibling children selected', ->
+        editor.setExpanded(one)
+        editor.setExpanded(two)
+        editor.moveSelectionRange(four, undefined, five)
+        editor.moveItemsLeft()
+        two.nextSibling.should.equal(four)
+        four.nextSibling.should.equal(five)
 
-    it 'should move items right', ->
-      editor.setExpanded(one)
-      editor.setExpanded(two)
-      editor.moveSelectionRange(four)
-      editor.moveItemsRight()
-      three.firstChild.should.equal(four)
+      it 'should move items right', ->
+        editor.setExpanded(one)
+        editor.setExpanded(two)
+        editor.moveSelectionRange(four)
+        editor.moveItemsRight()
+        three.firstChild.should.equal(four)
 
-    it 'should duplicate items', ->
-      editor.setExpanded(one)
-      editor.setExpanded(two)
-      editor.moveSelectionRange(two)
-      editor.duplicateItems()
-      editor.selection.focusItem.should.equal(two.nextSibling)
-      editor.isExpanded(two.nextSibling).should.be.ok
-      two.nextSibling.bodyText.should.equal('two')
-      two.nextSibling.firstChild.bodyText.should.equal('three')
+      it 'should duplicate items', ->
+        editor.setExpanded(one)
+        editor.setExpanded(two)
+        editor.moveSelectionRange(two)
+        editor.duplicateItems()
+        editor.selection.focusItem.should.equal(two.nextSibling)
+        editor.isExpanded(two.nextSibling).should.be.ok
+        two.nextSibling.bodyText.should.equal('two')
+        two.nextSibling.firstChild.bodyText.should.equal('three')
 
-    it 'should join items', ->
-      editor.setExpanded(one)
-      editor.moveSelectionRange(one)
-      editor.joinItems()
-      one.bodyText.should.equal('one two')
-      editor.selection.focusItem.should.equal(one)
-      editor.selection.focusOffset.should.equal(3)
-      one.firstChild.should.equal(three)
-      one.firstChild.nextSibling.should.equal(four)
+      it 'should join items', ->
+        editor.setExpanded(one)
+        editor.moveSelectionRange(one)
+        editor.joinItems()
+        one.bodyText.should.equal('one two')
+        editor.selection.focusItem.should.equal(one)
+        editor.selection.focusOffset.should.equal(3)
+        one.firstChild.should.equal(three)
+        one.firstChild.nextSibling.should.equal(four)
 
-    it 'should join items and undo', ->
-      editor.setExpanded(one)
-      editor.moveSelectionRange(one)
-      editor.joinItems()
-      editor.undo()
-      two.firstChild.should.equal(three)
-      two.lastChild.should.equal(four)
+      it 'should join items and undo', ->
+        editor.setExpanded(one)
+        editor.moveSelectionRange(one)
+        editor.joinItems()
+        editor.undo()
+        two.firstChild.should.equal(three)
+        two.lastChild.should.equal(four)
+
+    describe 'Group', ->
+
+      it 'should group selected branches into new branch', ->
+        editor.setSelectedItemRange(two, 1, five, 0)
+        editor.groupBranches()
+        editor.getSelectedRange().toString().should.equal('[(1, 1) - (1, 1)]')
+        buffer.getText().should.equal('one\n\t\n\t\ttwo\n\t\t\tthree\n\t\t\tfour\n\t\tfive\n\t\t\tsix')
+
+    describe 'Duplicate', ->
+
+      it 'should duplicate selected branches', ->
+        editor.setSelectedItemRange(five, 0, five, 2)
+        editor.duplicateBranches()
+        editor.getSelectedRange().toString().should.equal('[(6, 0) - (6, 2)]')
+        expect(buffer.getText()).toEqual('one\n\ttwo\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix\n\tfive\n\t\tsix')
+
+    describe 'Promote Children', ->
+
+      it 'should promote child branches', ->
+        editor.setSelectedItemRange(two)
+        editor.promoteChildBranches()
+        editor.getSelectedRange().toString().should.equal('[(1, 0) - (1, 0)]')
+        expect(buffer.getText()).toEqual('one\n\ttwo\n\tthree\n\tfour\n\tfive\n\t\tsix')
+
+    describe 'Demote Trailing Siblings', ->
+
+      it 'should demote trailing sibling branches', ->
+        editor.setSelectedItemRange(two)
+        editor.demoteTrailingSiblingBranches()
+        editor.getSelectedRange().toString().should.equal('[(1, 0) - (1, 0)]')
+        expect(buffer.getText()).toEqual('one\n\ttwo\n\t\tthree\n\t\tfour\n\t\tfive\n\t\t\tsix')
