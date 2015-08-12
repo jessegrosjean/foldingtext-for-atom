@@ -60,10 +60,6 @@ class OutlineBuffer extends Buffer
           @isUpdatingBuffer--
 
       when Mutation.CHILDREN_CHANGED
-        if target isnt @getHoistedItem()
-          if not @isVisible(target) or not @isExpanded(target)
-            return
-
         if mutation.removedItems.length
           # Remove lines
           removeStart = undefined
@@ -85,6 +81,11 @@ class OutlineBuffer extends Buffer
           removeRangeIfDefined()
 
         else if mutation.addedItems.length
+          # Ignore if lines shouldn't be in this buffer
+          if target isnt @getHoistedItem()
+            if not @isVisible(target) or not @isExpanded(target)
+              return
+
           # Insert lines
           addedLines = []
 
