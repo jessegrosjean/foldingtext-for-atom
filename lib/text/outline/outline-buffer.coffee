@@ -160,6 +160,26 @@ class OutlineBuffer extends Buffer
     unless startItem instanceof Item
       {startItem, _startItemOriginalDepth, startOffset, endItem, _endItemOriginalDepth, endOffset} = startItem
 
+    visibleStartItem = startItem
+    while visibleStartItem and not @isVisible(visibleStartItem)
+      visibleStartItem = visibleStartItem.previousItem
+    if startItem isnt visibleStartItem
+      startItem = visibleStartItem
+      unless startItem
+        return new Range
+      startOffset = @getLineForItem(startItem).getTabCount()
+      _startItemOriginalDepth = startItem.depth
+
+    visibleEndItem = endItem
+    while visibleEndItem and not @isVisible(visibleEndItem)
+      visibleEndItem = visibleEndItem.previousItem
+    if endItem isnt visibleEndItem
+      endItem = visibleEndItem
+      unless endItem
+        return new Range
+      endOffset = @getLineForItem(endItem).getTabCount()
+      _endItemOriginalDepth = endItem.depth
+
     startLine = @getLineForItem(startItem)
     startRow = startLine.getRow()
     startOffset ?= 0
