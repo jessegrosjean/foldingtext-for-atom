@@ -1,4 +1,5 @@
 OutlineBuffer = require './outline-buffer'
+Mutation = require '../../core/mutation'
 {CompositeDisposable} = require 'atom'
 Outline = require '../../core/outline'
 shortid = require '../../core/shortid'
@@ -88,7 +89,7 @@ class OutlineEditor
 
   setQuery: (query) ->
     # Remove old state
-    @iterateLines 0, @getLineCount(), (line) ->
+    @outlineBuffer.iterateLines 0, @outlineBuffer.getLineCount(), (line) ->
       item = line.item
       itemState = @getItemEditorState(item)
       itemState.matched = false
@@ -109,20 +110,71 @@ class OutlineEditor
   Section: Expand & Collapse
   ###
 
+  fold: (items, completely=false) ->
+    items ?= @getSelectedItems()
+    if not _.isArray(items)
+      items = [items]
+
+    selectionFoldable = false
+    selectionFullyExpanded = true
+
+    for each in items
+      if each.hasChildren
+        selectionFoldable = true
+        unless @isExpanded(each)
+          selectionFullyExpanded = false
+
+    if selectionFoldable
+      @_setExpandedState items, not selectionFullyExpanded, completely
+    else
+      if @isVisible(items[0].parent)
+        @setSelectedItemRange(items[0].parent)
+        @fold(undefined, completely)
+        return
+
+  foldCompletely: (items) ->
+    @fold(items, true)
+
+  increaseFoldingLevel: ->
+    @setFoldingLevel(@getFoldingLevel() + 1)
+
+  decreaseFoldingLevel: ->
+    @setFoldingLevel(@getFoldingLevel() - 1)
+
+  getFoldingLevel: ->
+    minFoldedDepth = Number.MAX_VALUE
+    maxItemDepth = 0
+
+    @outlineBuffer.iterateLines 0, @outlineBuffer.getLineCount(), (line) =>
+      item = line.item
+      depth = item.depth
+      if depth > maxItemDepth
+        maxItemDepth = depth
+      if item.hasChildren and @isCollapsed(item)
+        if depth < minFoldedDepth
+          minFoldedDepth = item.depth
+
+    if minFoldedDepth is Number.MAX_VALUE
+      maxItemDepth
+    else
+      minFoldedDepth
+
+  setFoldingLevel: (level) ->
+    items = @getHoistedItem().descendants
+    @setCollapsed((item for item in items when item.depth >= level))
+    @setExpanded((item for item in items when item.depth < level))
+
   isExpanded: (item) ->
-    return item and @getItemEditorState(item).expanded
+    return item and item.hasChildren and @getItemEditorState(item).expanded
 
   isCollapsed: (item) ->
-    return item and not @getItemEditorState(item).expanded
+    return item and item.hasChildren and not @getItemEditorState(item).expanded
 
   setExpanded: (items) ->
     @_setExpandedState items, true
 
   setCollapsed: (items) ->
     @_setExpandedState items, false
-
-  toggleExpanded: -> (items) ->
-    @_setExpandedState item, undefined
 
   expandAll: ->
     @setExpanded(@getHoistedItem().descendants)
@@ -146,10 +198,17 @@ class OutlineEditor
     @setCollapsed(collapseItems)
     @setExpanded(expandItems)
 
-  _setExpandedState: (items, expanded) ->
+  _setExpandedState: (items, expanded, completely=false) ->
     items ?= @getSelectedItems()
     if not _.isArray(items)
       items = [items]
+
+    if completely
+      newItems = []
+      for each in Item.getCommonAncestors(items)
+        newItems.push each
+        Array.prototype.push.apply(newItems, each.descendants)
+      items = newItems
 
     selectedItemRange = @getSelectedItemRange()
 
@@ -342,6 +401,14 @@ class OutlineEditor
     else
       @getNextVisibleBranch nextBranch, hoistedItem
 
+  getDrawingStateInRange: (range) ->
+    result = []
+    for eachLine in @outlineBuffer.getLinesInRange(range)
+      eachItem = eachLine.item
+      result.push
+        collapsed: @isCollapsed(eachItem)
+    result
+
   ###
   Section: Selection
   ###
@@ -396,27 +463,25 @@ class OutlineEditor
   ###
 
   insertNewline: ->
-    selectionRange = @selection
-    if selectionRange.isTextMode
-      if not selectionRange.isCollapsed
-        @delete()
-        selectionRange = @selection
+    selectedRange = @getSelectedRange()
+    if not selectedRange.isEmpty()
+      @delete()
+      selectedRange = @selection
 
-      focusItem = selectionRange.focusItem
-      focusOffset = selectionRange.focusOffset
+    focusItem = selectedRange.start.column
 
-      if focusOffset is 0
-        @insertItem('', true)
-        @moveSelectionRange(focusItem, 0)
-      else
-        splitText = focusItem.getAttributedBodyTextSubstring(focusOffset, -1)
-        undoManager = @outline.undoManager
-        undoManager.beginUndoGrouping()
-        focusItem.replaceBodyTextInRange('', focusOffset, -1)
-        @insertItem(splitText)
-        undoManager.endUndoGrouping()
+    focusOffset = selectedRange.focusOffset
+
+    if focusOffset is 0
+      @insertItem('', true)
+      @moveSelectionRange(focusItem, 0)
     else
-      @insertItem()
+      splitText = focusItem.getAttributedBodyTextSubstring(focusOffset, -1)
+      undoManager = @outline.undoManager
+      undoManager.beginUndoGrouping()
+      focusItem.replaceBodyTextInRange('', focusOffset, -1)
+      @insertItem(splitText)
+      undoManager.endUndoGrouping()
 
   insertNewlineAbove: (text) ->
     @insertItem(text, true)
@@ -487,6 +552,9 @@ class OutlineEditor
 
   _moveLinesInDirection: (items, direction) ->
     items ?= @getSelectedItems()
+    if not _.isArray(items)
+      items = [items]
+
     if items.length
       selectedItemRange = @getSelectedItemRange()
       minDepth = @getHoistedItem().depth + 1
@@ -516,8 +584,9 @@ class OutlineEditor
 
       expandItems = []
       disposable = outline.onDidChange (mutation) ->
-        if mutation.target.hasChildren and not (mutation.target in expandItems)
-          expandItems.push mutation.target
+        if mutation.type is Mutation.CHILDREN_CHANGED
+          if not (mutation.target in expandItems)
+            expandItems.push mutation.target
 
       outline.removeItems(items)
 
@@ -537,22 +606,26 @@ class OutlineEditor
   Section: Move Branches
   ###
 
-  moveBranchesUp: ->
-    @_moveBranchesInDirection('up')
+  moveBranchesUp: (items) ->
+    @_moveBranchesInDirection(items, 'up')
 
-  moveBranchesDown: ->
-    @_moveBranchesInDirection('down')
+  moveBranchesDown: (items) ->
+    @_moveBranchesInDirection(items, 'down')
 
-  moveBranchesLeft: ->
-    @_moveBranchesInDirection('left')
+  moveBranchesLeft: (items) ->
+    @_moveBranchesInDirection(items, 'left')
 
-  moveBranchesRight: ->
-    @_moveBranchesInDirection('right')
+  moveBranchesRight: (items) ->
+    @_moveBranchesInDirection(items, 'right')
 
-  _moveBranchesInDirection: (direction) ->
-    selectedItems = Item.getCommonAncestors(@getSelectedItems())
-    if selectedItems.length > 0
-      startItem = selectedItems[0]
+  _moveBranchesInDirection: (items, direction) ->
+    items ?= @getSelectedItems()
+    if not _.isArray(items)
+      items = [items]
+    items = Item.getCommonAncestors(items)
+
+    if items.length > 0
+      startItem = items[0]
       newNextSibling
       newParent
 
@@ -561,7 +634,7 @@ class OutlineEditor
         if newNextSibling
           newParent = newNextSibling.parent
       else if direction is 'down'
-        endItem = selectedItems[selectedItems.length - 1]
+        endItem = items[items.length - 1]
         newPreviousSibling = @getNextVisibleSibling(endItem)
         if newPreviousSibling
           newParent = newPreviousSibling.parent
@@ -571,92 +644,95 @@ class OutlineEditor
         if startItemParent isnt @getHoistedItem()
           newParent = startItemParent.parent
           newNextSibling = @getNextVisibleSibling(startItemParent)
-          while newNextSibling and newNextSibling in selectedItems
+          while newNextSibling and newNextSibling in items
             newNextSibling = @getNextVisibleSibling(newNextSibling)
       else if direction is 'right'
         newParent = @getPreviousVisibleSibling(startItem)
 
       if newParent
-        @moveBranches(selectedItems, newParent, newNextSibling)
+        @moveBranches(items, newParent, newNextSibling)
 
-  promoteChildItems: ->
-    selectedItems = Item.getCommonAncestors(@getSelectedItems())
-    if selectedItems.length > 0
-      undoManager = @outline.undoManager
+  groupBranches: (items) ->
+    items ?= @getSelectedItems()
+    if not _.isArray(items)
+      items = [items]
+    items = Item.getCommonAncestors(items)
+
+    if items.length > 0
+      outline = @outlineBuffer.outline
+      first = items[0]
+      group = outline.createItem ''
+
+      undoManager = outline.undoManager
       undoManager.beginUndoGrouping()
-      for each in selectedItems
-        @moveBranches(each.children, each.parent, each.nextSibling)
+
+      first.parent.insertChildBefore group, first
+      @setSelectedItemRange group, group.depth - @getHoistedItem().depth
+      @moveBranches items, group
+
       undoManager.endUndoGrouping()
-      undoManager.setActionName('Promote Children')
+      undoManager.setActionName('Group Items')
 
-  demoteTrailingSiblingItems: ->
-    selectedItems = Item.getCommonAncestors(@getSelectedItems())
-    item = selectedItems[0]
+  duplicateBranches: (items) ->
+    items ?= @getSelectedItems()
+    if not _.isArray(items)
+      items = [items]
+    items = Item.getCommonAncestors(items)
 
+    if items.length > 0
+      itemRange = @getSelectedItemRange()
+      outline = @outlineBuffer.outline
+      expandedClones = []
+      clonedItems = []
+
+      for each in items
+        clonedItems.push each.cloneItem (oldID, cloneID, cloneItem) =>
+          oldItem = outline.getItemForID(oldID)
+          if oldItem is itemRange.startItem
+            itemRange.startItem = cloneItem
+          if oldItem is itemRange.endItem
+            itemRange.endItem = cloneItem
+          if @isExpanded(oldItem)
+            expandedClones.push(cloneItem)
+
+      last = items[items.length - 1]
+      insertBefore = last.nextSibling
+      parent = insertBefore?.parent ? items[0].parent
+      undoManager = outline.undoManager
+
+      undoManager.beginUndoGrouping()
+      @setExpanded(expandedClones)
+      parent.insertChildrenBefore(clonedItems, insertBefore)
+      @setSelectedItemRange(itemRange)
+      undoManager.endUndoGrouping()
+      undoManager.setActionName('Duplicate Items')
+
+  promoteChildBranches: (item) ->
+    item ?= @getSelectedItems()[0]
+    if item
+      @moveBranches(item.children, item.parent, item.nextSibling)
+      @outlineBuffer.outline.undoManager.setActionName('Promote Children')
+
+  demoteTrailingSiblingBranches: (item) ->
+    item ?= @getSelectedItems()[0]
     if item
       trailingSiblings = []
-      each = item.nextSibling
 
+      each = item.nextSibling
       while each
         trailingSiblings.push(each)
         each = each.nextSibling
 
       if trailingSiblings.length > 0
         @moveBranches(trailingSiblings, item, null)
-        @outline.undoManager.setActionName('Demote Siblings')
-
-  groupItems: ->
-    selectedItems = Item.getCommonAncestors(@getSelectedItems())
-    if selectedItems.length > 0
-      first = selectedItems[0]
-      group = @outline.createItem ''
-
-      undoManager = @outline.undoManager
-      undoManager.beginUndoGrouping()
-
-      first.parent.insertChildBefore group, first
-      @moveSelectionRange group, 0
-      @moveBranches selectedItems, group
-
-      undoManager.endUndoGrouping()
-      undoManager.setActionName('Group Items')
-
-  duplicateItems: ->
-    selectedItems = Item.getCommonAncestors(@getSelectedItems())
-    if selectedItems.length > 0
-      anchorItem = @selection.anchorItem
-      nextAnchorItem = null
-      focusItem = @selection.focusItem
-      nextFocusItem = null
-      outline = @outline
-      outlineEditor = this
-      expandedClones = []
-      clonedItems = []
-      oldToClonedIDs = {}
-
-      for each in selectedItems
-        clonedItems.push each.cloneItem (oldID, cloneID, cloneItem) ->
-          oldItem = outline.getItemForID(oldID)
-          if oldItem is anchorItem
-            nextAnchorItem = cloneItem
-          if oldItem is focusItem
-            nextFocusItem = cloneItem
-          if outlineEditor.isExpanded(oldItem)
-            expandedClones.push(cloneItem)
-
-      last = selectedItems[selectedItems.length - 1]
-      insertBefore = last.nextSibling
-      parent = insertBefore?.parent ? selectedItems[0].parent
-      undoManager = @outline.undoManager
-
-      undoManager.beginUndoGrouping()
-      @setExpanded(expandedClones)
-      parent.insertChildrenBefore(clonedItems, insertBefore)
-      @moveSelectionRange(nextFocusItem, @selection.focusOffset, nextAnchorItem, @selection.anchorOffset)
-      undoManager.endUndoGrouping()
-      undoManager.setActionName('Duplicate Items')
+        @outlineBuffer.outline.undoManager.setActionName('Demote Siblings')
 
   moveBranches: (items, newParent, newNextSibling) ->
+    items ?= @getSelectedItems()
+    if not _.isArray(items)
+      items = [items]
+    items = Item.getCommonAncestors(items)
+
     outline = @outlineBuffer.outline
 
     undoManager = outline.undoManager
@@ -679,29 +755,6 @@ class OutlineEditor
 
     undoManager.endUndoGrouping()
     undoManager.setActionName('Move Items')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   ###
   Section: Scripting
