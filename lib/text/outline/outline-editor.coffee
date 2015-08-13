@@ -463,25 +463,47 @@ class OutlineEditor
   ###
 
   insertNewline: ->
+    outline = @outlineBuffer.outline
+    undoManager = outline.undoManager
+    undoManager.beginUndoGrouping()
+
     selectedRange = @getSelectedRange()
+    selectedItemRange = @getSelectedItemRange()
+
     if not selectedRange.isEmpty()
-      @delete()
-      selectedRange = @selection
+      @outlineBuffer.setTextInRange('', selectedRange)
+      selectedRange.end = selectedRange.start
 
-    focusItem = selectedRange.start.column
+    startItem = selectedItemRange.startItem
+    startLine = @outlineBuffer.getLineForItem(startItem)
+    startOffset = selectedItemRange.startOffset
 
-    focusOffset = selectedRange.focusOffset
+    match = startItem.bodyText.match(/\t*(- )(.*)/)
+    prefix = match?[1] ? ''
+    content = match?[2] ? startItem.bodyText
+    lead = startLine.getTabCount() + prefix.length
 
-    if focusOffset is 0
+    if startOffset <= lead and (not prefix or content)
       @insertItem('', true)
-      @moveSelectionRange(focusItem, 0)
+      @setSelectedItemRange(startItem, startOffset)
+    else if startOffset is lead and (prefix and not content)
+      startItem.bodyText = ''
     else
-      splitText = focusItem.getAttributedBodyTextSubstring(focusOffset, -1)
-      undoManager = @outline.undoManager
-      undoManager.beginUndoGrouping()
-      focusItem.replaceBodyTextInRange('', focusOffset, -1)
-      @insertItem(splitText)
-      undoManager.endUndoGrouping()
+      bodyTextOffset = startOffset - startLine.getTabCount()
+      splitText = startItem.getAttributedBodyTextSubstring(bodyTextOffset, -1)
+      startItem.replaceBodyTextInRange('', bodyTextOffset, -1)
+
+      if prefix
+        splitText.insertStringAtLocation(prefix, 0)
+        @insertItem(splitText)
+        selectedRange = @getSelectedRange()
+        selectedRange.start.column += prefix.length
+        selectedRange.end.column += prefix.length
+        @setSelectedRange(selectedRange)
+      else
+        @insertItem(splitText)
+
+    undoManager.endUndoGrouping()
 
   insertNewlineAbove: (text) ->
     @insertItem(text, true)
@@ -496,7 +518,8 @@ class OutlineEditor
   # Returns the new {Item}.
   insertItem: (text, above=false) ->
     text ?= ''
-    selectedItems = @selection.items
+
+    selectedItems = @getSelectedItems()
     insertBefore
     parent
 
@@ -521,16 +544,15 @@ class OutlineEditor
         insertBefore = @getNextVisibleSibling selectedItem
 
     outline = parent.outline
-    outlineEditorElement = @outlineEditorElement
     insertItem = outline.createItem(text)
     undoManager = outline.undoManager
 
     undoManager.beginUndoGrouping()
     parent.insertChildBefore(insertItem, insertBefore)
     undoManager.endUndoGrouping()
+    @setSelectedItemRange(insertItem, @outlineBuffer.getLineForItem(insertItem).getTabCount())
 
     undoManager.setActionName('Insert Item')
-    @moveSelectionRange(insertItem, 0)
 
     insertItem
 

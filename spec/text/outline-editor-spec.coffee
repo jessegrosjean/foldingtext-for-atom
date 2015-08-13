@@ -77,6 +77,27 @@ describe 'OutlineEditor', ->
         editor.setExpanded()
         expect(buffer.getText()).toEqual('one\n\ttwo\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix')
 
+  describe 'Insert', ->
+
+    it 'should insert new empty item if existing is selected at end', ->
+      editor.setSelectedItemRange(two, 4)
+      editor.insertNewline()
+      editor.getSelectedRange().toString().should.equal('[(2, 2) - (2, 2)]')
+      expect(buffer.getText()).toEqual('one\n\ttwo\n\t\t\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix')
+
+    it 'should insert new split from current if selection is in middle', ->
+      editor.setSelectedItemRange(two, 2)
+      editor.insertNewline()
+      editor.getSelectedRange().toString().should.equal('[(2, 2) - (2, 2)]')
+      expect(buffer.getText()).toEqual('one\n\tt\n\t\two\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix')
+
+    it 'should insert empty above current (move current down) if selection at start', ->
+      editor.setSelectedItemRange(two, 1)
+      editor.insertNewline()
+      buffer.getLine(2).item.should.equal(two)
+      editor.getSelectedRange().toString().should.equal('[(2, 1) - (2, 1)]')
+      expect(buffer.getText()).toEqual('one\n\t\n\ttwo\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix')
+
   describe 'Organize', ->
 
     describe 'Move Lines', ->
