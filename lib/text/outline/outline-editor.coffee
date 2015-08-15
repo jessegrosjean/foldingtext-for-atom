@@ -37,6 +37,36 @@ class OutlineEditor
       @outlineBuffer.setTextInRange(string, range)
       @isUpdatingOutlineBuffer--
 
+  nativeTextBufferDrawingStateForRange: (nsrange) ->
+    range = @outlineBuffer.getRangeFromCharacterRange(nsrange.location, nsrange.location + nsrange.length)
+    visitedAncestors = new Set(@getHoistedItem())
+    visibleItemAncestorRanges = []
+    visibleItemStates = []
+
+    for eachLine in @outlineBuffer.getLinesInRange(range)
+      eachItem = eachLine.item
+      visibleItemStates.push
+        gapAfter: false
+        gapBefore: false
+        collapsed: @isCollapsed(eachItem)
+
+
+      ancestor = eachItem.parent
+      while not visitedAncestors.has(ancestor)
+        ancestorLine = @outlineBuffer.getLineForItem(ancestor)
+        firstChildLine = @outlineBuffer.getLineForItem(@getFirstVisibleChild(ancestor))
+        lastVisibleDescendantLine = @outlineBuffer.getLineForItem(@getLastVisibleDescendantOrSelf(ancestor))
+        visibleItemAncestorRanges.push
+          ancestorStart: ancestorLine.getCharacterOffset() + ancestorLine.getTabCount()
+          firstChildStart: firstChildLine.getCharacterOffset()
+          lastVisibleDescendantEnd: lastVisibleDescendantLine.getCharacterOffset() + lastVisibleDescendantLine.getCharacterCount() - 1
+        visitedAncestors.add(ancestor)
+        ancestor = ancestor.parent
+
+    {} =
+      visibleItemAncestorRanges: visibleItemAncestorRanges
+      visibleItemStates: visibleItemStates
+
   destroy: ->
     unless @destroyed
       @outlineBuffer.destroy()
@@ -127,8 +157,9 @@ class OutlineEditor
     if selectionFoldable
       @_setExpandedState items, not selectionFullyExpanded, completely
     else
-      if @isVisible(items[0].parent)
-        @setSelectedItemRange(items[0].parent)
+      parent = items[0].parent
+      if @isVisible(parent)
+        @setSelectedItemRange(parent, @getHoistedItem().depth - parent.depth)
         @fold(undefined, completely)
         return
 
@@ -401,13 +432,18 @@ class OutlineEditor
     else
       @getNextVisibleBranch nextBranch, hoistedItem
 
-  getDrawingStateInRange: (range) ->
-    result = []
-    for eachLine in @outlineBuffer.getLinesInRange(range)
-      eachItem = eachLine.item
-      result.push
-        collapsed: @isCollapsed(eachItem)
-    result
+  getVisibleBranchCharacterRange: (item, hoistedItem) ->
+    startLine = @outlineBuffer.getLineForItem(item)
+    endLine = @outlineBuffer.getLineForItem(@getLastVisibleDescendantOrSelf(item, hoistedItem))
+    {} =
+      start: startLine.getCharacterOffset()
+      end: endLine.getCharacterOffset() + endLine.getCharacterCount() - 1
+
+  getVisibleBodyCharacterRange: (item) ->
+    line = @outlineBuffer.getLineForItem(item)
+    {} =
+      start: line.getTabCount()
+      end: line.getCharacterCount() - 1 - line.getTabCount()
 
   ###
   Section: Selection
