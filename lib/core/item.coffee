@@ -177,6 +177,8 @@ class Item
     else
       @_liOrRootUL.removeAttribute name
 
+    outline.syncAttributeToBodyText(this, name, value)
+
     if isInOutline
       outline.emitter.emit 'did-change', mutation
       outline.endChanges()
@@ -369,6 +371,7 @@ class Item
       return
 
     attributedBodyText = @attributedBodyText
+    oldBodyText = attributedBodyText.getString()
     isInOutline = @isInOutline
     outline = @outline
     insertedString
@@ -409,6 +412,8 @@ class Item
     newBodyP = ownerDocument.createElement('P')
     newBodyP.appendChild(newBodyPContent)
     li.replaceChild(newBodyP, bodyP)
+
+    outline.syncBodyTextToAttributes(this, oldBodyText)
 
     if isInOutline
       outline.emitter.emit 'did-change', mutation

@@ -1,6 +1,6 @@
 # Copyright (c) 2015 Jesse Grosjean. All rights reserved.
 
-{File, Emitter, CompositeDisposable} = require 'atom'
+{File, Emitter, Disposable, CompositeDisposable} = require 'atom'
 ItemSerializer = require './item-serializer'
 UndoManager = require './undo-manager'
 Constants = require './constants'
@@ -94,6 +94,10 @@ class Outline
 
     @undoManager = undoManager = new UndoManager
     @emitter = new Emitter
+
+    @syncingToAttributes = 0
+    @syncingToBodyText = 0
+    @syncRules = null
 
     @loaded = false
     @loadOptions = {}
@@ -674,6 +678,31 @@ class Outline
 
   breakUndoCoalescing: ->
     @coalescingMutation = null
+
+  syncAttributeToBodyText: (item, name, value) ->
+    return unless @syncRules
+    unless @syncingToAttributes
+      @syncingToBodyText++
+      for each in @syncRules
+        each.syncAttributeToBodyText(item, name, value)
+      @syncingToBodyText--
+
+  syncBodyTextToAttributes: (item, oldBodyText) ->
+    return unless @syncRules
+    unless @syncingToBodyText
+      @syncingToAttributes++
+      for each in @syncRules
+        each.syncBodyTextToAttributes(item, oldBodyText)
+      @syncingToAttributes--
+
+  registerAttributeBodyTextSyncRule: (syncRule) ->
+    unless @syncRules
+      @syncRules = []
+    @syncRules.push(syncRule)
+    new Disposable =>
+      @syncRules.splice(@syncRules.indexOf(syncRule), 1)
+      if @syncRules.length is 0
+        @syncRules = null
 
   recordChange: (mutation) ->
     if @undoManager.isUndoing or @undoManager.isUndoing
