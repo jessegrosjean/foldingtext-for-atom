@@ -392,6 +392,9 @@ class Item
       else
         replacedText = new AttributedString
 
+      if replacedText.length is 0 and insertedText.length is 0
+        return
+
       mutation = Mutation.createBodyTextMutation this, location, insertedString.length, replacedText
       outline.emitter.emit 'will-change', mutation
       outline.beginChanges()
