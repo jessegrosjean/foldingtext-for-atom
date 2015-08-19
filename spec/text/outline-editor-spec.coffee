@@ -77,6 +77,49 @@ describe 'OutlineEditor', ->
         editor.setExpanded()
         expect(buffer.getText()).toEqual('one\n\ttwo\n\t\tthree\n\t\tfour\n\tfive\n\t\tsix')
 
+    describe 'Filter Items', ->
+
+      it 'should set/get query', ->
+        editor.getQuery().should.equal('')
+        editor.setQuery('hello world')
+        editor.getQuery().should.equal('hello world')
+
+      it 'should filter buffer to show items (and ancestors) matching query', ->
+        editor.setQuery('two')
+        editor.isVisible(one).should.be.ok
+        editor.isVisible(two).should.be.ok
+        editor.isVisible(three).should.not.be.ok
+        editor.isVisible(five).should.not.be.ok
+        editor.setQuery(null)
+        editor.isVisible(one).should.be.ok
+        editor.isVisible(two).should.not.be.ok
+        editor.isVisible(three).should.not.be.ok
+        editor.isVisible(five).should.not.be.ok
+
+      it 'should expand to show search and restore original expanded after search', ->
+        editor.setCollapsed([two, five])
+        editor.setQuery('three')
+        editor.isVisible(one).should.be.ok
+        editor.isVisible(two).should.be.ok
+        editor.isVisible(three).should.be.ok
+        editor.isVisible(four).should.not.be.ok
+        editor.isVisible(five).should.not.be.ok
+        editor.setQuery('')
+        editor.isVisible(one).should.be.ok
+        editor.isVisible(two).should.be.ok
+        editor.isVisible(three).should.not.be.ok
+        editor.isVisible(four).should.not.be.ok
+        editor.isVisible(five).should.be.ok
+        editor.isVisible(six).should.not.be.ok
+
+      it 'should add new inserted items to search results', ->
+        editor.setQuery('three')
+        editor.setSelectedItemRange(three, 5)
+        editor.insertNewline()
+        buffer.getText().should.equal('one\n\ttwo\n\t\tthr\n\t\tee')
+        editor.setQuery('')
+        buffer.getText().should.equal('one\n\ttwo\n\t\tthr\n\t\tee\n\t\tfour\n\tfive\n\t\tsix')
+
   describe 'Insert', ->
 
     it 'should insert new empty item if existing is selected at end', ->
@@ -140,6 +183,7 @@ describe 'OutlineEditor', ->
         root.appendChild(four)
         three.indent = 3
         outline.insertItemBefore(three, four)
+        editor.setExpanded(one)
         editor.setSelectedItemRange(one, 1)
         editor.moveLinesDown()
         one.indent.should.equal(1)
