@@ -1,3 +1,4 @@
+ItemSerializer = require '../../core//item-serializer'
 OutlineBuffer = require './outline-buffer'
 Mutation = require '../../core/mutation'
 {CompositeDisposable} = require 'atom'
@@ -8,6 +9,7 @@ Item = require '../../core/item'
 _ = require 'underscore-plus'
 Range = require '../range'
 assert = require 'assert'
+#less = require '../less'
 
 class OutlineEditor
 
@@ -19,6 +21,17 @@ class OutlineEditor
     @outlineBuffer = new OutlineBuffer(outline, this)
     @nativeEditor ?= new NativeEditor
 
+    @subscriptions.add @outlineBuffer.onWillProcessOutlineMutation (mutation) =>
+      targetItem = mutation.target
+      if @searchQuery
+        if mutation.type is Mutation.CHILDREN_CHANGED and (targetItem is @getHoistedItem() or @getHoistedItem().contains(targetItem))
+          for eachItem in mutation.addedItems
+            @_addSearchResult eachItem
+
+      if mutation.type is Mutation.CHILDREN_CHANGED
+        if not targetItem.hasChildren
+          @setCollapsed targetItem
+
     @subscriptions.add @outlineBuffer.onDidChange (e) =>
       if not @isUpdatingOutlineBuffer
         range = e.oldCharacterRange
@@ -28,6 +41,8 @@ class OutlineEditor
         @isUpdatingNativeBuffer--
       assert(@nativeEditor.nativeTextContent is @outlineBuffer.getText(), 'Text Buffers are Equal')
 
+    @searchQuery = ''
+    @expandedBySearch = null
     @setHoistedItem(@outlineBuffer.outline.root)
 
   nativeTextBufferDidReplaceCharactersInRangeWithString: (nsrange, string) ->
@@ -39,17 +54,17 @@ class OutlineEditor
 
   nativeTextBufferDrawingStateForRange: (nsrange) ->
     range = @outlineBuffer.getRangeFromCharacterRange(nsrange.location, nsrange.location + nsrange.length)
+    linesInRange = @outlineBuffer.getLinesInRange(range)
     visitedAncestors = new Set(@getHoistedItem())
     visibleItemAncestorRanges = []
     visibleItemStates = []
 
-    for eachLine in @outlineBuffer.getLinesInRange(range)
+    for eachLine in linesInRange
       eachItem = eachLine.item
       visibleItemStates.push
-        gapAfter: false
-        gapBefore: false
+        gapBefore: eachItem.previousSibling and not @isVisible(eachItem.previousSibling)
+        hasChildren: eachItem.hasChildren
         collapsed: @isCollapsed(eachItem)
-
 
       ancestor = eachItem.parent
       while not visitedAncestors.has(ancestor)
@@ -63,9 +78,29 @@ class OutlineEditor
         visitedAncestors.add(ancestor)
         ancestor = ancestor.parent
 
+    if lastLine = linesInRange[linesInRange.length - 1]
+      lastItem = lastLine.item
+      if lastItem.nextSibling and not @isVisible(lastItem.nextSibling)
+        visibleItemStates[visibleItemStates.length - 1].gapAfter = true
+
     {} =
       visibleItemAncestorRanges: visibleItemAncestorRanges
       visibleItemStates: visibleItemStates
+
+  ###
+  parseCSS: (input, options) ->
+    options ?= {}
+
+    try
+      less().render input, options, (error, output) ->
+        console.log output.css
+
+      less().parse input, options, (err, root, imports, options) ->
+        parseTree = new less().ParseTree(root, imports)
+        result = parseTree.toCSS(options)
+    catch e
+      console.log e
+  ###
 
   destroy: ->
     unless @destroyed
@@ -117,24 +152,48 @@ class OutlineEditor
   isMatchedAncestor: (item) ->
     return item and @getItemEditorState(item).matchedAncestor
 
+  getQuery: ->
+    @searchQuery
+
   setQuery: (query) ->
-    # Remove old state
-    @outlineBuffer.iterateLines 0, @outlineBuffer.getLineCount(), (line) ->
-      item = line.item
-      itemState = @getItemEditorState(item)
+    @searchQuery = query
+
+    # Remove old search state from the entire tree
+    for each in @outlineBuffer.outline.root.descendants
+      itemState = @getItemEditorState(each)
       itemState.matched = false
       itemState.matchedAncestor = false
+      if @expandedBySearch?.has(each)
+        itemState.expanded = false
 
-    # Remove old lines
+    # Clear the text display buffer
     @outlineBuffer.isUpdatingBuffer++
-    @removeLines(0, @getLineCount())
+    @outlineBuffer.removeLines(0, @outlineBuffer.getLineCount())
     @outlineBuffer.isUpdatingBuffer--
+    @expandedBySearch = null
 
+    # Update search state
     if query
-      # Set matched state for each result
-      # Add lines for all expanded items below hoisted item that match query
-    else
-      # Add lines for all expanded items below hoisted item
+      @expandedBySearch = new Set
+      for eachItem in @getHoistedItem().evaluateItemPath(query)
+        @_addSearchResult(eachItem)
+
+    @nativeEditor.nativeQuery = query
+    @setHoistedItem(@getHoistedItem())
+
+  _addSearchResult: (item) ->
+    @getItemEditorState(item).matched = true
+    ancestor = item.parent
+    while ancestor
+      ancestorState = @getItemEditorState(ancestor)
+      if ancestorState.matchedAncestor
+        ancestor = null
+      else
+        unless ancestorState.expanded
+          ancestorState.expanded = true
+          @expandedBySearch.add ancestor
+        ancestorState.matchedAncestor = true
+        ancestor = ancestor.parent
 
   ###
   Section: Expand & Collapse
@@ -251,6 +310,7 @@ class OutlineEditor
           @getItemEditorState(each).expanded = expanded
       for each in items
         if @isExpanded(each) isnt expanded
+          @expandedBySearch?.delete(each)
           @getItemEditorState(each).expanded = expanded
           @_insertVisibleDescendantLines(each)
     else
@@ -301,7 +361,12 @@ class OutlineEditor
     while parent isnt hoistedItem
       return false unless @isExpanded(parent)
       parent = parent.parent
-    return true
+
+    if @searchQuery
+      itemState = @getItemEditorState(item)
+      itemState.matched or itemState.matchedAncestor
+    else
+      return true
 
   # Public: Returns first visible {Item} in editor.
   #
@@ -563,7 +628,7 @@ class OutlineEditor
       selectedItem = selectedItems[0]
       if not selectedItem
         parent = @getHoistedItem()
-        insertBefore = @getFirstVisibleChild parent
+        insertBefore = parent.firstChild
       else
         parent = selectedItem.parent
         insertBefore = selectedItem
@@ -571,13 +636,13 @@ class OutlineEditor
       selectedItem = selectedItems[selectedItems.length - 1]
       if not selectedItem
         parent = @getHoistedItem()
-        insertBefore = @getFirstVisibleChild parent
+        insertBefore = null
       else if @isExpanded(selectedItem)
         parent = selectedItem
-        insertBefore = @getFirstVisibleChild parent
+        insertBefore = parent.firstChild
       else
         parent = selectedItem.parent
-        insertBefore = @getNextVisibleSibling selectedItem
+        insertBefore = selectedItem.nextSibling
 
     outline = parent.outline
     insertItem = outline.createItem(text)
@@ -815,6 +880,16 @@ class OutlineEditor
     undoManager.setActionName('Move Items')
 
   ###
+  Section: Serialization
+  ###
+
+  serialize: (mimeType) ->
+    ItemSerializer.serializeItems(@outlineBuffer.outline.root.children, self, 'text/plain')
+
+  deserialize: (data, mimeType) ->
+    items = ItemSerializer.deserializeItems(data, @outlineBuffer.outline, 'text/plain')
+
+  ###
   Section: Scripting
   ###
 
@@ -838,10 +913,9 @@ class OutlineEditor
 
   getItemEditorState: (item) ->
     if item
-      key = @id + '-editor-state'
-      unless state = item.getUserData(key)
+      unless state = item.getUserData(@id)
         state = new ItemEditorState
-        item.setUserData key, state
+        item.setUserData @id, state
       state
 
 class ItemEditorState
@@ -855,9 +929,16 @@ class ItemEditorState
 class NativeEditor
   constructor: ->
     @text = ''
+    @query = ''
     @selectedRange =
       location: 0
       length: 0
+
+  Object.defineProperty @::, 'nativeQuery',
+    get: ->
+      @query
+
+    set: (@query) ->
 
   Object.defineProperty @::, 'nativeSelectedRange',
     get: ->

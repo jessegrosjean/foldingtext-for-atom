@@ -24,6 +24,8 @@ class OutlineBuffer extends Buffer
     if @isUpdatingOutline
       return
 
+    @emitter.emit 'will-process-outline-mutation', mutation
+
     target = mutation.target
 
     switch mutation.type
@@ -100,31 +102,44 @@ class OutlineBuffer extends Buffer
           for each in mutation.addedItems
             addLineForItemIfVisible(each)
 
-          insertBeforeItem = addedLines[addedLines.length - 1].item.nextItem
-          while insertBeforeItem and not (insertBeforeLine = @getLineForItem(insertBeforeItem))
-            insertBeforeItem = insertBeforeItem.nextItem
+          if addedLines.length
+            insertBeforeItem = addedLines[addedLines.length - 1].item.nextItem
+            while insertBeforeItem and not (insertBeforeLine = @getLineForItem(insertBeforeItem))
+              insertBeforeItem = insertBeforeItem.nextItem
 
-          if insertBeforeLine
-            row = insertBeforeLine.getRow()
-          else
-            insertAfterItem = addedLines[0].item.previousItem
-            while insertAfterItem and not (insertAfterLine = @getLineForItem(insertAfterItem))
-              insertAfterItem = insertAfterItem.nextItem
-
-            if insertAfterLine
-              row = insertAfterLine.getRow() + 1
+            if insertBeforeLine
+              row = insertBeforeLine.getRow()
             else
-              row = @getLineCount()
+              insertAfterItem = addedLines[0].item.previousItem
+              while insertAfterItem and not (insertAfterLine = @getLineForItem(insertAfterItem))
+                insertAfterItem = insertAfterItem.nextItem
 
-          @isUpdatingBuffer++
-          @insertLines(row, addedLines)
-          @isUpdatingBuffer--
+              if insertAfterLine
+                row = insertAfterLine.getRow() + 1
+              else
+                row = @getLineCount()
+
+            @isUpdatingBuffer++
+            @insertLines(row, addedLines)
+            @isUpdatingBuffer--
+
+    @emitter.emit 'did-process-outline-mutation', mutation
 
   destroy: ->
     unless @destroyed
       @subscriptions.dispose()
       @outline.release()
       super()
+
+  ###
+  Section: Events
+  ###
+
+  onWillProcessOutlineMutation: (callback) ->
+    @emitter.on 'will-process-outline-mutation', callback
+
+  onDidProcessOutlineMutation: (callback) ->
+    @emitter.on 'did-process-outline-mutation', callback
 
   ###
   Section: Outline Editor Cover
