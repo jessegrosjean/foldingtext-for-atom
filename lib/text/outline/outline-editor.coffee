@@ -9,7 +9,6 @@ Item = require '../../core/item'
 _ = require 'underscore-plus'
 Range = require '../range'
 assert = require 'assert'
-#less = require '../less'
 
 class OutlineEditor
 
@@ -86,21 +85,6 @@ class OutlineEditor
     {} =
       visibleItemAncestorRanges: visibleItemAncestorRanges
       visibleItemStates: visibleItemStates
-
-  ###
-  parseCSS: (input, options) ->
-    options ?= {}
-
-    try
-      less().render input, options, (error, output) ->
-        console.log output.css
-
-      less().parse input, options, (err, root, imports, options) ->
-        parseTree = new less().ParseTree(root, imports)
-        result = parseTree.toCSS(options)
-    catch e
-      console.log e
-  ###
 
   destroy: ->
     unless @destroyed
