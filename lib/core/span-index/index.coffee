@@ -1,6 +1,7 @@
 SpanBranch = require './span-branch'
 SpanLeaf = require './span-leaf'
 {Emitter} = require 'atom'
+assert = require 'assert'
 Span = require './span'
 
 class SpanIndex extends SpanBranch
@@ -38,7 +39,7 @@ class SpanIndex extends SpanBranch
   Section: Characters
   ###
 
-  deleteText: (offset, length) ->
+  deleteRange: (offset, length) ->
     unless length
       return
 
@@ -49,36 +50,66 @@ class SpanIndex extends SpanBranch
       if start.offset is 0 and start.span.getLength() is length
         @removeSpans(start.index, 1)
       else
-        start.span.deleteText(start.offset, end.offset - start.offset)
+        start.span.deleteRange(start.offset, end.offset - start.offset)
     else
       removeStart = start.index
       removeLength = end.index - start.index
       unless start.offset is 0
-        start.span.deleteText(start.offset, start.span.getLength() - start.offset)
+        start.span.deleteRange(start.offset, start.span.getLength() - start.offset)
         removeStart++
         removeLength--
       unless end.offset is end.span.getLength()
-        end.span.deleteText(0, end.offset)
+        end.span.deleteRange(0, end.offset)
         removeLength--
 
       if removeLength > 0
         @removeSpans(removeStart, removeLength)
 
     if @getSpanCount() is 0 and start
-      start.span.deleteText(0, start.span.getLength())
+      start.span.deleteRange(0, start.span.getLength())
       @insertSpans(0, [start.span])
 
   insertText: (offset, text) ->
-    if text
-      if @getSpanCount() is 0
-        @insertSpans(0, [@createSpanWithText(text)])
-      else
-        start = @getSpanIndexOffset(offset)
-        start.span.insertText(start.offset, text)
+    unless text
+      return
+
+    if @getSpanCount() is 0
+      @insertSpans(0, [@createSpanWithText(text)])
+    else
+      start = @getSpanIndexOffset(offset)
+      start.span.insertText(start.offset, text)
 
   ###
   Section: Spans
   ###
+
+  sliceSpansToRange: (offset, length) ->
+    assert(length > 0)
+
+    start = @getSpanIndexOffset(offset)
+    sliceStart = start.index
+    if startSplit = start.span.split(start.offset)
+      @insertSpans(start.index + 1, [startSplit])
+      sliceStart++
+
+    end = @getSpanIndexOffset(offset + length)
+    sliceEnd = end.index
+    if endSplit = end.span.split(end.offset)
+      @insertSpans(end.index + 1, [endSplit])
+    else if end.offset is 0
+      sliceEnd--
+
+    {} =
+      startIndex: sliceStart
+      count: (sliceEnd - sliceStart) + 1
+
+  replaceSpansFromOffset: (offset, spans) ->
+    totalLength = 0
+    for each in spans
+      totalLength += each.getLength()
+    slice = @sliceSpansToRange(offset, totalLength)
+    @removeSpans(slice.startIndex, slice.count)
+    @insertSpans(slice.startIndex, spans)
 
   createSpanWithText: (text) ->
     new Span(text)

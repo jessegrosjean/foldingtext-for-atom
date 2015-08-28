@@ -3,9 +3,9 @@ Line = require './Line'
 
 class LineIndex extends SpanIndex
 
-  @stringStore: null
+  @string: null
 
-  constructor: (@stringStore) ->
+  constructor: (@string) ->
     super()
 
   getLineCount: ->
@@ -40,7 +40,10 @@ class LineIndex extends SpanIndex
   createSpanWithText: (text) ->
     new Line(text)
 
-  deleteText: (offset, length) ->
+  deleteRange: (offset, length) ->
+    unless length
+      return
+
     super(offset, length)
 
     # Merge lines not sperated by \n
@@ -49,7 +52,7 @@ class LineIndex extends SpanIndex
       prevLine = prev.line
       prevStart = prev.startOffset
       prevLength = prevLine.getLength()
-      prevLineText = @stringStore.substr(prevStart, prevLength)
+      prevLineText = @string.substr(prevStart, prevLength)
 
       if prevLineText.indexOf('\n') is -1
         cur = @getLineIndexOffset(offset)
@@ -57,29 +60,27 @@ class LineIndex extends SpanIndex
         @removeLines(cur.index, 1)
 
   insertText: (offset, text) ->
+    unless text
+      return
+
     super(offset, text)
 
     # Split line at offset for all inserted \n
     lineIndexOffset = @getLineIndexOffset(offset)
+    isLastLine = lineIndexOffset.index is @getLineCount() - 1
     line = lineIndexOffset.line
     start = lineIndexOffset.startOffset
     length = line.getLength()
-    lineText = @stringStore.substr(start, length)
-    lineStart = 0
-    lineEnd = lineText.indexOf('\n', lineStart) + 1
+    lineText = @string.substr(start, length)
+    lines = lineText.match(/(.+\n?)|(\n)/g)
 
-    if lineEnd > 0
-      lineStart = lineEnd
-      lineEnd = lineText.indexOf('\n', lineStart) + 1
-
-      if lineEnd > 0
-        line.setLength(line.getLength() - lineStart)
-        insertLines = []
-        while lineEnd > 0
-          insertLines.push(@createLineWithText(lineEnd - lineStart))
-          lineStart = lineEnd
-          lineEnd = lineText.indexOf('\n', lineStart) + 1
-        insertLines.push(@createLineWithText(lineStart - lineText.length))
-        @insertLines(lineIndexOffset.index + 1, insertLines)
+    if lines.length > 1
+      line.setLength(lines[0].length)
+      insertLines = []
+      for i in [1...lines.length]
+        insertLines.push(@createLineWithText(lines[i].length))
+      if isLastLine and lineText[lineText.length - 1] is '\n'
+        insertLines.push(@createLineWithText(''))
+      @insertLines(lineIndexOffset.index + 1, insertLines)
 
 module.exports = LineIndex

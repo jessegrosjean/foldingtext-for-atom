@@ -29,6 +29,9 @@ class RunIndex extends SpanIndex
   removeRuns: (start, deleteCount) ->
     @removeSpans(start, deleteCount)
 
+  sliceRunsToRange: (offset, length) ->
+    @sliceSpansToRange(offset, length)
+
   createRunWithText: (text) ->
     @createSpanWithText(text)
 
@@ -101,19 +104,8 @@ class RunIndex extends SpanIndex
   ###
 
   sliceAndIterateRunsByOffset: (offset, length, operation) ->
-    start = @getRunIndexOffset(offset)
-    if startSplit = start.run.split(start.offset)
-      @insertRuns(start.index + 1, [startSplit])
-
-    end = @getRunIndexOffset(offset + length)
-    if endSplit = end.run.split(end.offset)
-      @insertRuns(end.index + 1, [endSplit])
-
-    startIndex = start.index
-    if startSplit
-      startIndex++
-
-    @iterateSpans(startIndex, (end.index - startIndex) + 1, operation)
+    slice = @sliceRunsToRange(offset, length)
+    @iterateSpans(slice.startIndex, slice.count, operation)
 
   setAttributesInRange: (attributes, offset, length) ->
     @sliceAndIterateRunsByOffset offset, length, (run) ->

@@ -43,7 +43,7 @@ class Span
         each = each.parent
     @length = length
 
-  deleteText: (offset, length) ->
+  deleteRange: (offset, length) ->
     @setLength(@getLength() - length)
 
   insertText: (offset, text) ->

@@ -27,7 +27,7 @@ describe 'SpanIndex', ->
 
     it 'delete text to empty, leave last span in place', ->
       spanIndex.insertText(0, 'hello world')
-      spanIndex.deleteText(0, 11)
+      spanIndex.deleteRange(0, 11)
       spanIndex.getLength().should.equal(0)
       spanIndex.getSpanCount().should.equal(1)
 
@@ -41,7 +41,7 @@ describe 'SpanIndex', ->
       spanIndex.getSpanIndexOffset(5).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 2)
       spanIndex.getSpanIndexOffset(6).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 3)
 
-  describe 'Performance', ->
+  xdescribe 'Performance', ->
 
     it 'should handle 10,000 spans', ->
 
