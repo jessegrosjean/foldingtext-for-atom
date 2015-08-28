@@ -22,6 +22,7 @@ module.exports = {
   },
   resolve: {
     alias: {
+      less: path.join(__dirname, '/lib-browser/shims/less'),
       atom: path.join(__dirname, '/lib-browser/shims/atom'),
       fs: path.join(__dirname, '/lib-browser/shims/fs'),
       grim: path.join(__dirname, '/lib-browser/shims/grim')

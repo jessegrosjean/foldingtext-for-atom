@@ -297,3 +297,25 @@ describe 'OutlineBuffer', ->
         buffer.setTextInRange('', [[0, 0], [0, 1]])
         expect(item.bodyText).toBe('one')
         expect(item.depth).toBe(1)
+
+  describe 'Performance', ->
+    it 'should load 10,000 items', ->
+      lines = []
+      for i in [0..(10000 / 10)]
+        lines.push('project:')
+        lines.push('\t- task!')
+        lines.push('\t\tnote')
+        lines.push('\t- task! @done')
+        lines.push('\t\tnote')
+        lines.push('\t- task!')
+        lines.push('\t\tnote')
+        lines.push('\t- task!')
+        lines.push('\t\tnote')
+        lines.push('\t- task!')
+      lines = lines.join('\n')
+
+      console.profile('Create Many')
+      console.time('Create Many')
+      buffer.setTextInRange(lines, [[0, 0], [0, 1]])
+      console.timeEnd('Create Many Items')
+      console.profileEnd()

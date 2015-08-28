@@ -1,4 +1,5 @@
-ItemSerializer = require '../../core//item-serializer'
+TaskPaperSyncRules = require '../../sync-rules/taskpaper-sync-rules'
+ItemSerializer = require '../../core/item-serializer'
 OutlineBuffer = require './outline-buffer'
 Mutation = require '../../core/mutation'
 {CompositeDisposable} = require 'atom'
@@ -19,6 +20,8 @@ class OutlineEditor
     @subscriptions = new CompositeDisposable
     @outlineBuffer = new OutlineBuffer(outline, this)
     @nativeEditor ?= new NativeEditor
+
+    @outlineBuffer.outline.registerAttributeBodyTextSyncRule(TaskPaperSyncRules)
 
     @subscriptions.add @outlineBuffer.onWillProcessOutlineMutation (mutation) =>
       targetItem = mutation.target
