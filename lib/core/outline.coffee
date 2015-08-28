@@ -679,12 +679,12 @@ class Outline
   breakUndoCoalescing: ->
     @coalescingMutation = null
 
-  syncAttributeToBodyText: (item, name, value) ->
+  syncAttributeToBodyText: (item, name, value, oldValue) ->
     return unless @syncRules
     unless @syncingToAttributes
       @syncingToBodyText++
       for each in @syncRules
-        each.syncAttributeToBodyText(item, name, value)
+        each.syncAttributeToBodyText(item, name, value, oldValue)
       @syncingToBodyText--
 
   syncBodyTextToAttributes: (item, oldBodyText) ->

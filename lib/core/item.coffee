@@ -177,7 +177,7 @@ class Item
     else
       @_liOrRootUL.removeAttribute name
 
-    outline.syncAttributeToBodyText(this, name, value)
+    outline.syncAttributeToBodyText(this, name, value, oldValue)
 
     if isInOutline
       outline.emitter.emit 'did-change', mutation
