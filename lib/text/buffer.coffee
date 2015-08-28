@@ -1,5 +1,5 @@
-BufferBranch = require './b-tree/buffer-branch'
-BufferLeaf = require './b-tree/buffer-leaf'
+BufferBranch = require './buffer-tree/buffer-branch'
+BufferLeaf = require './buffer-tree/buffer-leaf'
 {newlineRegex} = require './helpers'
 {Emitter} = require 'atom'
 Range = require './range'
