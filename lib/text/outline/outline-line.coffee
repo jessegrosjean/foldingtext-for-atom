@@ -58,7 +58,7 @@ class OutlineLine extends Line
       else
         @item.indent += indentDelta
 
-  deleteText: (start, end) ->
+  deleteRange: (start, end) ->
     if start is end
       return
 
@@ -135,7 +135,7 @@ class OutlineLine extends Line
       @buffer.isUpdatingOutline++
 
       if start isnt end
-        @deleteText(start, end)
+        @deleteRange(start, end)
 
       if textString.length
         @insertText(text, start)
