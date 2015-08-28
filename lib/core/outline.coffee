@@ -445,6 +445,7 @@ class Outline
     depth = 1 if depth < 1
 
     @beginChanges()
+    @undoManager.beginUndoGrouping()
 
     item.removeFromParent()
 
@@ -491,6 +492,7 @@ class Outline
       for each, i in reparentChildren
         each.indent = reparentChildrenIndents[i]
 
+    @undoManager.endUndoGrouping()
     @endChanges()
 
   # Public: Insert the items before the given `referenceItem`. See
@@ -501,8 +503,10 @@ class Outline
   # - `referenceItem` Reference {Item} to insert before.
   insertItemsBefore: (items, referenceItem) ->
     @beginChanges()
+    @undoManager.beginUndoGrouping()
     for each in items
       @insertItemBefore(each, referenceItem)
+    @undoManager.endUndoGrouping()
     @endChanges()
 
   # Public: Remove the item but leave it's child items in the outline.
@@ -510,6 +514,7 @@ class Outline
   # - `item` {Item} to remove.
   removeItem: (item) ->
     @beginChanges()
+    @undoManager.beginUndoGrouping()
     depth = item.depth
     previousItem = item.previousItem
     nextBranch = item.nextBranch
@@ -521,6 +526,7 @@ class Outline
     item.removeFromParent()
     item.indent = depth
     @insertItemsBefore(children, nextBranch)
+    @undoManager.endUndoGrouping()
     @endChanges()
 
   # Public: Remove the items but leave there child items in the outline.
@@ -528,8 +534,10 @@ class Outline
   # - `items` {Item}s to remove.
   removeItems: (items) ->
     @beginChanges()
+    @undoManager.beginUndoGrouping()
     for each in items
       @removeItem(each)
+    @undoManager.endUndoGrouping()
     @endChanges()
 
   # Not sure about this method... I think they are being used to handle moving
