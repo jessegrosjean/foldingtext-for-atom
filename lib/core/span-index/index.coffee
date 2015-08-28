@@ -6,34 +6,40 @@ Span = require './span'
 
 class SpanIndex extends SpanBranch
 
+  emitter: null
+
   constructor: ->
     super([new SpanLeaf([])])
     @changing = 0
-    @emitter = new Emitter()
 
   destroy: ->
     unless @destroyed
       @destroyed = true
-      @emitter.emit 'did-destroy'
+      @emitter?.emit 'did-destroy'
 
   ###
   Section: Events
   ###
 
+  _getEmitter: ->
+    unless emitter = @emitter
+      @emitter = emitter = new Emitter
+    emitter
+
   onDidBeginChanges: (callback) ->
-    @emitter.on 'did-begin-changes', callback
+    @_getEmitter().on 'did-begin-changes', callback
 
   onWillChange: (callback) ->
-    @emitter.on 'will-change', callback
+    @_getEmitter().on 'will-change', callback
 
   onDidChange: (callback) ->
-    @emitter.on 'did-change', callback
+    @_getEmitter().on 'did-change', callback
 
   onDidEndChanges: (callback) ->
-    @emitter.on 'did-end-changes', callback
+    @_getEmitter().on 'did-end-changes', callback
 
   onDidDestroy: (callback) ->
-    @emitter.on 'did-destroy', callback
+    @_getEmitter().on 'did-destroy', callback
 
   ###
   Section: Characters

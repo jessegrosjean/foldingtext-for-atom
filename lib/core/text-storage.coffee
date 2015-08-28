@@ -8,36 +8,41 @@ class TextStorage
   string: null
   runIndex: null
   lineIndex: null
+  emitter: null
 
   constructor: (string='') ->
     @string = string
-    @emitter = new Emitter()
 
   destroy: ->
     unless @destroyed
       @destroyed = true
       @runIndex?.destroy()
       @lineIndex?.destroy()
-      @emitter.emit 'did-destroy'
+      @emitter?.emit 'did-destroy'
 
   ###
   Section: Events
   ###
 
+  _getEmitter: ->
+    unless emitter = @emitter
+      @emitter = emitter = new Emitter
+    emitter
+
   onDidBeginChanges: (callback) ->
-    @emitter.on 'did-begin-changes', callback
+    @_getEmitter().on 'did-begin-changes', callback
 
   onWillChange: (callback) ->
-    @emitter.on 'will-change', callback
+    @_getEmitter().on 'will-change', callback
 
   onDidChange: (callback) ->
-    @emitter.on 'did-change', callback
+    @_getEmitter().on 'did-change', callback
 
   onDidEndChanges: (callback) ->
-    @emitter.on 'did-end-changes', callback
+    @_getEmitter().on 'did-end-changes', callback
 
   onDidDestroy: (callback) ->
-    @emitter.on 'did-destroy', callback
+    @_getEmitter().on 'did-destroy', callback
 
   ###
   String
@@ -80,6 +85,10 @@ class TextStorage
     @string.insert(offset, text)
     @runIndex?.insertText(offset, text)
     @lineIndex?.insertText(offset, text)
+
+  replaceRangeWithString: (offset, length, string) ->
+    @deleteRange(offset, length)
+    @insertString(offset, string)
 
   ###
   Attributes
@@ -174,12 +183,6 @@ class TextStorage
 
   iterateLines: (row, count, operation) ->
     @_getLineIndex().iterateLines(row, count, operation)
-
-  insertLines: (row, lines) ->
-    @_getLineIndex().insertLines(row, lines)
-
-  removeLines: (row, deleteCount) ->
-    @_getLineIndex().removeLines(row, deleteCount)
 
   ###
   Debug
