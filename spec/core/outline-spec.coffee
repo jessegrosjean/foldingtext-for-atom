@@ -144,7 +144,7 @@ describe 'Outline', ->
         items.push(outline.createItem('hello'))
       branch.appendChildren(items)
       outline.root.appendChild(branch)
-      console.timeEnd('Create Many Items')
+      console.timeEnd('Create Many')
       outline.root.descendants.length.should.equal(10008)
       console.profileEnd()
 
