@@ -1,6 +1,6 @@
 SpanIndex = require '../../lib/core/span-index'
 
-describe 'SpanIndex', ->
+fdescribe 'SpanIndex', ->
   [spanIndex] = []
 
   beforeEach ->
@@ -16,17 +16,17 @@ describe 'SpanIndex', ->
       spanIndex.getSpanCount().should.equal(0)
 
     it 'can be cloned', ->
-      spanIndex.createSpanWithText('one').clone().getLength().should.equal(3)
+      spanIndex.createSpan('one').clone().getLength().should.equal(3)
 
   describe 'Empty', ->
 
     it 'insert text into empty, automatically insert span if needed', ->
-      spanIndex.insertText(0, 'hello world')
+      spanIndex.insertString(0, 'hello world')
       spanIndex.getLength().should.equal(11)
       spanIndex.getSpanCount().should.equal(1)
 
     it 'delete text to empty, leave last span in place', ->
-      spanIndex.insertText(0, 'hello world')
+      spanIndex.insertString(0, 'hello world')
       spanIndex.deleteRange(0, 11)
       spanIndex.getLength().should.equal(0)
       spanIndex.getSpanCount().should.equal(1)
@@ -34,12 +34,12 @@ describe 'SpanIndex', ->
   describe 'Spans', ->
 
     it 'find spans by offset', ->
-      spanIndex.insertSpans(0, [spanIndex.createSpanWithText('one'), spanIndex.createSpanWithText('two')])
-      spanIndex.getSpanIndexOffset(0).should.eql(span: spanIndex.getSpan(0), index: 0, startOffset: 0, offset: 0)
-      spanIndex.getSpanIndexOffset(2).should.eql(span: spanIndex.getSpan(0), index: 0, startOffset: 0, offset: 2)
-      spanIndex.getSpanIndexOffset(3).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 0)
-      spanIndex.getSpanIndexOffset(5).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 2)
-      spanIndex.getSpanIndexOffset(6).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 3)
+      spanIndex.insertSpans(0, [spanIndex.createSpan('one'), spanIndex.createSpan('two')])
+      spanIndex.getSpanAtOffset(0).should.eql(span: spanIndex.getSpan(0), index: 0, startOffset: 0, offset: 0)
+      spanIndex.getSpanAtOffset(2).should.eql(span: spanIndex.getSpan(0), index: 0, startOffset: 0, offset: 2)
+      spanIndex.getSpanAtOffset(3).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 0)
+      spanIndex.getSpanAtOffset(5).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 2)
+      spanIndex.getSpanAtOffset(6).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 3)
 
   xdescribe 'Performance', ->
 
@@ -50,7 +50,7 @@ describe 'SpanIndex', ->
       spanCount = 10000
       spans = []
       for i in [0..spanCount - 1]
-        spans.push(spanIndex.createSpanWithText('hello world!'))
+        spans.push(spanIndex.createSpan('hello world!'))
       console.timeEnd('Create Spans')
       console.profileEnd()
 
@@ -85,7 +85,7 @@ describe 'SpanIndex', ->
       console.profile('Random Insert Text')
       console.time('Random Insert Text')
       for i in [0..spanCount - 1]
-        spanIndex.insertText(getRandomInt(0, spanIndex.getLength()), 'Hello')
+        spanIndex.insertString(getRandomInt(0, spanIndex.getLength()), 'Hello')
       spanIndex.getLength().should.equal(spanCount * 'hello world!Hello'.length)
       console.timeEnd('Random Insert Text')
       console.profileEnd()

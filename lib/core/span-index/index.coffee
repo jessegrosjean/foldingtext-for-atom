@@ -7,10 +7,16 @@ Span = require './span'
 class SpanIndex extends SpanBranch
 
   emitter: null
+  inclusiveLeft: false
+  inclusiveRight: true
 
-  constructor: ->
-    super([new SpanLeaf([])])
+  constructor: (children) ->
+    children ?= [new SpanLeaf([])]
+    super(children)
     @changing = 0
+
+  clone: ->
+    super()
 
   destroy: ->
     unless @destroyed
@@ -49,100 +55,67 @@ class SpanIndex extends SpanBranch
     unless length
       return
 
-    start = @getSpanIndexOffset(offset)
-    end = @getSpanIndexOffset(offset + length)
+    slice = @sliceSpansToRange(offset, length)
+    @removeSpans(slice.index, slice.count)
 
-    if start.span is end.span
-      if start.offset is 0 and start.span.getLength() is length
-        @removeSpans(start.index, 1)
-      else
-        start.span.deleteRange(start.offset, end.offset - start.offset)
-    else
-      removeStart = start.index
-      removeLength = end.index - start.index
-      unless start.offset is 0
-        start.span.deleteRange(start.offset, start.span.getLength() - start.offset)
-        removeStart++
-        removeLength--
-      unless end.offset is end.span.getLength()
-        end.span.deleteRange(0, end.offset)
-        removeLength--
-
-      if removeLength > 0
-        @removeSpans(removeStart, removeLength)
-
-    if @getSpanCount() is 0 and start
-      start.span.deleteRange(0, start.span.getLength())
-      @insertSpans(0, [start.span])
-
-  insertText: (offset, text) ->
-    unless text
+  insertString: (offset, string) ->
+    unless string
       return
 
     if @getSpanCount() is 0
-      @insertSpans(0, [@createSpanWithText(text)])
+      @insertSpans(0, [@createSpan(string)])
     else
-      start = @getSpanIndexOffset(offset)
-      start.span.insertText(start.offset, text)
+      start = @getSpanAtOffset(offset)
+      start.span.insertString(start.offset, string)
+
+  replaceRange: (offset, length, string) ->
+    @insertString(offset, string)
+    @deleteRange(offset + string.length, length)
 
   ###
   Section: Spans
   ###
 
-  sliceSpansToRange: (offset, length) ->
-    assert(length > 0)
+  createSpan: (text) ->
+    new Span(text)
 
-    start = @getSpanIndexOffset(offset)
-    sliceStart = start.index
+  getSpanAtOffset: (offset, index=0) ->
+    result = super(offset, index)
+    result.startOffset = offset - result.offset
+    result
+
+  sliceSpanAtOffset: (offset) ->
+    start = @getSpanAtOffset(offset)
     if startSplit = start.span.split(start.offset)
       @insertSpans(start.index + 1, [startSplit])
-      sliceStart++
+    start
 
-    end = @getSpanIndexOffset(offset + length)
-    sliceEnd = end.index
-    if endSplit = end.span.split(end.offset)
-      @insertSpans(end.index + 1, [endSplit])
-    else if end.offset is 0
-      sliceEnd--
-
+  sliceSpansToRange: (offset, length) ->
+    assert(length > 0)
+    start = @sliceSpanAtOffset(offset)
+    if start.offset is start.span.getLength()
+      start.index++
+    end = @sliceSpanAtOffset(offset + length)
     {} =
-      startIndex: sliceStart
-      count: (sliceEnd - sliceStart) + 1
+      index: start.index
+      count: (end.index - start.index) + 1
 
   replaceSpansFromOffset: (offset, spans) ->
     totalLength = 0
     for each in spans
       totalLength += each.getLength()
     slice = @sliceSpansToRange(offset, totalLength)
-    @removeSpans(slice.startIndex, slice.count)
-    @insertSpans(slice.startIndex, spans)
-
-  createSpanWithText: (text) ->
-    new Span(text)
-
-  getSpanIndexOffset: (offset, index=0) ->
-    # Special case offset = length
-    if offset is @getLength()
-      spanCount = @getSpanCount()
-      span = @getSpan(spanCount - 1)
-      {} =
-        span: span
-        index: spanCount - 1
-        startOffset: offset - span.getLength()
-        offset: span.getLength()
-    else
-      result = super(offset, index)
-      result.startOffset = offset - result.offset
-      result
+    @removeSpans(slice.index, slice.count)
+    @insertSpans(slice.index, spans)
 
   ###
   Section: Debug
   ###
 
   toString: ->
-    toStrings = []
+    spanStrings = []
     @iterateSpans 0, @getSpanCount(), (span) ->
-      toStrings.push(span.toString())
-    "length: #{@getLength()} spans: #{toStrings.join(', ')}"
+      spanStrings.push(span.toString())
+    "#{spanStrings.join('')}"
 
 module.exports = SpanIndex

@@ -8,6 +8,12 @@ class SpanLeaf
       length += each.getLength()
     @length = length
 
+  clone: ->
+    children = []
+    for each in @children
+      children.push(each.clone())
+    new @constructor(children)
+
   ###
   Section: Characters
   ###
@@ -40,10 +46,10 @@ class SpanLeaf
       index += @children.indexOf(child)
     index
 
-  getSpanIndexOffset: (offset, index=0) ->
+  getSpanAtOffset: (offset, index=0) ->
     for each in @children
       childLength = each.getLength()
-      if offset >= childLength
+      if offset > childLength
         offset -= childLength
         index++
       else

@@ -15,25 +15,25 @@ describe 'LineIndex', ->
 
   it 'creates line for string with no newlines', ->
     lineIndex.string = 'one'
-    lineIndex.insertText(0, 'one')
+    lineIndex.insertString(0, 'one')
     lineIndex.getLength().should.equal('one'.length)
     lineIndex.getLineCount().should.equal(1)
 
   it 'creates lines for string with single newline', ->
     lineIndex.string = 'one\ntwo'
-    lineIndex.insertText(0, 'one\ntwo')
+    lineIndex.insertString(0, 'one\ntwo')
     lineIndex.getLength().should.equal('one\ntwo'.length)
     lineIndex.getLineCount().should.equal(2)
 
   it 'creates lines for string with multiple newlines', ->
     lineIndex.string = 'one\ntwo\n'
-    lineIndex.insertText(0, 'one\ntwo\n')
+    lineIndex.insertString(0, 'one\ntwo\n')
     lineIndex.getLength().should.equal('one\ntwo\n'.length)
     lineIndex.getLineCount().should.equal(3)
 
   it 'remove lines for deleted text', ->
     lineIndex.string = 'one\ntwo\n'
-    lineIndex.insertText(0, 'one\ntwo\n')
+    lineIndex.insertString(0, 'one\ntwo\n')
 
     lineIndex.string = 'one\ntwo'
     lineIndex.deleteRange(7, '\n'.length)

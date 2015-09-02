@@ -26,9 +26,9 @@ class Run extends Span
   removeAttribute: (attribute) ->
     delete @attributes[attribute]
 
-  _mergeWithNext: (run) ->
+  mergeWithSpan: (run) ->
     if _.isEqual(@attributes, run.attributes)
-      @setLength(@getLength() + run.getLength())
+      @setString(@string + run.string)
       true
     else
       false
@@ -36,7 +36,7 @@ class Run extends Span
   toString: ->
     sortedNames = for name of @attributes then name
     sortedNames.sort()
-    nameValues = ("#{name}=#{@attributes[name]}" for name in sortedNames)
-    "#{super()}/#{nameValues.join('/')}"
+    nameValues = ("#{name}:#{JSON.stringify(@attributes[name])}" for name in sortedNames)
+    super(nameValues.join('/'))
 
 module.exports = Run

@@ -66,7 +66,6 @@ class Outline
   textStorage: null
 
   root: null
-  idsToItems: null
   refcount: 0
   changeCount: 0
   undoSubscriptions: null
@@ -88,10 +87,15 @@ class Outline
   # Public: Create a new outline.
   constructor: (options) ->
     @id = shortid()
-    @idsToItems = new Map()
     @textStorage = new TextStorage
-    @root = @createItem '', Constants.RootID
-    @root.isInOutline = true
+
+    @outlineStore = @createOutlineStore()
+
+    rootElement = @outlineStore.getElementById Constants.RootID
+    @loadingLIUsedIDs = {}
+    @root = @createItem null, rootElement
+    @loadingLIUsedIDs = null
+
     @undoManager = undoManager = new UndoManager
     @emitter = new Emitter
 
@@ -122,6 +126,13 @@ class Outline
 
     @setPath(options.filePath) if options?.filePath
     @load() if options?.load
+
+  createOutlineStore: (outlineStore) ->
+    outlineStore = document.implementation.createHTMLDocument()
+    rootUL = outlineStore.createElement('ul')
+    rootUL.id = Constants.RootID
+    outlineStore.documentElement.lastChild.appendChild(rootUL)
+    outlineStore
 
   ###
   Section: Finding Outlines
@@ -358,22 +369,22 @@ class Outline
   Section: Reading Items
   ###
 
+  # Public: Returns an {Array} of all {Item}s in the outline (except the
+  # root) in outline order.
+  getItems: ->
+    @root.descendants
+
   isEmpty: ->
     firstChild = @root.firstChild
     not firstChild or
         (not firstChild.nextItem and
         firstChild.bodyText.length is 0)
 
-  # Public: Returns an {Array} of all {Item}s in the outline (except the
-  # root) in outline order.
-  getItems: ->
-    @root.descendants
-
   # Public: Returns {Item} for given id.
   #
   # - `id` {String} id.
   getItemForID: (id) ->
-    @idsToItems.get(id)
+    @outlineStore.getElementById(id)?._item
 
   # Public: Returns {Array} of {Item}s for given {Array} of ids.
   #
@@ -388,10 +399,6 @@ class Outline
         items.push each
     items
 
-  rowForItem: (item) ->
-
-  itemForRow: (row) ->
-
   ###
   Section: Creating Items
   ###
@@ -400,29 +407,17 @@ class Outline
   # not yet inserted into it so it won't be visible until you insert it.
   #
   # - `text` (optional) {String} or {AttributedString}.
-  createItem: (text, id, remapIDCallback) ->
-    new Item(@, text, id, remapIDCallback)
+  createItem: (text, LIOrID, remapIDCallback) ->
+    if LIOrID and _.isString(LIOrID)
+      LI = @createStoreLI()
+      LI.id = LIOrID
+      LIOrID = LI
+    new Item(@, text, LIOrID or @createStoreLI(), remapIDCallback)
 
-  cloneItem: (item, deep=true, remapIDCallback) ->
+  cloneItem: (item, remapIDCallback) ->
     assert.ok(not item.isRoot, 'Can not clone root')
     assert.ok(item.outline is @, 'Item must be owned by this outline')
-
-    clonedItem = @createItem(item.textStorage)
-
-    if item.attributes
-      clonedItem.attributes = _.clone(item.attributes)
-    if item.userData
-      clonedItem.userData = _.clone(item.userData)
-
-    if deep and eachChild = item.firstChild
-      children = []
-      while eachChild
-        children.push(@cloneItem(eachChild, deep))
-        eachChild = eachChild.nextSibling
-      clonedItem.appendChildren(children)
-
-    remapIDCallback?(item.id, clonedItem.id)
-    clonedItem
+    @createItem(null, item._liOrRootUL.cloneNode(true), remapIDCallback)
 
   # Public: Creates a copy of an {Item} from an external outline that can be
   # inserted into the current outline.
@@ -430,25 +425,10 @@ class Outline
   # - `item` {Item} to import.
   #
   # Returns {Item} copy.
-  importItem: (item, deep=true, remapIDCallback) ->
+  importItem: (item) ->
     assert.ok(not item.isRoot, 'Can not import root item')
     assert.ok(item.outline isnt @, 'Item must not be owned by this outline')
-
-    importedItem = @createItem(item.textStorage, item.id, remapIDCallback)
-
-    if item.attributes
-      importedItem.attributes = _.clone(item.attributes)
-    if item.userData
-      importedItem.userData = _.clone(item.userData)
-
-    if deep and eachChild = item.firstChild
-      children = []
-      while eachChild
-        children.push(@importItem(eachChild, deep))
-        eachChild = eachChild.nextSibling
-      importedItem.appendChildren(children)
-
-    importedItem
+    @createItem(null, @outlineStore.importNode(item._liOrRootUL, true))
 
   ###
   Section: Insert & Remove Items
@@ -628,6 +608,70 @@ class Outline
     options.root ?= @root
     contextItem ?= @root
     ItemPath.evaluate itemPath, contextItem, options
+
+  # Public: XPath query internal HTML structure.
+  #
+  # - `xpathExpression` {String} xpath expression
+  # - `contextItem` (optional)
+  # - `namespaceResolver` (optional)
+  # - `resultType` (optional)
+  # - `result` (optional)
+  #
+  # This query evaluates on the underlying HTMLDocument. Please refer to the
+  # standard [document.evaluate](https://developer.mozilla.org/en-
+  # US/docs/Web/API/document.evaluate) documentation for details.
+  #
+  # Returns an [XPathResult](https://developer.mozilla.org/en-
+  # US/docs/XPathResult) based on an [XPath](https://developer.mozilla.org/en-
+  # US/docs/Web/XPath) expression and other given parameters.
+  evaluateXPath: (xpathExpression, contextItem, namespaceResolver, resultType, result) ->
+    contextItem ?= @root
+    @outlineStore.evaluate(
+      xpathExpression,
+      contextItem._liOrRootUL,
+      namespaceResolver,
+      resultType,
+      result
+    )
+
+  # Public: XPath query internal HTML structure for matching {Items}.
+  #
+  # Items are considered to match if they, or a node contained in their body
+  # text, matches the XPath.
+  #
+  # - `xpathExpression` {String} xpath expression
+  # - `contextItem` (optional) {String}
+  # - `namespaceResolver` (optional) {String}
+  #
+  # Returns an {Array} of all {Item} matching the
+  # [XPath](https://developer.mozilla.org/en-US/docs/Web/XPath) expression.
+  getItemsForXPath: (xpathExpression, contextItem, namespaceResolver, exceptionCallback) ->
+    try
+      xpathResult = @evaluateXPath(
+        xpathExpression,
+        contextItem,
+        null,
+        XPathResult.ORDERED_NODE_ITERATOR_TYPE
+      )
+      each = xpathResult.iterateNext()
+      lastItem = undefined
+      items = []
+
+      while each
+        while each and not each._item
+          each = each.parentNode
+        if each
+          eachItem = each._item
+          if eachItem isnt lastItem
+            items.push(eachItem)
+            lastItem = eachItem
+        each = xpathResult.iterateNext()
+
+      return items
+    catch error
+      exceptionCallback?(error)
+
+    []
 
   ###
   Section: Grouping Changes
@@ -870,7 +914,8 @@ class Outline
     if @cachedDiskContents
       items = ItemSerializer.deserializeItems(@cachedDiskContents, this, @getMimeType())
       @loadOptions = items.loadOptions
-      @root.appendChildren(items)
+      for each in items
+        @root.appendChild(each)
     @endChanges()
     @changeCount = 0
     @emitModifiedStatusChanged(false)
@@ -899,6 +944,12 @@ class Outline
   Section: Private Utility Methods
   ###
 
+  createStoreLI: ->
+    outlineStore = @outlineStore
+    li = outlineStore.createElement('LI')
+    li.appendChild(outlineStore.createElement('P'))
+    li
+
   nextOutlineUniqueItemID: (candidateID) ->
     loadingLIUsedIDs = @loadingLIUsedIDs
     while true
@@ -906,7 +957,7 @@ class Outline
       if loadingLIUsedIDs and not loadingLIUsedIDs[id]
         loadingLIUsedIDs[id] = true
         return id
-      else if not @idsToItems.get(id)
+      else if not @outlineStore.getElementById(id)
         return id
       else
         candidateID = null

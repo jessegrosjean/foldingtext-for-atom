@@ -167,7 +167,7 @@ class Mutation
       true
     else if singleDeleteFromEnd
       if newInsertedTextLocation < thisInsertedTextLocation
-        @replacedText.insertStringAtLocation operation.replacedText, 0
+        @replacedText.insertTextStorage 0, operation.replacedText
         @insertedTextLocation--
       else
         @insertedTextLength--

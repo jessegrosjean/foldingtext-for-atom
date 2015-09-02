@@ -60,6 +60,20 @@ cleanFTMLDOM = (element) ->
       else
         each = dom.nextNode each
 
+createItem = (outline, LI, remapIDCallback) ->
+  P = LI.firstElementChild
+  UL = LI.lastChild
+  text = P.textContent
+  item = outline.createItem(text, LI.id, remapIDCallback)
+  if P isnt UL
+    eachLI = UL.firstElementChild
+    children = []
+    while eachLI
+      children.push(createItem(outline, eachLI, remapIDCallback))
+      eachLI = eachLI.nextElementSibling
+    item.appendChildren(children)
+  item
+
 deserializeItems = (ftmlString, outline) ->
   parser = new DOMParser()
   htmlDocument = parser.parseFromString(ftmlString, 'text/html')
@@ -86,14 +100,12 @@ deserializeItems = (ftmlString, outline) ->
 
     eachLI = rootUL.firstElementChild
     while eachLI
-      item = outline.createItem null, outline.outlineStore.importNode(eachLI, true), (oldID, newID) ->
+      item = createItem outline, eachLI, (oldID, newID) ->
         if expandedItemIDs[oldID]
           delete expandedItemIDs[oldID]
-          expandedItemIDs[newID] = true
-
+        expandedItemIDs[newID] = true
       if item
         items.push item
-
       eachLI = eachLI.nextElementSibling
   else
     throw new Error('Could not find <ul id="FoldingText"> element.')

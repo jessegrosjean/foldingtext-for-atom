@@ -1,6 +1,6 @@
 # Copyright (c) 2015 Jesse Grosjean. All rights reserved.
 
-TextStorage = require './text-storage-ftml'
+AttributedString = require './attributed-string'
 Constants = require './constants'
 Mutation = require './mutation'
 ItemPath = require './item-path'
@@ -16,7 +16,7 @@ assert = require 'assert'
 # When you move an item all of its children are moved with it.
 #
 # Items have a single paragraph of body text. You can access it as plain text,
-# a HTML string, or an {TextStorage}. You can add formatting to make parts
+# a HTML string, or an {AttributedString}. You can add formatting to make parts
 # of the text bold, italic, etc.
 #
 # You can assign item level attributes to items. For example you might store a
@@ -51,16 +51,50 @@ assert = require 'assert'
 module.exports =
 class Item
 
-  outline: null
-  inOutline: false
+  constructor: (outline, text, liOrRootUL, remappedIDCallback) ->
+    tagName = liOrRootUL.tagName
+    if tagName is 'LI'
+      p = liOrRootUL.firstChild
+      pOrUL = liOrRootUL.lastChild
+      pTagName = p?.tagName
+      pOrULTagName = pOrUL?.tagName
+      assert.ok(pTagName is 'P', "Expected 'P', but got #{pTagName}")
+      if pTagName is pOrULTagName
+        assert.ok(pOrUL is p, "Expect single 'P' child in 'LI'")
+      else
+        assert.ok(pOrULTagName is 'UL', "Expected 'UL', but got #{pOrULTagName}")
+        assert.ok(pOrUL.previousSibling is p, "Expected previous sibling of 'UL' to be 'P'")
 
-  constructor: (outline, text, id, remappedIDCallback) ->
+      AttributedString.validateInlineFTML(p)
+    else if tagName is 'UL'
+      assert.ok(liOrRootUL.id is Constants.RootID)
+    else
+      assert.ok(false, "Expected 'LI' or 'UL', but got #{tagName}")
+
     @outline = outline
-    @id = outline.nextOutlineUniqueItemID(id)
-    @textStorage = new TextStorage(text)
-    if id isnt @id
-      if remappedIDCallback and id
-        remappedIDCallback(id, @id, this)
+    @_liOrRootUL = liOrRootUL
+    @_bodyAttributedString = null
+    liOrRootUL._item = this
+
+    if ul = _childrenUL(liOrRootUL, false)
+      childLI = ul.firstChild
+      while childLI
+        outline.createItem(null, childLI, remappedIDCallback)
+        childLI = childLI.nextSibling
+
+    if text
+      if text instanceof AttributedString
+        @attributedBodyText = text
+      else
+        _bodyP(liOrRootUL).textContent = text
+
+    originalID = liOrRootUL.id
+    assignedID = outline.nextOutlineUniqueItemID(originalID)
+
+    if originalID isnt assignedID
+      liOrRootUL.id = assignedID
+      if remappedIDCallback and originalID
+        remappedIDCallback(originalID, assignedID, this)
 
   ###
   Section: Attributes
@@ -68,15 +102,23 @@ class Item
 
   # Public: Read-only unique and persistent {String} item ID.
   id: null
-
-  # Public: Read-only attribute key/value object
-  attributes: null
+  Object.defineProperty @::, 'id',
+    get: -> @_liOrRootUL.id
 
   # Public: Read-only {Array} of this item's attribute names.
   attributeNames: null
   Object.defineProperty @::, 'attributeNames',
     get: ->
-      Object.keys(@attributes)
+      namedItemMap = @_liOrRootUL.attributes
+      length = namedItemMap.length
+      attributeNames = []
+
+      for i in [0..length - 1] by 1
+        name = namedItemMap[i].name
+        if name isnt 'id'
+          attributeNames.push(name)
+
+      attributeNames
 
   # Public: Test to see if this item has an attribute with the given name.
   #
@@ -84,7 +126,7 @@ class Item
   #
   # Returns a {Boolean}
   hasAttribute: (name) ->
-    @attributes?[name]?
+    @_liOrRootUL.hasAttribute(name)
 
   # Public: Get the value of the specified attribute. If the attribute does
   # not exist will return `null`.
@@ -95,7 +137,8 @@ class Item
   #
   # Returns attribute value.
   getAttribute: (name, array, clazz) ->
-    if value = @attributes?[name]
+    value
+    if value = @_liOrRootUL.getAttribute name
       if array
         value = value.split /\s*,\s*/
         if clazz
@@ -130,12 +173,9 @@ class Item
       outline.recordChange mutation
 
     if value?
-      unless @attributes
-        @attributes = {}
-      @attributes[name] = value
+      @_liOrRootUL.setAttribute name, value
     else
-      if @attributes
-        delete @attributes[name]
+      @_liOrRootUL.removeAttribute name
 
     outline.syncAttributeToBodyText(this, name, value, oldValue)
 
@@ -161,8 +201,6 @@ class Item
         value
 
   @objectToAttributeValueString: (object) ->
-    if _.isNumber object
-      object.toString()
     if _.isString object
       object
     else if _.isDate object
@@ -177,8 +215,6 @@ class Item
   ###
   Section: User Data
   ###
-
-  userData: null
 
   getUserData: (userKey) ->
     @userData?[userKey]
@@ -196,81 +232,87 @@ class Item
   Section: Body Text
   ###
 
-  textStorage: null
+  # Public: Read-only true if this item has body text
+  hasBodyText: null
+  Object.defineProperty @::, 'hasBodyText',
+    get: -> _bodyP(@_liOrRootUL).innerHTML.length > 0
 
   # Public: Body text as plain text {String}.
   bodyText: null
   Object.defineProperty @::, 'bodyText',
     get: ->
-      @textStorage.string.toString()
-    set: (text='') ->
-      @replaceBodyTextInRange text, 0, @bodyTextLength
+      # Avoid creating attributed string if not already created. Syntax
+      # highlighting will call this method for each displayed node, so try
+      # to make it fast.
+      if @_bodyAttributedString
+        @_bodyAttributedString.getString()
+      else
+        AttributedString.inlineFTMLToText _bodyP(@_liOrRootUL)
+    set: (text) ->
+      @replaceBodyTextInRange text, 0, @bodyText.length
 
-  # Public: Body text length.
-  bodyTextLength: null
-  Object.defineProperty @::, 'bodyTextLength',
-    get: ->
-      @textStorage.string.length
-
-  # Public: Body as HTML {String}.
+  # Public: Body text as HTML {String}.
   bodyHTML: null
   Object.defineProperty @::, 'bodyHTML',
-    get: -> @attributedBodyText.toInlineFTMLString()
+    get: -> _bodyP(@_liOrRootUL).innerHTML
     set: (html) ->
-      p = document.createElement 'P'
+      p = @_liOrRootUL.ownerDocument.createElement 'P'
       p.innerHTML = html
-      @attributedBodyText = TextStorage.fromInlineFTML(p)
+      @attributedBodyText = AttributedString.fromInlineFTML(p)
 
-  # Public: Body text as read-only {TextStorage}.
+  # Public: Body text as {AttributedString}.
   attributedBodyText: null
   Object.defineProperty @::, 'attributedBodyText',
     get: ->
       if @isRoot
-        return new TextStorage
-      @textStorage
+        return new AttributedString
+      @_bodyAttributedString ?= AttributedString.fromInlineFTML(_bodyP(@_liOrRootUL))
+
     set: (attributedText) ->
-      @replaceBodyTextInRange attributedText, 0, @bodyTextLength
+      @replaceBodyTextInRange attributedText, 0, @bodyText.length
 
-  # Public: Returns an {TextStorage} substring of this item's body text.
+  # Public: Returns an {AttributedString} substring of this item's body text.
   #
-  # - `offset` Substring's strart offset.
+  # - `location` Substring's strart location.
   # - `length` Length of substring to extract.
-  getAttributedBodyTextSubstring: (offset, length) ->
-    @attributedBodyText.subtextStorage(offset, length)
+  getAttributedBodyTextSubstring: (location, length) ->
+    @attributedBodyText.getAttributedString(location, length)
 
-  # Public: Returns an {Object} with keys for each attribute at the given
-  # character offset, and by reference the range over which the elements
-  # apply.
+  # Public: Looks to see if there's an element with the given `tagName` at the
+  # given index. If there is then that element's attributes are returned and
+  # by reference the range over which the element applies.
   #
-  # - `offset` The character offset.
-  # - `effectiveRange` (optional) {Object} whose `offset` and `length`
+  # - `tagName` Tag name of the element.
+  # - `index` The character index.
+  # - `effectiveRange` (optional) {Object} whose `location` and `length`
   #    properties will be set to effective range of element.
-  # - `longestEffectiveRange` (optional) {Object} whose `offset` and `length`
+  # - `longestEffectiveRange` (optional) {Object} whose `location` and `length`
   #    properties will be set to longest effective range of element.
-  getBodyTextAttributesAtOffset: (offset, effectiveRange, longestEffectiveRange) ->
-    @attributedBodyText.getAttributesAtOffset(offset, effectiveRange, longestEffectiveRange)
-
-  # Public: Returns the value for an attribute with a given name of the
-  # character at a given offset, and by reference the range over which the
-  # attribute applies.
   #
-  # - `attribute` Attribute name.
-  # - `offset` The character offset.
-  # - `effectiveRange` (optional) {Object} whose `offset` and `length`
+  # Returns elements attribute values as an {Object} or {undefined}
+  getElementAtBodyTextIndex: (tagName, index, effectiveRange, longestEffectiveRange) ->
+    assert(tagName is tagName.toUpperCase(), 'Tag Names Must be Uppercase')
+    @attributedBodyText.attributeAtIndex(
+      tagName,
+      index,
+      effectiveRange,
+      longestEffectiveRange
+    )
+
+  # Public: Returns an {Object} with keys for each element at the given
+  # character index, and by reference the range over which the elements apply.
+  #
+  # - `index` The character index.
+  # - `effectiveRange` (optional) {Object} whose `location` and `length`
   #    properties will be set to effective range of element.
-  # - `longestEffectiveRange` (optional) {Object} whose `offset` and `length`
+  # - `longestEffectiveRange` (optional) {Object} whose `location` and `length`
   #    properties will be set to longest effective range of element.
-  getBodyTextAttributeAtOffset: (attribute, offset, effectiveRange, longestEffectiveRange) ->
-    @attributedBodyText.getAttributeAtOffset(attribute, offset, effectiveRange, longestEffectiveRange)
-
-  # Sets the attributes for the characters in the specified range to the
-  # specified attributes.
-  #
-  # - `attributes` {Object} with keys and values for each attribute
-  # - `offset` Start offset character offset.
-  # - `length` Range length.
-  setBodyTextAttributesInRange: (attributes, offset, length) ->
-    @attributedBodyText.setAttributesInRange(attributes, offset, length)
+  getElementsAtBodyTextIndex: (index, effectiveRange, longestEffectiveRange) ->
+    @attributedBodyText.attributesAtIndex(
+      index,
+      effectiveRange,
+      longestEffectiveRange
+    )
 
   # Public: Adds an element with the given tagName and attributes to the
   # characters in the specified range.
@@ -278,41 +320,53 @@ class Item
   # - `tagName` Tag name of the element.
   # - `attributes` Element attributes. Use `null` as a placeholder if element
   #    doesn't need attributes.
-  # - `offset` Start offset character offset.
+  # - `location` Start location character index.
   # - `length` Range length.
-  addBodyTextAttributeInRange: (attribute, value, offset, length) ->
-    @attributedBodyText.addAttributeInRange(attribute, value, offset, length)
+  addElementInBodyTextRange: (tagName, attributes, location, length) ->
+    elements = {}
+    elements[tagName] = attributes
+    @addElementsInBodyTextRange(elements, location, length)
 
-  # Public: Adds an element with the given tagName and attributes to the
-  # characters in the specified range.
-  #
-  # - `tagName` Tag name of the element.
-  # - `attributes` Element attributes. Use `null` as a placeholder if element
-  #    doesn't need attributes.
-  # - `offset` Start offset character offset.
-  # - `length` Range length.
-  addBodyTextAttributesInRange: (attributes, offset, length) ->
-    @attributedBodyText.addAttributesInRange(attributes, offset, length)
+  addElementsInBodyTextRange: (elements, location, length) ->
+    for eachTagName of elements
+      assert(
+        eachTagName is eachTagName.toUpperCase(),
+        'Tag Names Must be Uppercase'
+      )
+    changedText = @getAttributedBodyTextSubstring(location, length)
+    changedText.addAttributesInRange(elements, 0, length)
+    @replaceBodyTextInRange(changedText, location, length)
 
   # Public: Removes the element with the tagName from the characters in the
   # specified range.
   #
   # - `tagName` Tag name of the element.
-  # - `offset` Start offset character offset.
+  # - `location` Start location character index.
   # - `length` Range length.
-  removeBodyTextAttributeInRange: (attribute, offset, length) ->
-    @attributedBodyText.removeAttributeInRange(attribute, offset, length)
+  removeElementInBodyTextRange: (tagName, location, length) ->
+    assert(tagName is tagName.toUpperCase(), 'Tag Names Must be Uppercase')
+    @removeElementsInBodyTextRange([tagName], location, length)
 
-  insertLineBreakInBodyText: (offset) ->
+  removeElementsInBodyTextRange: (tagNames, location, length) ->
+    for eachTagName in tagNames
+      assert(
+        eachTagName is eachTagName.toUpperCase(),
+        'Tag Names Must be Uppercase'
+      )
+    changedText = @getAttributedBodyTextSubstring(location, length)
+    changedText.removeAttributesInRange(tagNames, 0, length)
+    @replaceBodyTextInRange(changedText, location, length)
 
-  insertImageInBodyText: (offset, image) ->
+  insertLineBreakInBodyText: (location) ->
+
+  insertImageInBodyText: (location, image) ->
 
   # Public: Replace body text in the given range.
   #
-  # - `insertedText` {String} or {TextStorage}
-  # - `offset` Start offset character offset.
+  # - `insertedText` {String} or {AttributedString}
+  # - `location` Start location character index.
   # - `length` Range length.
-  replaceBodyTextInRange: (insertedText, offset, length) ->
+  replaceBodyTextInRange: (insertedText, location, length) ->
     if @isRoot
       return
 
@@ -322,26 +376,42 @@ class Item
     outline = @outline
     insertedString
 
-    if insertedText instanceof TextStorage
+    if insertedText instanceof AttributedString
       insertedString = insertedText.getString()
     else
       insertedString = insertedText
 
-    assert.ok(insertedString.indexOf('\n') is -1, 'Item body text cannot contain newlines')
+    assert.ok(
+      insertedString.indexOf('\n') is -1,
+      'Item body text cannot contain newlines'
+    )
 
     if isInOutline
-      replacedText = attributedBodyText.subtextStorage(offset, length)
+      undoManager = outline.undoManager
+      replacedText
+
+      if length
+        replacedText = attributedBodyText.getAttributedString(location, length)
+      else
+        replacedText = new AttributedString
+
       if replacedText.length is 0 and insertedText.length is 0
         return
-      mutation = Mutation.createBodyTextMutation this, offset, insertedString.length, replacedText
+
+      mutation = Mutation.createBodyTextMutation this, location, insertedString.length, replacedText
       outline.emitter.emit 'will-change', mutation
       outline.beginChanges()
       outline.recordChange mutation
 
-    if insertedText instanceof TextStorage
-      attributedBodyText.replaceRangeWithTextStorage(offset, length, insertedText)
-    else
-      attributedBodyText.replaceRangeWithString(offset, length, insertedText)
+    li = @_liOrRootUL
+    bodyP = _bodyP(li)
+    attributedBodyText = @attributedBodyText
+    ownerDocument = li.ownerDocument
+    attributedBodyText.replaceCharactersInRange(insertedText, location, length)
+    newBodyPContent = attributedBodyText.toInlineFTMLFragment(ownerDocument)
+    newBodyP = ownerDocument.createElement('P')
+    newBodyP.appendChild(newBodyPContent)
+    li.replaceChild(newBodyP, bodyP)
 
     outline.syncBodyTextToAttributes(this, oldBodyText)
 
@@ -351,14 +421,14 @@ class Item
 
   # Public: Append body text.
   #
-  # - `text` {String} or {TextStorage}
+  # - `text` {String} or {AttributedString}
   # - `elements` (optional) {Object} whose keys are formatting element
   #   tagNames and values are attributes for those elements. If specified the
   #   appended text will include these elements.
   appendBodyText: (text, elements) ->
     if elements
-      unless text instanceof TextStorage
-        text = new TextStorage text
+      unless text instanceof AttributedString
+        text = new AttributedString text
       text.addAttributesInRange elements, 0, text.length
     @replaceBodyTextInRange text, @bodyText.length, 0
 
@@ -371,24 +441,6 @@ class Item
   Object.defineProperty @::, 'isRoot',
     get: -> @id is Constants.RootID
 
-  # Public: Read-only true if item is part of owning {Outline}
-  isInOutline: false
-  Object.defineProperty @::, 'isInOutline',
-    get: -> @inOutline
-    set: (isInOutline) ->
-      unless @inOutline is isInOutline
-        if isInOutline
-          @outline.idsToItems.set(@id, @)
-        else
-          @outline.idsToItems.delete(@id)
-
-        @inOutline = isInOutline
-        each = @firstChild
-        while each
-          each.isInOutline = isInOutline
-          each = each.nextSibling
-      @
-
   # Public: Read-only {Boolean} true if this item has no body text and no
   # attributes and no children.
   isEmpty: null
@@ -397,6 +449,13 @@ class Item
       not @hasBodyText and
       not @firstChild and
       @attributeNames.length is 0
+
+  # Public: Read-only true if item is part of owning {Outline}
+  isInOutline: null
+  Object.defineProperty @::, 'isInOutline',
+    get: ->
+      li = @_liOrRootUL
+      li.ownerDocument.contains(li);
 
   # Public: Read-only root {Item}.
   root: null
@@ -407,7 +466,7 @@ class Item
       else
         each = this
         while each.parent
-          each = each.parent
+          each = each.parent;
         each
 
   # Public: Read-only "depth" of {Item} in outline structure. Calculated by
@@ -453,33 +512,30 @@ class Item
 
       @setAttribute('indent', indent)
 
-  row: null
-  Object.defineProperty @::, 'row',
-    get: ->
-      if @inOutline
-        @outline.rowForItem(this)
-      else
-        row = 0
-        each = each.previousItem
-        while each
-          row++
-          each = each.previousItem
-        row
-
   # Public: Read-only parent {Item}.
   parent: null
+  Object.defineProperty @::, 'parent',
+    get: -> _parentLIOrRootUL(@_liOrRootUL)?._item
 
   # Public: Read-only first child {Item}.
   firstChild: null
+  Object.defineProperty @::, 'firstChild',
+    get: -> _childrenUL(@_liOrRootUL, false)?.firstChild?._item
 
   # Public: Read-only last child {Item}.
   lastChild: null
+  Object.defineProperty @::, 'lastChild',
+    get: -> _childrenUL(@_liOrRootUL, false)?.lastChild?._item
 
   # Public: Read-only previous sibling {Item}.
   previousSibling: null
+  Object.defineProperty @::, 'previousSibling',
+    get: -> @_liOrRootUL.previousSibling?._item
 
   # Public: Read-only next sibling {Item}.
   nextSibling: null
+  Object.defineProperty @::, 'nextSibling',
+    get: -> @_liOrRootUL.nextSibling?._item
 
   # Public: Read-only previous branch {Item}.
   previousBranch: null
@@ -567,7 +623,12 @@ class Item
   # Public: Read-only has children {Boolean}.
   hasChildren: null
   Object.defineProperty @::, 'hasChildren',
-    get: -> not not @firstChild
+    get: ->
+      ul = _childrenUL(@_liOrRootUL)
+      if ul
+        ul.hasChildNodes()
+      else
+        false
 
   # Public: Read-only {Array} of child {Items}.
   children: null
@@ -586,12 +647,21 @@ class Item
   #
   # Returns {Boolean}.
   contains: (item) ->
-    ancestor = item.parent
-    while ancestor
-      if ancestor is this
-        return true
-      ancestor = ancestor.parent
-    false
+    if item
+      @_liOrRootUL.contains(item._liOrRootUL)
+    else
+      false
+
+  # Public: Compares the position of this item against another item in the
+  # outline. See
+  # [Node.compareDocumentPosition()](https://developer.mozilla.org/en-
+  # US/docs/Web/API/Node.compareDocumentPosition) for more information.
+  #
+  # - `item` The {Item} to compare against.
+  #
+  # Returns a {Number} bitmask.
+  comparePosition: (item) ->
+    @_liOrRootUL.compareDocumentPosition(item._liOrRootUL)
 
   # Public: Deep clones this item.
   #
@@ -652,57 +722,47 @@ class Item
     @insertChildrenBefore([child], referenceSibling)
 
   # Public: Insert the new children before the referenced sibling in this
-  # item's list of children. If nextSibling isn't defined the new children are
-  # inserted at the end. This method resets the indent of children to match
-  # nextSibling or 1.
+  # item's list of children. If referenceSibling isn't defined the new
+  # children are inserted at the end. This method resets the indent of
+  # children to match referenceSibling or 1.
   #
   # - `children` {Array} of {Item}s to insert.
-  # - `nextSibling` (optional) The next sibling {Item} to insert before.
-  insertChildrenBefore: (children, nextSibling) ->
+  # - `referenceSibling` (optional) The referenced sibling {Item}.
+  insertChildrenBefore: (children, referenceSibling) ->
     isInOutline = @isInOutline
     outline = @outline
 
     outline.removeItemsFromParents(children)
 
-    if nextSibling
-      previousSibling = nextSibling.previousSibling
+    previousSibling = null
+    if referenceSibling
+      previousSibling = referenceSibling.previousSibling
     else
       previousSibling = @lastChild
 
     if isInOutline
-      mutation = Mutation.createChildrenMutation this, children, [], previousSibling, nextSibling
+      mutation = Mutation.createChildrenMutation this, children, [], previousSibling, referenceSibling
       outline.emitter.emit 'will-change', mutation
       outline.beginChanges()
-      outline.undoManager.beginUndoGrouping()
       outline.recordChange mutation
 
-    for each, i in children
-      assert.ok(each.outline is @outline, 'children must share same outline')
-      each.previousSibling = children[i - 1]
-      each.nextSibling = children[i + 1]
-      each.parent = this
+    ownerDocument = @_liOrRootUL.ownerDocument
+    documentFragment = ownerDocument.createDocumentFragment()
+    referenceSiblingLI = referenceSibling?._liOrRootUL
+    childrenUL = _childrenUL(@_liOrRootUL, true)
+    childIndent = previousSibling?.indent ? referenceSibling?.indent ? 1
 
-    firstChild = children[0]
-    lastChild = children[children.length - 1]
+    for each in children
+      assert.ok(each._liOrRootUL.ownerDocument is ownerDocument, 'children must share same owner document')
+      documentFragment.appendChild(each._liOrRootUL)
 
-    firstChild.previousSibling = previousSibling
-    previousSibling?.nextSibling = firstChild
-    lastChild.nextSibling = nextSibling
-    nextSibling?.previousSibling = lastChild
+    childrenUL.insertBefore(documentFragment, referenceSiblingLI)
 
-    if not firstChild.previousSibling
-      @firstChild = firstChild
-    if not lastChild.nextSibling
-      @lastChild = lastChild
-
-    childIndent = previousSibling?.indent ? nextSibling?.indent ? 1
     for each in children by -1
-      each.isInOutline = isInOutline
       each.indent = childIndent
 
     if isInOutline
       outline.emitter.emit 'did-change', mutation
-      outline.undoManager.endUndoGrouping()
       outline.endChanges()
 
   # Public: Append the new children to this item's list of children.
@@ -727,35 +787,19 @@ class Item
     isInOutline = @isInOutline
     outline = @outline
 
-    firstChild = children[0]
-    lastChild = children[children.length - 1]
-    previousSibling = firstChild.previousSibling
-    nextSibling = lastChild.nextSibling
-
     if isInOutline
-      mutation = Mutation.createChildrenMutation this, [], children, previousSibling, nextSibling
+      lastChild = children[children.length - 1]
+      nextSibling = lastChild.nextSibling
+      mutation = Mutation.createChildrenMutation this, [], children, children[0].previousSibling, nextSibling
       outline.emitter.emit 'will-change', mutation
       outline.beginChanges()
-      outline.undoManager.beginUndoGrouping()
       outline.recordChange mutation
 
-    previousSibling?.nextSibling = nextSibling
-    nextSibling?.previousSibling = previousSibling
-
-    if firstChild is @firstChild
-      @firstChild = nextSibling
-    if lastChild is @lastChild
-      @lastChild = previousSibling
-
     for each in children
-      each.isInOutline = false
-      each.nextSibling = null
-      each.previousSibling = null
-      each.parent = null
+      each._liOrRootUL.parentNode.removeChild(each._liOrRootUL)
 
     if isInOutline
       outline.emitter.emit 'did-change', mutation
-      outline.undoManager.endUndoGrouping()
       outline.endChanges()
 
   # Public: Remove the given child from this item's list of children.
@@ -775,6 +819,12 @@ class Item
   evaluateItemPath: (itemPath, options) ->
     ItemPath.evaluate itemPath, this, options
 
+  evaluateXPath: (xpathExpression, namespaceResolver, resultType, result) ->
+    @outline.evaluateXPath(xpathExpression, this, namespaceResolver, resultType, result)
+
+  getItemsForXPath: (xpathExpression, namespaceResolver, exceptionCallback) ->
+    @outline.getItemsForXPath(xpathExpression, this, namespaceResolver, exceptionCallback)
+
   ###
   Section: Debug
   ###
@@ -793,6 +843,47 @@ class Item
       results.push(each.branchToString(depthString))
     results.join('\n')
 
+  # Extended: Returns debug HTML string for this branch.
+  branchToHTML: ->
+    @_liOrRootUL.outerHTML
+
   # Extended: Returns debug string for this item.
   toString: (depthString) ->
-    (depthString or '') + '(' + @id + ') ' + @textStorage.toString()
+    (depthString or '') + '(' + @id + ') ' + @bodyHTML
+
+###
+Section: Util Functions
+###
+
+_parentLIOrRootUL = (liOrRootUL) ->
+  parentNode = liOrRootUL.parentNode
+  while parentNode
+    if parentNode._item
+      return parentNode
+    parentNode = parentNode.parentNode
+
+_bodyP = (liOrRootUL) ->
+  if liOrRootUL.tagName is 'UL'
+    # In case of root element just return an empty disconnected P for api
+    # compatibilty.
+    assert.ok(liOrRootUL.id is Constants.RootID)
+    liOrRootUL.ownerDocument.createElement('p')
+  else
+    liOrRootUL.firstChild
+
+_childrenUL = (liOrRootUL, createIfNeeded) ->
+  if liOrRootUL.tagName is 'UL'
+    assert.ok(liOrRootUL.id is Constants.RootID)
+    liOrRootUL
+  else
+    ul = liOrRootUL.lastChild
+    tagName = ul?.tagName
+    if tagName is 'UL'
+      ul
+    else if tagName is 'P'
+      if createIfNeeded
+        ul = liOrRootUL.ownerDocument.createElement('UL')
+        liOrRootUL.appendChild(ul)
+        ul
+    else if tagName
+      assert.ok(false, "Invalid HTML, expected #{tagName} to be 'P' or 'UL'")

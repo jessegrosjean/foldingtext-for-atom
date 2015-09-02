@@ -3,10 +3,8 @@ Line = require './Line'
 
 class LineIndex extends SpanIndex
 
-  @string: null
-
-  constructor: (@string) ->
-    super()
+  constructor: (string) ->
+    super(string)
 
   getLineCount: ->
     @spanCount
@@ -18,7 +16,7 @@ class LineIndex extends SpanIndex
     @getSpanIndex(child)
 
   getLineIndexOffset: (offset, index=0) ->
-    lineIndexOffset = @getSpanIndexOffset(offset, index)
+    lineIndexOffset = @getSpanAtOffset(offset, index)
     lineIndexOffset.line = lineIndexOffset.span
     lineIndexOffset
 
@@ -34,53 +32,80 @@ class LineIndex extends SpanIndex
   removeLines: (start, deleteCount) ->
     @removeSpans(start, deleteCount)
 
-  createLineWithText: (text) ->
-    @createSpanWithText(text)
+  createLine: (text) ->
+    @createSpan(text)
 
-  createSpanWithText: (text) ->
+  createSpan: (text) ->
     new Line(text)
 
   deleteRange: (offset, length) ->
     unless length
       return
 
-    super(offset, length)
+    slice = @sliceSpansToRange(offset, length)
+    if length is @getLength()
+      @getSpan(0).setString('')
+      @removeSpans(slice.index + 1, slice.count - 1)
+    else
+      @removeSpans(slice.index, slice.count)
 
-    # Merge lines not sperated by \n
-    if offset isnt 0
-      prev = @getLineIndexOffset(offset - 1)
-      prevLine = prev.line
-      prevStart = prev.startOffset
-      prevLength = prevLine.getLength()
-      prevLineText = @string.substr(prevStart, prevLength)
+    cur = @getSpanAtOffset(offset)
+    if cur.span.getString().indexOf('\n') is -1
+      if next = @getSpan(cur.index + 1)
+        cur.span.appendString(next.getString())
+        @removeSpans(cur.index + 1, 1)
 
-      if prevLineText.indexOf('\n') is -1
-        cur = @getLineIndexOffset(offset)
-        prevLine.setLength(prevLine.getLength() + cur.line.getLength())
-        @removeLines(cur.index, 1)
-
-  insertText: (offset, text) ->
+  insertString: (offset, text) ->
     unless text
       return
 
-    super(offset, text)
+    if @getSpanCount() is 0
+      @insertSpans(0, [@createSpan('')])
 
-    # Split line at offset for all inserted \n
-    lineIndexOffset = @getLineIndexOffset(offset)
-    isLastLine = lineIndexOffset.index is @getLineCount() - 1
-    line = lineIndexOffset.line
-    start = lineIndexOffset.startOffset
-    length = line.getLength()
-    lineText = @string.substr(start, length)
-    lines = lineText.match(/(.+\n?)|(\n)/g)
+    start = @getSpanAtOffset(offset)
+    if start.offset is start.span.getLength()
+      if offset is @getLength()
+        if next = @getSpan(start.index + 1)
+          start.span = next
+          start.offset = 0
+          start.index++
+      else
+        start = @getSpanAtOffset(offset + 1)
+        start.offset = 0
 
-    if lines.length > 1
-      line.setLength(lines[0].length)
-      insertLines = []
-      for i in [1...lines.length]
-        insertLines.push(@createLineWithText(lines[i].length))
-      if isLastLine and lineText[lineText.length - 1] is '\n'
-        insertLines.push(@createLineWithText(''))
-      @insertLines(lineIndexOffset.index + 1, insertLines)
+    lines = text.split('\n')
+    trail = start.span.getString().substr(start.offset)
+    start.span.deleteRange(start.offset, start.span.getLength() - start.offset)
+    start.span.insertString(start.offset, lines.shift())
+
+    if start.index isnt @getSpanCount() - 1 and start.span.getString().indexOf('\n') is -1
+      start.span.appendString('\n')
+
+    if lines.length
+      lines[lines.length - 1] += trail
+      spans = (@createSpan(each) for each in lines)
+      @insertSpans(start.index + 1, spans)
+
+  insertSpans: (start, spans) ->
+    for each in spans
+      if each.getString().indexOf('\n') is -1
+        each.appendString('\n')
+
+    if start is @getSpanCount()
+      if oldLast = @getSpan(start - 1)
+        if oldLast.getString().indexOf('\n') is -1
+          oldLast.appendString('\n')
+      newLast = spans[spans.length - 1]
+      newLast.deleteRange(newLast.getLength() - 1, 1)
+
+    super(start, spans)
+
+  removeSpans: (start, deleteCount) ->
+    super(start, deleteCount)
+
+    if start is @getSpanCount()
+      if newLast = @getSpan(start - 1)
+        if newLast.getString().indexOf('\n') isnt -1
+          newLast.deleteRange(newLast.getLength() - 1, 1)
 
 module.exports = LineIndex

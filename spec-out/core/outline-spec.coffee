@@ -1,6 +1,5 @@
 loadOutlineFixture = require '../load-outline-fixture'
 Outline = require '../../lib/core/outline'
-shortid = require '../../lib/core/shortid'
 path = require 'path'
 fs = require 'fs'
 
@@ -32,6 +31,7 @@ describe 'Outline', ->
 
   it 'should import item', ->
     outline2 = new Outline()
+
     oneImport = outline2.importItem(one)
     oneImport.outline.should.equal(outline2)
     oneImport.isInOutline.should.be.false
@@ -98,12 +98,39 @@ describe 'Outline', ->
       two.lastChild.should.equal(four)
       outline.undoManager.redo()
 
+  describe 'Search', ->
+    it 'should find DOM using xpath', ->
+      outline.evaluateXPath('//li', null, null, XPathResult.ANY_TYPE, null).iterateNext().should.equal(one._liOrRootUL)
+
+    it 'should find items using xpath', ->
+      items = outline.getItemsForXPath('//li')
+      items.should.eql([
+        one,
+        two,
+        three,
+        four,
+        five,
+        six
+      ])
+
+    it 'should only return item once even if multiple xpath matches', ->
+      items = outline.getItemsForXPath('//*')
+      items.should.eql([
+        root,
+        one,
+        two,
+        three,
+        four,
+        five,
+        six
+      ])
+
   describe 'Undo', ->
     it 'should undo append child', ->
       child = outline.createItem('hello')
       one.appendChild(child)
       outline.undoManager.undo()
-      expect(child.parent).toBe(null)
+      expect(child.parent).toBe(undefined)
 
     it 'should undo remove child', ->
       outline.undoManager.beginUndoGrouping()
@@ -123,7 +150,7 @@ describe 'Outline', ->
       one.setAttribute('myattr', 'test')
       one.getAttribute('myattr').should.equal('test')
       outline.undoManager.undo()
-      expect(one.getAttribute('myattr') is undefined).toBe(true)
+      expect(one.getAttribute('myattr') is null).toBe(true)
 
     describe 'Body Text', ->
       it 'should undo set body text', ->
@@ -165,36 +192,30 @@ describe 'Outline', ->
       # solution for that part of the code.
       branch = outline.createItem('branch')
 
-      console.time('Create Objects')
-      items = []
-      for i in [0..10000]
-        items.push(name: shortid())
-      console.timeEnd('Create Objects')
-
-      console.profile('Create Items')
-      console.time('Create Items')
+      console.profile('Create Many')
+      console.time('Create Many')
       items = []
       for i in [0..10000]
         items.push(outline.createItem('hello'))
       branch.appendChildren(items)
       outline.root.appendChild(branch)
-      console.timeEnd('Create Items')
+      console.timeEnd('Create Many Items')
       outline.root.descendants.length.should.equal(10008)
       console.profileEnd()
 
-      console.time('Copy Items')
+      console.time('Copy Many')
       branch.cloneItem()
-      console.timeEnd('Copy Items')
+      console.timeEnd('Copy Many')
 
-      console.time('Remove Items')
+      console.time('Remove Many')
       branch.removeChildren(items)
-      console.timeEnd('Remove Items')
+      console.timeEnd('Remove Many')
 
     it 'should load 100,000 items', ->
-      console.profile('Load Items')
-      console.time('Load Items')
+      console.profile('Load Many')
+      console.time('Load Many')
       outline = new Outline()
       outline.loadSync(path.join(__dirname, '..', 'fixtures', 'big-outline.ftml'))
-      console.timeEnd('Load Items')
+      console.timeEnd('Load Many')
       outline.root.descendants.length.should.equal(100007)
       console.profileEnd()

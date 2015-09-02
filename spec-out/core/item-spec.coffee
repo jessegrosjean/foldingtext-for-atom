@@ -2,7 +2,6 @@ loadOutlineFixture = require '../load-outline-fixture'
 Constants = require '../../lib/core/constants'
 Outline = require '../../lib/core/outline'
 Item = require '../../lib/core/item'
-should = require 'should'
 
 describe 'Item', ->
   [outline, root, one, two, three, four, five, six] = []
@@ -10,7 +9,7 @@ describe 'Item', ->
   beforeEach ->
     {outline, root, one, two, three, four, five, six} = loadOutlineFixture()
 
-  it 'should get parent', ->
+  fit 'should get parent', ->
     two.parent.should.equal(one)
     one.parent.should.equal(root)
 
@@ -22,7 +21,7 @@ describe 'Item', ->
 
   it 'should delete item', ->
     two.removeFromParent()
-    expect(two.parent is null).toBe(true)
+    expect(two.parent is undefined).toBe(true)
 
   it 'should make item connections', ->
     one.firstChild.should.equal(two)
@@ -39,7 +38,7 @@ describe 'Item', ->
 
   describe 'Attributes', ->
     it 'should set/get attribute', ->
-      expect(five.getAttribute('test') is undefined).toBe(true)
+      expect(five.getAttribute('test') is null).toBe(true)
       five.setAttribute('test', 'hello')
       five.getAttribute('test').should.equal('hello')
 
@@ -89,30 +88,29 @@ describe 'Item', ->
     describe 'Inline Elements', ->
       it 'should get elements', ->
         one.bodyHTML = '<b>one</b> <img src="boo.png">two three'
-        one.getBodyTextAttributesAtOffset(0).should.eql({ B: null })
-        one.getBodyTextAttributesAtOffset(4).should.eql({})
-        one.getBodyTextAttributesAtOffset(5).should.eql({ IMG: { src: 'boo.png' } })
+        one.getElementsAtBodyTextIndex(0).should.eql({ B: null })
+        one.getElementsAtBodyTextIndex(4).should.eql({ IMG: { src: 'boo.png' } })
 
       it 'should get empty elements', ->
         one.bodyText = 'one two three'
-        one.getBodyTextAttributesAtOffset(0).should.eql({})
+        one.getElementsAtBodyTextIndex(0).should.eql({})
 
       it 'should add elements', ->
         one.bodyText = 'one two three'
-        one.addBodyTextAttributeInRange('B', null, 4, 3)
+        one.addElementInBodyTextRange('B', null, 4, 3)
         one.bodyHTML.should.equal('one <b>two</b> three')
 
       it 'should add overlapping back element', ->
         one.bodyText = 'one two three'
-        one.addBodyTextAttributeInRange('B', null, 0, 7)
-        one.addBodyTextAttributeInRange('I', null, 4, 9)
+        one.addElementInBodyTextRange('B', null, 0, 7)
+        one.addElementInBodyTextRange('I', null, 4, 9)
         one.bodyHTML.should.equal('<b>one <i>two</i></b><i> three</i>')
 
       it 'should add overlapping front and back element', ->
         one.bodyText = 'three'
-        one.addBodyTextAttributeInRange('B', null, 0, 2)
-        one.addBodyTextAttributeInRange('U', null, 1, 3)
-        one.addBodyTextAttributeInRange('I', null, 3, 2)
+        one.addElementInBodyTextRange('B', null, 0, 2)
+        one.addElementInBodyTextRange('U', null, 1, 3)
+        one.addElementInBodyTextRange('I', null, 3, 2)
         one.bodyHTML.should.equal('<b>t<u>h</u></b><u>r<i>e</i></u><i>e</i>')
 
       it 'should add append text with elements', ->
@@ -122,23 +120,23 @@ describe 'Item', ->
         one.bodyHTML.should.equal('<i>o<b>ne</b></i>')
 
       it 'should add consecutive attribute with different values', ->
-        one.addBodyTextAttributeInRange('SPAN', 'data-a': 'a', 0, 1)
-        one.addBodyTextAttributeInRange('SPAN', 'data-b': 'b', 1, 2)
+        one.addElementInBodyTextRange('SPAN', 'data-a': 'a', 0, 1)
+        one.addElementInBodyTextRange('SPAN', 'data-b': 'b', 1, 2)
         one.bodyHTML.should.equal('<span data-a="a">o</span><span data-b="b">ne</span>')
 
       it 'should add consecutive attribute with same values', ->
-        one.addBodyTextAttributeInRange('SPAN', 'data-a': 'a', 0, 1)
-        one.addBodyTextAttributeInRange('SPAN', 'data-a': 'a', 1, 2)
+        one.addElementInBodyTextRange('SPAN', 'data-a': 'a', 0, 1)
+        one.addElementInBodyTextRange('SPAN', 'data-a': 'a', 1, 2)
         one.bodyHTML.should.equal('<span data-a="a">one</span>')
 
       it 'should remove element', ->
         one.bodyHTML = '<b>one</b>'
-        one.removeBodyTextAttributeInRange('B', 0, 3)
+        one.removeElementInBodyTextRange('B', 0, 3)
         one.bodyHTML.should.equal('one')
 
       it 'should remove middle of element span', ->
         one.bodyHTML = '<b>one</b>'
-        one.removeBodyTextAttributeInRange('B', 1, 1)
+        one.removeElementInBodyTextRange('B', 1, 1)
         one.bodyHTML.should.equal('<b>o</b>n<b>e</b>')
 
       describe 'Void Elements', ->

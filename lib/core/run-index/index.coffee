@@ -13,7 +13,7 @@ class RunIndex extends SpanIndex
     @getSpanIndex(child)
 
   getRunIndexOffset: (offset, index=0) ->
-    runIndexOffset = @getSpanIndexOffset(offset, index)
+    runIndexOffset = @getSpanAtOffset(offset, index)
     runIndexOffset.run = runIndexOffset.span
     runIndexOffset
 
@@ -32,17 +32,17 @@ class RunIndex extends SpanIndex
   sliceRunsToRange: (offset, length) ->
     @sliceSpansToRange(offset, length)
 
-  createRunWithText: (text) ->
-    @createSpanWithText(text)
+  createRun: (text) ->
+    @createSpan(text)
 
-  createSpanWithText: (text) ->
+  createSpan: (text) ->
     new Run(text)
 
   ###
   Reading attributes
   ###
 
-  attributesAtOffset: (offset, effectiveRange, longestEffectiveRange) ->
+  getAttributesAtOffset: (offset, effectiveRange, longestEffectiveRange) ->
     start = @getRunIndexOffset(offset)
     result = start.run.attributes
 
@@ -56,7 +56,7 @@ class RunIndex extends SpanIndex
 
     result
 
-  attributeAtOffset: (attribute, offset, effectiveRange, longestEffectiveRange) ->
+  getAttributeAtOffset: (attribute, offset, effectiveRange, longestEffectiveRange) ->
     start = @getRunIndexOffset(offset)
     result = start.run.attributes[attribute]
 
@@ -105,7 +105,7 @@ class RunIndex extends SpanIndex
 
   sliceAndIterateRunsByOffset: (offset, length, operation) ->
     slice = @sliceRunsToRange(offset, length)
-    @iterateSpans(slice.startIndex, slice.count, operation)
+    @iterateSpans(slice.index, slice.count, operation)
 
   setAttributesInRange: (attributes, offset, length) ->
     @sliceAndIterateRunsByOffset offset, length, (run) ->

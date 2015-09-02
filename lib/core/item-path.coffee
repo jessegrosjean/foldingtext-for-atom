@@ -93,7 +93,7 @@ class ItemPath
         i++
         j++
       else
-        if r1.comparePosition(r2) & Node.DOCUMENT_POSITION_FOLLOWING
+        if r1.row < r2.row
           results.push(r1)
           i++
         else
@@ -125,7 +125,7 @@ class ItemPath
         i++
         j++
       else
-        if r1.comparePosition(r2) & Node.DOCUMENT_POSITION_FOLLOWING
+        if r1.row < r2.row
           i++
         else
           j++
@@ -141,7 +141,7 @@ class ItemPath
       r1 = results1[i]
       r2 = results2[j]
 
-      while r1 and r2 and (r1.comparePosition(r2) & Node.DOCUMENT_POSITION_PRECEDING)
+      while r1 and r2 and (r1.row > r2.row)
         j++
         r2 = results2[j]
 

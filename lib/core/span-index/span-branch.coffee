@@ -13,6 +13,12 @@ class SpanBranch
     @spanCount = spanCount
     @length = length
 
+  clone: ->
+    children = []
+    for each in @children
+      children.push(each.clone())
+    new @constructor(children)
+
   ###
   Section: Characters
   ###
@@ -53,16 +59,19 @@ class SpanBranch
         index += each.getSpanCount()
     index
 
-  getSpanIndexOffset: (offset, index=0) ->
+  getSpanAtOffset: (offset, index=0) ->
     for each in @children
       childLength = each.getLength()
-      if offset >= childLength
+      if offset > childLength
         offset -= childLength
         index += each.getSpanCount()
       else
-        return each.getSpanIndexOffset(offset, index)
+        return each.getSpanAtOffset(offset, index)
 
   getSpans: (start, count) ->
+    start ?= 0
+    count ?= @getSpanCount() - start
+
     spans = []
     @iterateSpans start, count, (span) ->
       spans.push(span)
@@ -122,6 +131,23 @@ class SpanBranch
         start -= childSpanCount
       i++
     @maybeCollapse(deleteCount)
+
+  mergeSpans: (start, count) ->
+    prev = null
+    removeStart = start
+    removeRanges = []
+    removeRange = null
+    @iterateSpans start, count, (each) ->
+      if prev?.mergeWithSpan(each)
+        unless removeRange
+          removeRanges.push(removeRange)
+          removeRange.start = removeStart
+        removeRange.count++
+      else
+        removeRange = null
+        removeStart++
+    for each in removeRanges
+      @removeSpans(each.start, each.count)
 
   ###
   Section: Tree Balance

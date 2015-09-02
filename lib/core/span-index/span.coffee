@@ -3,27 +3,24 @@ _ = require 'underscore-plus'
 class Span
 
   @parent: null
-  @length: 0
+  @string: ''
 
-  constructor: (textLength) ->
-    if _.isString textLength
-      @length = textLength.length
-    else
-      @length = textLength
+  constructor: (@string='') ->
 
   clone: ->
-    clone = new @constructor()
-    clone.setLength(@length)
-    clone
+    new @constructor(@string)
 
   split: (offset) ->
-    if offset is 0 or offset is @length
+    if offset is 0 or offset is @getLength()
       return null
 
     clone = @clone()
-    clone.setLength(@length - offset)
-    @setLength(offset)
+    clone.setString(@string.substr(offset))
+    @setString(@string.substr(0, offset))
     clone
+
+  mergeWithSpan: (span) ->
+    false
 
   ###
   Section: Characters
@@ -33,21 +30,31 @@ class Span
     @parent.getOffset(this) or 0
 
   getLength: ->
-    @length
+    @string.length
 
-  setLength: (length) ->
-    if delta = (length - @length)
+  getString: ->
+    @string
+
+  setString: (string='') ->
+    delta = (string.length - @string.length)
+    @string = string
+    if delta
       each = @parent
       while each
         each.length += delta
         each = each.parent
-    @length = length
+    @
 
   deleteRange: (offset, length) ->
-    @setLength(@getLength() - length)
+    newString = @string.slice(0, offset) + @string.slice(offset + length)
+    @setString(newString)
 
-  insertText: (offset, text) ->
-    @setLength(@getLength() + text.length)
+  insertString: (offset, text) ->
+    newString = @string.substr(0, offset) + text + @string.substr(offset)
+    @setString(newString)
+
+  appendString: (string) ->
+    @insertString(@getLength(), string)
 
   ###
   Section: Spans
@@ -63,12 +70,10 @@ class Span
   Section: Debug
   ###
 
-  toString: ->
-    offset = @getOffset()
-    length = @getLength()
-    if length <= 1
-      "#{offset}"
+  toString: (extra) ->
+    if extra
+      "(#{@string}/#{extra})"
     else
-      "#{offset}-#{offset + @getLength() - 1}"
+      "(#{@string})"
 
 module.exports = Span
