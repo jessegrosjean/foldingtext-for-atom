@@ -95,26 +95,26 @@ describe 'OutlineEditorElement', ->
     it 'should above/before', ->
       rect = editorElement.getBoundingClientRect()
       itemCaretPosition = editorElement.pick(rect.left, rect.top).itemCaretPosition
-      itemCaretPosition.offsetItem.should.eql(one)
-      itemCaretPosition.offset.should.eql(0)
+      itemCaretPosition.locationItem.should.eql(one)
+      itemCaretPosition.location.should.eql(0)
 
     it 'should above/after', ->
       rect = editorElement.getBoundingClientRect()
       itemCaretPosition = editorElement.pick(rect.right, rect.top).itemCaretPosition
-      itemCaretPosition.offsetItem.should.eql(one)
-      itemCaretPosition.offset.should.eql(0)
+      itemCaretPosition.locationItem.should.eql(one)
+      itemCaretPosition.location.should.eql(0)
 
     it 'should below/before', ->
       rect = editorElement.getBoundingClientRect()
       itemCaretPosition = editorElement.pick(rect.left, rect.bottom).itemCaretPosition
-      itemCaretPosition.offsetItem.should.eql(six)
-      itemCaretPosition.offset.should.eql(3)
+      itemCaretPosition.locationItem.should.eql(six)
+      itemCaretPosition.location.should.eql(3)
 
     it 'should below/after', ->
       rect = editorElement.getBoundingClientRect()
       itemCaretPosition = editorElement.pick(rect.right, rect.bottom).itemCaretPosition
-      itemCaretPosition.offsetItem.should.eql(six)
-      itemCaretPosition.offset.should.eql(3)
+      itemCaretPosition.locationItem.should.eql(six)
+      itemCaretPosition.location.should.eql(3)
 
     it 'should pick with no items without stackoverflow', ->
       one.removeFromParent()
@@ -155,48 +155,48 @@ describe 'OutlineEditorElement', ->
       pickLeftBottom.selectionAffinity.should.equal('SelectionAffinityDownstream')
 
   describe 'Offset Encoding', ->
-    it 'should translate from outline to DOM offsets', ->
+    it 'should translate from outline to DOM locations', ->
       viewLI = document.getElementById(one.id)
       itemRenderer = editorElement.itemRenderer
       SPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
 
       itemRenderer.itemOffsetToNodeOffset(one, 0).should.eql
         node: SPAN.firstChild
-        offset: 0
+        location: 0
 
       itemRenderer.itemOffsetToNodeOffset(one, 2).should.eql
         node: SPAN.firstChild
-        offset: 2
+        location: 2
 
       one.bodyHTML = 'one <b>two</b> three'
 
       SPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
       itemRenderer.itemOffsetToNodeOffset(one, 4).should.eql
         node: SPAN.firstChild
-        offset: 4
+        location: 4
 
-      itemRenderer.itemOffsetToNodeOffset(one, 5).offset.should.equal(1)
-      itemRenderer.itemOffsetToNodeOffset(one, 7).offset.should.equal(3)
-      itemRenderer.itemOffsetToNodeOffset(one, 8).offset.should.equal(1)
+      itemRenderer.itemOffsetToNodeOffset(one, 5).location.should.equal(1)
+      itemRenderer.itemOffsetToNodeOffset(one, 7).location.should.equal(3)
+      itemRenderer.itemOffsetToNodeOffset(one, 8).location.should.equal(1)
 
     it 'should translate from DOM to outline', ->
       viewLI = document.getElementById(one.id)
       SPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
 
-      AttributedString.inlineFTMLOffsetToTextOffset(SPAN, 0).should.equal(0)
-      AttributedString.inlineFTMLOffsetToTextOffset(SPAN.firstChild, 0).should.equal(0)
+      AttributedString.inlineFTMLIndexToTextIndex(SPAN, 0).should.equal(0)
+      AttributedString.inlineFTMLIndexToTextIndex(SPAN.firstChild, 0).should.equal(0)
 
       one.bodyHTML = 'one <b>two</b> three'
       SPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI)
 
-      AttributedString.inlineFTMLOffsetToTextOffset(SPAN, 0).should.equal(0)
-      AttributedString.inlineFTMLOffsetToTextOffset(SPAN, 1).should.equal(4)
-      AttributedString.inlineFTMLOffsetToTextOffset(SPAN, 2).should.equal(7)
+      AttributedString.inlineFTMLIndexToTextIndex(SPAN, 0).should.equal(0)
+      AttributedString.inlineFTMLIndexToTextIndex(SPAN, 1).should.equal(4)
+      AttributedString.inlineFTMLIndexToTextIndex(SPAN, 2).should.equal(7)
 
       b = SPAN.firstChild.nextSibling
 
-      AttributedString.inlineFTMLOffsetToTextOffset(b, 0).should.equal(4)
-      AttributedString.inlineFTMLOffsetToTextOffset(b.firstChild, 2).should.equal(6)
+      AttributedString.inlineFTMLIndexToTextIndex(b, 0).should.equal(4)
+      AttributedString.inlineFTMLIndexToTextIndex(b.firstChild, 2).should.equal(6)
 
-      AttributedString.inlineFTMLOffsetToTextOffset(SPAN.lastChild, 0).should.equal(7)
-      AttributedString.inlineFTMLOffsetToTextOffset(SPAN.lastChild, 3).should.equal(10)
+      AttributedString.inlineFTMLIndexToTextIndex(SPAN.lastChild, 0).should.equal(7)
+      AttributedString.inlineFTMLIndexToTextIndex(SPAN.lastChild, 3).should.equal(10)

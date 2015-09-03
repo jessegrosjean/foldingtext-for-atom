@@ -49,39 +49,39 @@ describe 'RunIndex', ->
       runIndex.addAttributesInRange(a: '1', 0, 4)
       runIndex.addAttributesInRange(b: '2', 2, 3)
 
-    it 'finds attributes at offset', ->
-      runIndex.getAttributesAtOffset(0).should.eql(a: '1')
-      runIndex.getAttributesAtOffset(3).should.eql(a: '1', b: '2')
-      runIndex.getAttributesAtOffset(4).should.eql(b: '2')
-      runIndex.getAttributesAtOffset(5).should.eql({})
+    it 'finds attributes at location', ->
+      runIndex.getAttributesAtIndex(0).should.eql(a: '1')
+      runIndex.getAttributesAtIndex(3).should.eql(a: '1', b: '2')
+      runIndex.getAttributesAtIndex(4).should.eql(b: '2')
+      runIndex.getAttributesAtIndex(5).should.eql({})
 
-    it 'finds effective range of attributes at offset', ->
+    it 'finds effective range of attributes at location', ->
       range = {}
-      runIndex.getAttributesAtOffset(0, range)
-      range.should.eql(offset: 0, length: 2)
+      runIndex.getAttributesAtIndex(0, range)
+      range.should.eql(location: 0, length: 2)
 
-      runIndex.getAttributesAtOffset(3, range)
-      range.should.eql(offset: 2, length: 2)
+      runIndex.getAttributesAtIndex(3, range)
+      range.should.eql(location: 2, length: 2)
 
-      runIndex.getAttributesAtOffset(4, range)
-      range.should.eql(offset: 4, length: 1)
+      runIndex.getAttributesAtIndex(4, range)
+      range.should.eql(location: 4, length: 1)
 
-      runIndex.getAttributesAtOffset(5, range)
-      range.should.eql(offset: 5, length: 1)
+      runIndex.getAttributesAtIndex(5, range)
+      range.should.eql(location: 5, length: 1)
 
-    it 'finds longest effective range of attribute at offset', ->
+    it 'finds longest effective range of attribute at location', ->
       range = {}
-      runIndex.getAttributeAtOffset('a', 0, null, range)
-      range.should.eql(offset: 0, length: 4)
+      runIndex.getAttributeAtIndex('a', 0, null, range)
+      range.should.eql(location: 0, length: 4)
 
-      runIndex.getAttributeAtOffset('a', 3, null, range)
-      range.should.eql(offset: 0, length: 4)
+      runIndex.getAttributeAtIndex('a', 3, null, range)
+      range.should.eql(location: 0, length: 4)
 
-      runIndex.getAttributeAtOffset('b', 4, null, range)
-      range.should.eql(offset: 2, length: 3)
+      runIndex.getAttributeAtIndex('b', 4, null, range)
+      range.should.eql(location: 2, length: 3)
 
-      runIndex.getAttributeAtOffset('b', 5, null, range)
-      range.should.eql(offset: 5, length: 1)
+      runIndex.getAttributeAtIndex('b', 5, null, range)
+      range.should.eql(location: 5, length: 1)
 
-      runIndex.getAttributeAtOffset('undefinedeverywhere', 4, null, range)
-      range.should.eql(offset: 0, length: 6)
+      runIndex.getAttributeAtIndex('undefinedeverywhere', 4, null, range)
+      range.should.eql(location: 0, length: 6)

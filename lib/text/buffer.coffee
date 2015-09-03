@@ -91,7 +91,7 @@ class Buffer extends BufferBranch
     effectsSingleLine = startRow is endRow
     startLine = @getLine(startRow)
     endLine = @getLine(endRow)
-    startOffset = startLine.getCharacterOffset()
+    spanLocation = startLine.getCharacterOffset()
 
     unless wasChanging
       changeEvent =
@@ -99,7 +99,7 @@ class Buffer extends BufferBranch
         oldCharacterRange: @getCharacterRangeFromRange(oldRange)
         oldText: @getTextInRange(oldRange)
         newRange: newRange.copy()
-        newCharacterRange: start: startOffset, end: startOffset + newText.length
+        newCharacterRange: start: spanLocation, end: spanLocation + newText.length
         newText: newText
       @emitter.emit 'will-change', changeEvent
 
@@ -178,7 +178,7 @@ class Buffer extends BufferBranch
     unless @changing
       newText = (each.getText() for each in lines).join('\n')
       oldRange = new Range([row, 0], [row, 0])
-      startOffset
+      spanLocation
       newRange
 
       if row is @lineCount
@@ -186,22 +186,22 @@ class Buffer extends BufferBranch
           lastLineIndex = row + lines.length - 1
           lastLine = lines[lastLineIndex]
           newRange = new Range([row, 0], [lastLineIndex, lastLine.getCharacterCount() - 1])
-          startOffset = 0
+          spanLocation = 0
         else
           newRange = new Range([row, 0], [row + lines.length, 0])
           newText = '\n' + newText
           prevLine = @getLine(row - 1)
           prevLineLength = prevLine.getCharacterCount()
-          startOffset = prevLine.getCharacterOffset() + prevLineLength - 1
+          spanLocation = prevLine.getCharacterOffset() + prevLineLength - 1
           oldRange = new Range([row - 1, prevLineLength - 1], [row - 1, prevLineLength - 1])
       else
         newText += '\n'
         newRange = new Range([row, 0], [row + lines.length, 0])
-        startOffset = @getCharacterOffsetFromPoint(newRange.start)
+        spanLocation = @getCharacterOffsetFromPoint(newRange.start)
 
       newCharacterRange =
-        start: startOffset
-        end: startOffset + newText.length
+        start: spanLocation
+        end: spanLocation + newText.length
 
       changeEvent =
         oldRange: oldRange
@@ -271,11 +271,11 @@ class Buffer extends BufferBranch
       end = @getCharacterOffsetFromPoint(range.end)
     start: start, end: end
 
-  getRangeFromCharacterRange: (startOffset, endOffset) ->
+  getRangeFromCharacterRange: (spanLocation, endOffset) ->
     if endOffset is 0
       return new Range()
-    start = @getLineRowColumn(startOffset)
-    if startOffset is endOffset
+    start = @getLineRowColumn(spanLocation)
+    if spanLocation is endOffset
       end = start
     else
       end = @getLineRowColumn(endOffset)

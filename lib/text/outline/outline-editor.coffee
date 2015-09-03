@@ -543,8 +543,8 @@ class OutlineEditor
     #@nativeEditor.setSelectedRanges(nsranges)
     @nativeEditor.nativeSelectedRange = nsranges[0]
 
-  setSelectedItemRange: (startItem, startOffset, endItem, endOffset) ->
-    @setSelectedRange(@outlineBuffer.getRangeFromItemRange(startItem, startOffset, endItem, endOffset))
+  setSelectedItemRange: (startItem, spanLocation, endItem, endOffset) ->
+    @setSelectedRange(@outlineBuffer.getRangeFromItemRange(startItem, spanLocation, endItem, endOffset))
 
   ###
   Section: Insert
@@ -564,20 +564,20 @@ class OutlineEditor
 
     startItem = selectedItemRange.startItem
     startLine = @outlineBuffer.getLineForItem(startItem)
-    startOffset = selectedItemRange.startOffset
+    spanLocation = selectedItemRange.spanLocation
 
     match = startItem.bodyText.match(/\t*(- )(.*)/)
     prefix = match?[1] ? ''
     content = match?[2] ? startItem.bodyText
     lead = startLine.getTabCount() + prefix.length
 
-    if startOffset <= lead and (not prefix or content)
+    if spanLocation <= lead and (not prefix or content)
       @insertItem('', true)
-      @setSelectedItemRange(startItem, startOffset)
-    else if startOffset is lead and (prefix and not content)
+      @setSelectedItemRange(startItem, spanLocation)
+    else if spanLocation is lead and (prefix and not content)
       startItem.bodyText = ''
     else
-      bodyTextOffset = startOffset - startLine.getTabCount()
+      bodyTextOffset = spanLocation - startLine.getTabCount()
       splitText = startItem.getAttributedBodyTextSubstring(bodyTextOffset, -1)
       startItem.replaceBodyTextInRange('', bodyTextOffset, -1)
 

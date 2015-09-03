@@ -284,7 +284,7 @@ class ItemPath
       value = predicate.value
 
       if not relation and not value
-        return @valueForAttributePath(attributePath, item) isnt null
+        return @valueForAttributePath(attributePath, item) isnt undefined
 
       predicateValueCache = predicate.predicateValueCache
       unless predicateValueCache
@@ -292,7 +292,7 @@ class ItemPath
         predicate.predicateValueCache = predicateValueCache
 
       attributeValue = @valueForAttributePath attributePath, item
-      if attributeValue isnt null
+      if attributeValue isnt undefined
         attributeValue = @convertValueForModifier attributeValue.toString(), modifier
 
       @evaluateRelation attributeValue, relation, predicateValueCache, predicate

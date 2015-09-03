@@ -167,14 +167,14 @@ class OutlineBuffer extends Buffer
     {} =
       startItem: startItem
       _startItemOriginalDepth: startItem.depth
-      startOffset: range.start.column
+      spanLocation: range.start.column
       endItem: endItem
       _endItemOriginalDepth: endItem.depth
       endOffset: range.end.column
 
-  getRangeFromItemRange: (startItem, startOffset, endItem, endOffset) ->
+  getRangeFromItemRange: (startItem, spanLocation, endItem, endOffset) ->
     unless startItem instanceof Item
-      {startItem, _startItemOriginalDepth, startOffset, endItem, _endItemOriginalDepth, endOffset} = startItem
+      {startItem, _startItemOriginalDepth, spanLocation, endItem, _endItemOriginalDepth, endOffset} = startItem
 
     visibleStartItem = startItem
     while visibleStartItem and not @isVisible(visibleStartItem)
@@ -183,7 +183,7 @@ class OutlineBuffer extends Buffer
       startItem = visibleStartItem
       unless startItem
         return new Range
-      startOffset = @getLineForItem(startItem).getTabCount()
+      spanLocation = @getLineForItem(startItem).getTabCount()
       _startItemOriginalDepth = startItem.depth
 
     visibleEndItem = endItem
@@ -198,7 +198,7 @@ class OutlineBuffer extends Buffer
 
     startLine = @getLineForItem(startItem)
     startRow = startLine.getRow()
-    startOffset ?= 0
+    spanLocation ?= 0
     if endItem
       endLine = @getLineForItem(endItem)
       endRow = endLine.getRow()
@@ -206,13 +206,13 @@ class OutlineBuffer extends Buffer
     else
       endItem = startItem
       endRow = startRow
-      endOffset = startOffset
+      endOffset = spanLocation
 
     if _startItemOriginalDepth? and _endItemOriginalDepth?
-      startOffset += startItem.depth - _startItemOriginalDepth
+      spanLocation += startItem.depth - _startItemOriginalDepth
       endOffset += endItem.depth - _endItemOriginalDepth
 
-    new Range([startRow, startOffset], [endRow, endOffset])
+    new Range([startRow, spanLocation], [endRow, endOffset])
 
   insertLines: (row, lines) ->
     insertBefore = @getLine(row)?.item or @getHoistedItem().nextSibling

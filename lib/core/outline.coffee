@@ -389,8 +389,10 @@ class Outline
     items
 
   rowForItem: (item) ->
+    @getItems().indexOf(item)
 
   itemForRow: (row) ->
+    @getItems()[row]
 
   ###
   Section: Creating Items

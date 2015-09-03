@@ -4,145 +4,6 @@ describe 'TextStorage', ->
   [textStorage] = []
 
   beforeEach ->
-    textStorage = new TextStorage()
-
-  afterEach ->
-    textStorage.destroy()
-
-  it 'starts empty', ->
-    textStorage.getLength().should.equal(0)
-    textStorage.toString().should.equal('lines:  runs: ')
-
-  it 'inserts text', ->
-    textStorage.insertString(0, 'one')
-    textStorage.insertString(2, 'moose')
-    textStorage.toString().should.equal('lines: (onmoosee) runs: (onmoosee)')
-
-  it 'deletes text', ->
-    textStorage.insertString(0, 'one')
-    textStorage.deleteRange(1, 1)
-    textStorage.toString().should.equal('lines: (oe) runs: (oe)')
-
-  it 'gets subtextStorage', ->
-    textStorage.insertString(0, 'one\ntwo')
-    textStorage.addAttributeInRange('a', 'a', 0, 5)
-    textStorage.addAttributeInRange('b', 'b', 2, 5)
-    textStorage.toString().should.equal('lines: (one\n)(two) runs: (on/a:"a")(e\nt/a:"a"/b:"b")(wo/b:"b")')
-    textStorage.subtextStorage(0, 2).toString().should.equal('lines: (on) runs: (on/a:"a")')
-    textStorage.subtextStorage(0, 1).toString().should.equal('lines: (o) runs: (o/a:"a")')
-    textStorage.subtextStorage(1, 4).toString().should.equal('lines: (ne\n)(t) runs: (n/a:"a")(e\nt/a:"a"/b:"b")')
-
-  it 'appends textStorage', ->
-    textStorage.insertString(0, 'one')
-    textStorage.addAttributeInRange('a', 'a', 0, 3)
-    append = new TextStorage()
-    append.insertString(0, 'two')
-    append.addAttributeInRange('b', 'b', 0, 3)
-    textStorage.appendTextStorage(append)
-    textStorage.toString().should.equal('lines: (onetwo) runs: (one/a:"a")(two/b:"b")')
-
-  it 'inserts textStorage', ->
-    textStorage.insertString(0, 'one')
-    textStorage.addAttributeInRange('a', 'a', 0, 3)
-    insert = new TextStorage()
-    insert.insertString(0, 'two')
-    insert.addAttributeInRange('b', 'b', 0, 3)
-    textStorage.insertTextStorage(2, insert)
-    textStorage.toString().should.equal('lines: (ontwoe) runs: (on/a:"a")(two/b:"b")(e/a:"a")')
-
-  describe 'Inline FTML', ->
-
-    beforeEach ->
-      textStorage = new TextStorage 'Hello world!'
-
-    describe 'To Inline FTML', ->
-
-      it 'should convert to Inline FTML', ->
-        textStorage.toInlineFTMLString().should.equal('Hello world!')
-
-      it 'should convert to Inline FTML with attributes', ->
-        textStorage.addAttributeInRange('B', 'data-my': 'test', 3, 5)
-        textStorage.toInlineFTMLString().should.equal('Hel<b data-my="test">lo wo</b>rld!')
-
-      it 'should convert empty to Inline FTML', ->
-        new TextStorage().toInlineFTMLString().should.equal('')
-
-    describe 'From Inline FTML', ->
-
-      it 'should convert from Inline FTML', ->
-        TextStorage.fromInlineFTMLString('Hello world!').toString().should.equal('lines: (Hello world!) runs: (Hello world!)')
-
-      it 'should convert from Inline FTML with attributes', ->
-        TextStorage.fromInlineFTMLString('Hel<b data-my="test">lo wo</b>rld!').toString().should.equal('lines: (Hello world!) runs: (Hel)(lo wo/B:{"data-my":"test"})(rld!)')
-
-      it 'should convert from empty Inline FTML', ->
-        TextStorage.fromInlineFTMLString('').toString().should.equal('lines:  runs: ')
-
-    describe 'Offset Mapping', ->
-
-      it 'should map from string to Inline FTML offsets', ->
-        textStorage = TextStorage.fromInlineFTMLString('Hel<b data-my="test">lo wo</b>rld!')
-        inlineFTMLContainer = textStorage.toInlineFTMLFragment()
-
-        TextStorage.textOffsetToInlineFTMLOffset(0, inlineFTMLContainer).should.eql
-          node: inlineFTMLContainer.firstChild
-          offset: 0
-
-        TextStorage.textOffsetToInlineFTMLOffset(3, inlineFTMLContainer).should.eql
-          node: inlineFTMLContainer.firstChild
-          offset: 3
-
-        TextStorage.textOffsetToInlineFTMLOffset(4, inlineFTMLContainer).should.eql
-          node: inlineFTMLContainer.firstChild.nextSibling.firstChild
-          offset: 1
-
-        TextStorage.textOffsetToInlineFTMLOffset(12, inlineFTMLContainer).should.eql
-          node: inlineFTMLContainer.firstChild.nextSibling.nextSibling
-          offset: 4
-
-      it 'should map from string to empty Inline FTML offsets', ->
-        inlineFTMLContainer = document.createElement 'p'
-        TextStorage.textOffsetToInlineFTMLOffset(0, inlineFTMLContainer).should.eql
-          node: inlineFTMLContainer
-          offset: 0
-
-      it 'should map from Inline FTML offsets to string', ->
-        textStorage = TextStorage.fromInlineFTMLString('Hel<b data-my="test">lo wo</b>rld!')
-        inlineFTMLContainer = textStorage.toInlineFTMLFragment()
-
-        node = inlineFTMLContainer.firstChild
-        offset = 0
-        TextStorage.inlineFTMLOffsetToTextOffset(node, offset, inlineFTMLContainer).should.equal(0)
-
-        node = inlineFTMLContainer.firstChild.nextSibling.firstChild
-        offset = 0
-        TextStorage.inlineFTMLOffsetToTextOffset(node, offset, inlineFTMLContainer).should.equal(3)
-
-        node = inlineFTMLContainer.firstChild.nextSibling.firstChild
-        offset = 1
-        TextStorage.inlineFTMLOffsetToTextOffset(node, offset, inlineFTMLContainer).should.equal(4)
-
-        node = inlineFTMLContainer.firstChild.nextSibling.nextSibling
-        offset = 4
-        TextStorage.inlineFTMLOffsetToTextOffset(node, offset, inlineFTMLContainer).should.equal(12)
-
-      it 'should map from empty Inline FTML to string offsets', ->
-        inlineFTMLContainer = document.createElement 'p'
-        TextStorage.inlineFTMLOffsetToTextOffset(inlineFTMLContainer, 0, inlineFTMLContainer).should.equal(0)
-
-
-
-
-
-
-
-
-
-
-describe 'TextStorage', ->
-  [textStorage] = []
-
-  beforeEach ->
     textStorage = new TextStorage 'Hello world!'
 
   describe 'Get Substrings', ->
@@ -313,55 +174,44 @@ describe 'TextStorage', ->
 
   describe 'Add/Remove/Find Attributes', ->
 
-    fit 'should add attribute run', ->
+    it 'should add attribute run', ->
       range = {}
-      debugger
       textStorage.addAttributeInRange('name', 'jesse', 0, 5)
-      textStorage.getAttributesAtOffset(0, range).name.should.equal('jesse')
-      range.offset.should.equal(0)
+      textStorage.getAttributesAtIndex(0, range).name.should.equal('jesse')
+      range.location.should.equal(0)
       range.length.should.equal(5)
-      textStorage.getAttributesAtOffset(5, range).should.eql({})
-      range.offset.should.equal(5)
+      textStorage.getAttributesAtIndex(5, range).should.eql({})
+      range.location.should.equal(5)
       range.length.should.equal(7)
 
     it 'should add attribute run bordering start of string', ->
       range = {}
       textStorage.addAttributeInRange('name', 'jesse', 0, 5)
-      textStorage.getAttributesAtOffset(0, range).name.should.equal('jesse')
-      range.offset.should.equal(0)
+      textStorage.getAttributesAtIndex(0, range).name.should.equal('jesse')
+      range.location.should.equal(0)
       range.length.should.equal(5)
 
     it 'should add attribute run bordering end of string', ->
       range = {}
       textStorage.addAttributeInRange('name', 'jesse', 6, 6)
-      textStorage.getAttributesAtOffset(6, range).name.should.equal('jesse')
-      range.offset.should.equal(6)
+      textStorage.getAttributesAtIndex(6, range).name.should.equal('jesse')
+      range.location.should.equal(6)
       range.length.should.equal(6)
 
     it 'should find longest effective range for attribute', ->
       longestEffectiveRange = {}
       textStorage.addAttributeInRange('one', 'one', 0, 12)
       textStorage.addAttributeInRange('two', 'two', 6, 6)
-      textStorage.attributeAtIndex('one', 6, null, longestEffectiveRange).should.equal('one')
-      longestEffectiveRange.location.should.equal(0)
-      longestEffectiveRange.length.should.equal(12)
-
-    it 'should find longest effective range for attributes', ->
-      longestEffectiveRange = {}
-      textStorage.addAttributeInRange('one', 'one', 0, 12)
-      textStorage.addAttributeInRange('two', 'two', 6, 6)
-      textStorage._indexOfAttributeRunForCharacterIndex(10) # artificial split
-      textStorage.getAttributesAtOffset(6, null, longestEffectiveRange)
-      longestEffectiveRange.location.should.equal(6)
-      longestEffectiveRange.length.should.equal(6)
+      textStorage.getAttributeAtIndex('one', 6, null, longestEffectiveRange).should.equal('one')
+      longestEffectiveRange.should.eql(location: 0, length: 12)
 
     it 'should add multiple attributes in same attribute run', ->
       range = {}
       textStorage.addAttributeInRange('name', 'jesse', 0, 5)
       textStorage.addAttributeInRange('age', '35', 0, 5)
-      textStorage.getAttributesAtOffset(0, range).name.should.equal('jesse')
-      textStorage.getAttributesAtOffset(0, range).age.should.equal('35')
-      range.offset.should.equal(0)
+      textStorage.getAttributesAtIndex(0, range).name.should.equal('jesse')
+      textStorage.getAttributesAtIndex(0, range).age.should.equal('35')
+      range.location.should.equal(0)
       range.length.should.equal(5)
 
     it 'should add attributes in overlapping ranges', ->
@@ -369,36 +219,115 @@ describe 'TextStorage', ->
       textStorage.addAttributeInRange('name', 'jesse', 0, 5)
       textStorage.addAttributeInRange('age', '35', 3, 5)
 
-      textStorage.getAttributesAtOffset(0, range).name.should.equal('jesse')
-      (textStorage.getAttributesAtOffset(0, range).age is undefined).should.be.true
-      range.offset.should.equal(0)
+      textStorage.getAttributesAtIndex(0, range).name.should.equal('jesse')
+      (textStorage.getAttributesAtIndex(0, range).age is undefined).should.be.true
+      range.location.should.equal(0)
       range.length.should.equal(3)
 
-      textStorage.getAttributesAtOffset(3, range).name.should.equal('jesse')
-      textStorage.getAttributesAtOffset(3, range).age.should.equal('35')
-      range.offset.should.equal(3)
+      textStorage.getAttributesAtIndex(3, range).name.should.equal('jesse')
+      textStorage.getAttributesAtIndex(3, range).age.should.equal('35')
+      range.location.should.equal(3)
       range.length.should.equal(2)
 
-      (textStorage.getAttributesAtOffset(6, range).name is undefined).should.be.true
-      textStorage.getAttributesAtOffset(6, range).age.should.equal('35')
-      range.offset.should.equal(5)
+      (textStorage.getAttributesAtIndex(6, range).name is undefined).should.be.true
+      textStorage.getAttributesAtIndex(6, range).age.should.equal('35')
+      range.location.should.equal(5)
       range.length.should.equal(3)
 
     it 'should allow removing attributes in range', ->
       textStorage.addAttributeInRange('name', 'jesse', 0, 12)
       textStorage.removeAttributeInRange('name', 0, 12)
-      textStorage.toString(true).should.equal('(Hello world!/)')
+      textStorage.toString(true).should.equal('lines: (Hello world!) runs: (Hello world!)')
 
       textStorage.addAttributeInRange('name', 'jesse', 0, 12)
       textStorage.removeAttributeInRange('name', 0, 3)
-      textStorage.toString(true).should.equal('(Hel/)(lo world!/name="jesse")')
+      textStorage.toString(true).should.equal('lines: (Hello world!) runs: (Hel)(lo world!/name:"jesse")')
 
       textStorage.removeAttributeInRange('name', 9, 3)
-      textStorage.toString(true).should.equal('(Hel/)(lo wor/name="jesse")(ld!/)')
+      textStorage.toString(true).should.equal('lines: (Hello world!) runs: (Hel)(lo wor/name:"jesse")(ld!)')
 
-    it 'should return null when accessing attributes at end of string', ->
-      expect(textStorage.getAttributesAtOffset(0, null) isnt null).toBe(true)
-      expect(textStorage.getAttributesAtOffset(11, null) isnt null).toBe(true)
-      expect(textStorage.getAttributesAtOffset(12, null) is null).toBe(true)
-      textStorage.replaceCharactersInRange('', 0, 12)
-      expect(textStorage.getAttributesAtOffset(0, null) is null).toBe(true)
+    it 'should throw when accessing attributes past end of string', ->
+      (-> textStorage.getAttributesAtIndex(11)).should.not.throw()
+      (-> textStorage.getAttributesAtIndex(12)).should.throw()
+      textStorage.replaceRangeWithString(0, 12, '')
+      (-> textStorage.getAttributesAtIndex(0)).should.throw()
+
+  describe 'Inline FTML', ->
+
+    beforeEach ->
+      textStorage = new TextStorage 'Hello world!'
+
+    describe 'To Inline FTML', ->
+
+      it 'should convert to Inline FTML', ->
+        textStorage.toInlineFTMLString().should.equal('Hello world!')
+
+      it 'should convert to Inline FTML with attributes', ->
+        textStorage.addAttributeInRange('B', 'data-my': 'test', 3, 5)
+        textStorage.toInlineFTMLString().should.equal('Hel<b data-my="test">lo wo</b>rld!')
+
+      it 'should convert empty to Inline FTML', ->
+        new TextStorage().toInlineFTMLString().should.equal('')
+
+    describe 'From Inline FTML', ->
+
+      it 'should convert from Inline FTML', ->
+        TextStorage.fromInlineFTMLString('Hello world!').toString().should.equal('lines: (Hello world!) runs: (Hello world!)')
+
+      it 'should convert from Inline FTML with attributes', ->
+        TextStorage.fromInlineFTMLString('Hel<b data-my="test">lo wo</b>rld!').toString().should.equal('lines: (Hello world!) runs: (Hel)(lo wo/B:{"data-my":"test"})(rld!)')
+
+      it 'should convert from empty Inline FTML', ->
+        TextStorage.fromInlineFTMLString('').toString().should.equal('lines:  runs: ')
+
+    describe 'Offset Mapping', ->
+
+      it 'should map from string to Inline FTML locations', ->
+        textStorage = TextStorage.fromInlineFTMLString('Hel<b data-my="test">lo wo</b>rld!')
+        inlineFTMLContainer = textStorage.toInlineFTMLFragment()
+
+        TextStorage.textIndexToInlineFTMLIndex(0, inlineFTMLContainer).should.eql
+          node: inlineFTMLContainer.firstChild
+          index: 0
+
+        TextStorage.textIndexToInlineFTMLIndex(3, inlineFTMLContainer).should.eql
+          node: inlineFTMLContainer.firstChild
+          index: 3
+
+        TextStorage.textIndexToInlineFTMLIndex(4, inlineFTMLContainer).should.eql
+          node: inlineFTMLContainer.firstChild.nextSibling.firstChild
+          index: 1
+
+        TextStorage.textIndexToInlineFTMLIndex(12, inlineFTMLContainer).should.eql
+          node: inlineFTMLContainer.firstChild.nextSibling.nextSibling
+          index: 4
+
+      it 'should map from string to empty Inline FTML locations', ->
+        inlineFTMLContainer = document.createElement 'p'
+        TextStorage.textIndexToInlineFTMLIndex(0, inlineFTMLContainer).should.eql
+          node: inlineFTMLContainer
+          index: 0
+
+      it 'should map from Inline FTML locations to string', ->
+        textStorage = TextStorage.fromInlineFTMLString('Hel<b data-my="test">lo wo</b>rld!')
+        inlineFTMLContainer = textStorage.toInlineFTMLFragment()
+
+        node = inlineFTMLContainer.firstChild
+        index = 0
+        TextStorage.inlineFTMLIndexToTextIndex(node, index, inlineFTMLContainer).should.equal(0)
+
+        node = inlineFTMLContainer.firstChild.nextSibling.firstChild
+        index = 0
+        TextStorage.inlineFTMLIndexToTextIndex(node, index, inlineFTMLContainer).should.equal(3)
+
+        node = inlineFTMLContainer.firstChild.nextSibling.firstChild
+        index = 1
+        TextStorage.inlineFTMLIndexToTextIndex(node, index, inlineFTMLContainer).should.equal(4)
+
+        node = inlineFTMLContainer.firstChild.nextSibling.nextSibling
+        index = 4
+        TextStorage.inlineFTMLIndexToTextIndex(node, index, inlineFTMLContainer).should.equal(12)
+
+      it 'should map from empty Inline FTML to string locations', ->
+        inlineFTMLContainer = document.createElement 'p'
+        TextStorage.inlineFTMLIndexToTextIndex(inlineFTMLContainer, 0, inlineFTMLContainer).should.equal(0)

@@ -84,17 +84,17 @@ class TextStorage
   charCodeAt: (position) ->
     @rope.charCodeAt(position)
 
-  deleteRange: (offset, length) ->
+  deleteRange: (location, length) ->
     unless length
       return
     unless @rope.remove
       @rope = new Rope(@rope)
       @lineIndex?.string = @rope
-    @rope.remove(offset, offset + length)
-    @runIndex?.deleteRange(offset, length)
-    @lineIndex?.deleteRange(offset, length)
+    @rope.remove(location, location + length)
+    @runIndex?.deleteRange(location, length)
+    @lineIndex?.deleteRange(location, length)
 
-  insertString: (offset, text) ->
+  insertString: (location, text) ->
     unless text
       return
 
@@ -102,13 +102,13 @@ class TextStorage
       @rope = new Rope(@rope)
       @lineIndex?.string = @rope
     text = text.split(/\u000d(?:\u000a)?|\u000a|\u2029|\u000c|\u0085/).join('\n')
-    @rope.insert(offset, text)
-    @runIndex?.insertString(offset, text)
-    @lineIndex?.insertString(offset, text)
+    @rope.insert(location, text)
+    @runIndex?.insertString(location, text)
+    @lineIndex?.insertString(location, text)
 
-  replaceRangeWithString: (offset, length, string) ->
-    @insertString(offset, string)
-    @deleteRange(offset + string.length, length)
+  replaceRangeWithString: (location, length, string) ->
+    @insertString(location, string)
+    @deleteRange(location + string.length, length)
 
   ###
   Attributes
@@ -126,58 +126,58 @@ class TextStorage
     else
       []
 
-  getAttributesAtOffset: (offset, effectiveRange, longestEffectiveRange) ->
-    @_getRunIndex().getAttributesAtOffset(offset, effectiveRange, longestEffectiveRange)
+  getAttributesAtIndex: (index, effectiveRange, longestEffectiveRange) ->
+    @_getRunIndex().getAttributesAtIndex(index, effectiveRange, longestEffectiveRange)
 
-  getAttributeAtOffset: (attribute, offset, effectiveRange, longestEffectiveRange) ->
-    @_getRunIndex().getAttributeAtOffset(attribute, offset, effectiveRange, longestEffectiveRange)
+  getAttributeAtIndex: (attribute, index, effectiveRange, longestEffectiveRange) ->
+    @_getRunIndex().getAttributeAtIndex(attribute, index, effectiveRange, longestEffectiveRange)
 
-  setAttributesInRange: (attributes, offset, length) ->
-    @_getRunIndex().setAttributesInRange(attributes, offset, length)
+  setAttributesInRange: (attributes, index, length) ->
+    @_getRunIndex().setAttributesInRange(attributes, index, length)
 
-  addAttributeInRange: (attribute, value, offset, length) ->
-    @_getRunIndex().addAttributeInRange(attribute, value, offset, length)
+  addAttributeInRange: (attribute, value, index, length) ->
+    @_getRunIndex().addAttributeInRange(attribute, value, index, length)
 
-  addAttributesInRange: (attributes, offset, length) ->
-    @_getRunIndex().addAttributesInRange(attributes, offset, length)
+  addAttributesInRange: (attributes, index, length) ->
+    @_getRunIndex().addAttributesInRange(attributes, index, length)
 
-  removeAttributeInRange: (attribute, offset, length) ->
+  removeAttributeInRange: (attribute, index, length) ->
     if @runIndex
-      @runIndex.removeAttributeInRange(attribute, offset, length)
+      @runIndex.removeAttributeInRange(attribute, index, length)
 
   ###
   String and attributes
   ###
 
-  subtextStorage: (offset, length) ->
+  subtextStorage: (location, length) ->
     unless length
       return new TextStorage('')
-    subtextStorage = new TextStorage(@rope.substr(offset, length))
+    subtextStorage = new TextStorage(@rope.substr(location, length))
     if @runIndex
-      slice = @runIndex.sliceSpansToRange(offset, length)
+      slice = @runIndex.sliceSpansToRange(location, length)
       insertRuns = []
-      @runIndex.iterateRuns slice.index, slice.count, (run) ->
+      @runIndex.iterateRuns slice.spanIndex, slice.count, (run) ->
         insertRuns.push(run.clone())
-      subtextStorage._getRunIndex().replaceSpansFromOffset(0, insertRuns)
+      subtextStorage._getRunIndex().replaceSpansFromLocation(0, insertRuns)
     subtextStorage
 
   appendTextStorage: (textStorage) ->
     @insertTextStorage(@rope.length, textStorage)
 
-  insertTextStorage: (offset, textStorage) ->
+  insertTextStorage: (location, textStorage) ->
     unless textStorage.length
       return
-    @insertString(offset, textStorage.getString())
-    @setAttributesInRange({}, offset, textStorage.getLength())
+    @insertString(location, textStorage.getString())
+    @setAttributesInRange({}, location, textStorage.getLength())
     if otherRunIndex = textStorage.runIndex
       insertRuns = []
       otherRunIndex.iterateRuns 0, otherRunIndex.getRunCount(), (run) ->
         insertRuns.push(run.clone())
-      @_getRunIndex().replaceSpansFromOffset(offset, insertRuns)
+      @_getRunIndex().replaceSpansFromLocation(location, insertRuns)
 
-  replaceRangeWithTextStorage: (offset, length, textStorage) ->
-    @deleteRange(offset, length)
-    @insertTextStorage(offset, textStorage)
+  replaceRangeWithTextStorage: (location, length, textStorage) ->
+    @deleteRange(location, length)
+    @insertTextStorage(location, textStorage)
 
   ###
   Lines
@@ -197,9 +197,6 @@ class TextStorage
 
   getRow: (line) ->
     @_getLineIndex().getLineIndex(line)
-
-  getLineRowOffset: (offset) ->
-    @_getLineIndex().getLineIndexOffset(offset)
 
   getLines: (row, count) ->
     @_getLineIndex().getLines(row, count)

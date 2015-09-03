@@ -100,18 +100,19 @@ deserializeItems = (opml, outline) ->
 
   outlineElementToItem = (outlineElement, outline) ->
     assert.ok(outlineElement.tagName.toUpperCase() is 'OUTLINE', "Expected OUTLINE element but got #{outlineElement.tagName}")
-    attributes = outlineElement.attributes
     item = outline.createItem '', outlineElement.getAttribute('id')
     item.bodyHTML = outlineElement.getAttribute('text') or ''
 
-    for attr in attributes
-      if attr.specified
-        name = attr.name
-        value = attr.value
-        unless name is 'id' or name is 'text'
-          if name is 'created' or name is 'modified'
-            value = new Date(value)
-          item.setAttribute 'data-' + name, value
+    if outlineElement.hasAttributes()
+      attributes = outlineElement.attributes
+      for attr in attributes
+        if attr.specified
+          name = attr.name
+          value = attr.value
+          unless name is 'id' or name is 'text'
+            if name is 'created' or name is 'modified'
+              value = new Date(value)
+            item.setAttribute 'data-' + name, value
 
     eachOutline = outlineElement.firstElementChild
     while eachOutline

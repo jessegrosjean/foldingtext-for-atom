@@ -88,32 +88,61 @@ describe 'SpanIndex', ->
       spanIndex.removeSpans(1, 2)
       spanIndex.toString().should.equal('(hello)')
 
-    it 'slices spans at text offset ', ->
+    it 'slices spans at text location ', ->
       spanIndex.insertString(0, 'onetwo')
-      spanIndex.sliceSpanAtOffset(0).should.eql(span: spanIndex.getSpan(0), index: 0, startOffset: 0, offset: 0)
-      spanIndex.sliceSpanAtOffset(6).should.eql(span: spanIndex.getSpan(0), index: 0, startOffset: 0, offset: 6)
+      spanIndex.sliceSpanAtLocation(0).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 0)
+      spanIndex.sliceSpanAtLocation(6).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 6)
       spanIndex.toString().should.equal('(onetwo)')
-      spanIndex.sliceSpanAtOffset(3).should.eql(span: spanIndex.getSpan(0), index: 0, startOffset: 0, offset: 3)
+      spanIndex.sliceSpanAtLocation(3).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 3)
       spanIndex.toString().should.equal('(one)(two)')
-      spanIndex.sliceSpanAtOffset(3).should.eql(span: spanIndex.getSpan(0), index: 0, startOffset: 0, offset: 3)
+      spanIndex.sliceSpanAtLocation(3).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 3)
 
     it 'slice spans to range', ->
       spanIndex.insertString(0, 'onetwo')
-      spanIndex.sliceSpansToRange(0, 6).should.eql(index: 0, count: 1)
-      spanIndex.sliceSpansToRange(0, 2).should.eql(index: 0, count: 1)
-      spanIndex.sliceSpansToRange(4, 2).should.eql(index: 2, count: 1)
+      spanIndex.sliceSpansToRange(0, 6).should.eql(spanIndex: 0, count: 1)
+      spanIndex.sliceSpansToRange(0, 2).should.eql(spanIndex: 0, count: 1)
+      spanIndex.sliceSpansToRange(4, 2).should.eql(spanIndex: 2, count: 1)
 
-    it 'finds spans by text offset', ->
+    it 'finds span over character index', ->
       spanIndex.insertSpans(0, [
         spanIndex.createSpan('one'),
         spanIndex.createSpan('two')
       ])
-      spanIndex.getSpanAtOffset(0).should.eql(span: spanIndex.getSpan(0), index: 0, startOffset: 0, offset: 0)
-      spanIndex.getSpanAtOffset(2).should.eql(span: spanIndex.getSpan(0), index: 0, startOffset: 0, offset: 2)
-      spanIndex.getSpanAtOffset(3).should.eql(span: spanIndex.getSpan(0), index: 0, startOffset: 0, offset: 3)
-      spanIndex.getSpanAtOffset(4).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 1)
-      spanIndex.getSpanAtOffset(5).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 2)
-      spanIndex.getSpanAtOffset(6).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 3)
+      spanIndex.getSpanInfoAtCharacterIndex(0).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 0)
+      spanIndex.getSpanInfoAtCharacterIndex(1).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 1)
+      spanIndex.getSpanInfoAtCharacterIndex(2).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 2)
+      spanIndex.getSpanInfoAtCharacterIndex(3).should.eql(span: spanIndex.getSpan(1), spanIndex: 1, spanLocation: 3, location: 0)
+      spanIndex.getSpanInfoAtCharacterIndex(4).should.eql(span: spanIndex.getSpan(1), spanIndex: 1, spanLocation: 3, location: 1)
+      spanIndex.getSpanInfoAtCharacterIndex(5).should.eql(span: spanIndex.getSpan(1), spanIndex: 1, spanLocation: 3, location: 2)
+      (-> spanIndex.getSpanInfoAtCharacterIndex(6)).should.throw()
+
+    it 'get choose left span at cursor index', ->
+      spanIndex.insertSpans(0, [
+        spanIndex.createSpan('one'),
+        spanIndex.createSpan('two')
+      ])
+      spanIndex.getSpanInfoAtLocation(0).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 0)
+      spanIndex.getSpanInfoAtLocation(1).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 1)
+      spanIndex.getSpanInfoAtLocation(2).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 2)
+      spanIndex.getSpanInfoAtLocation(3).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 3)
+      spanIndex.getSpanInfoAtLocation(4).should.eql(span: spanIndex.getSpan(1), spanIndex: 1, spanLocation: 3, location: 1)
+      spanIndex.getSpanInfoAtLocation(5).should.eql(span: spanIndex.getSpan(1), spanIndex: 1, spanLocation: 3, location: 2)
+      spanIndex.getSpanInfoAtLocation(6).should.eql(span: spanIndex.getSpan(1), spanIndex: 1, spanLocation: 3, location: 3)
+      (-> spanIndex.getSpanInfoAtLocation(7)).should.throw()
+
+    it 'get choose right span at cursor index', ->
+      spanIndex.insertSpans(0, [
+        spanIndex.createSpan('one'),
+        spanIndex.createSpan('two')
+      ])
+      spanIndex.getSpanInfoAtLocation(0, true).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 0)
+      spanIndex.getSpanInfoAtLocation(1, true).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 1)
+      spanIndex.getSpanInfoAtLocation(2, true).should.eql(span: spanIndex.getSpan(0), spanIndex: 0, spanLocation: 0, location: 2)
+      spanIndex.getSpanInfoAtLocation(3, true).should.eql(span: spanIndex.getSpan(1), spanIndex: 1, spanLocation: 3, location: 0)
+      spanIndex.getSpanInfoAtLocation(4, true).should.eql(span: spanIndex.getSpan(1), spanIndex: 1, spanLocation: 3, location: 1)
+      spanIndex.getSpanInfoAtLocation(5, true).should.eql(span: spanIndex.getSpan(1), spanIndex: 1, spanLocation: 3, location: 2)
+      spanIndex.getSpanInfoAtLocation(6, true).should.eql(span: spanIndex.getSpan(1), spanIndex: 1, spanLocation: 3, location: 3)
+      (-> spanIndex.getSpanInfoAtLocation(7, true)).should.throw()
 
   describe 'Performance', ->
 

@@ -44,21 +44,18 @@ describe 'Item', ->
       five.getAttribute('test').should.equal('hello')
 
     it 'should get/set attribute as array', ->
-      five.setAttribute('test', ['one', 'two', 'three'])
-      five.getAttribute('test').should.equal('one,two,three')
+      five.setAttribute('test', 'one,two,three')
       five.getAttribute('test', true).should.eql(['one', 'two', 'three'])
 
     it 'should get/set number attributes', ->
-      five.setAttribute('test', [1, 2, 3])
-      five.getAttribute('test').should.equal('1,2,3')
+      five.setAttribute('test', '1,2,3')
       five.getAttribute('test', true).should.eql(['1', '2', '3'])
       five.getAttribute('test', true, Number).should.eql([1, 2, 3])
 
     it 'should get/set date attributes', ->
       date = new Date('11/27/76')
       dateString = date.toISOString()
-      five.setAttribute('test', [date, date], Date)
-      five.getAttribute('test').should.equal("#{dateString},#{dateString}")
+      five.setAttribute('test', "#{dateString},#{dateString}")
       five.getAttribute('test', true).should.eql([dateString, dateString])
       five.getAttribute('test', true, Date).should.eql([date, date])
 
@@ -89,13 +86,13 @@ describe 'Item', ->
     describe 'Inline Elements', ->
       it 'should get elements', ->
         one.bodyHTML = '<b>one</b> <img src="boo.png">two three'
-        one.getBodyTextAttributesAtOffset(0).should.eql({ B: null })
-        one.getBodyTextAttributesAtOffset(4).should.eql({})
-        one.getBodyTextAttributesAtOffset(5).should.eql({ IMG: { src: 'boo.png' } })
+        one.getBodyTextAttributesAtIndex(0).should.eql({ B: null })
+        one.getBodyTextAttributesAtIndex(3).should.eql({})
+        one.getBodyTextAttributesAtIndex(4).should.eql({ IMG: { src: 'boo.png' } })
 
       it 'should get empty elements', ->
         one.bodyText = 'one two three'
-        one.getBodyTextAttributesAtOffset(0).should.eql({})
+        one.getBodyTextAttributesAtIndex(0).should.eql({})
 
       it 'should add elements', ->
         one.bodyText = 'one two three'
@@ -164,12 +161,10 @@ describe 'Item', ->
           one.bodyHTML.should.equal('one <img> three')
           one.bodyText.length.should.equal(11)
 
-        xit 'text content enocde <br> using "New Line Character"', ->
-          one.bodyText = 'one \u2028 three'
-          one.bodyHTML.should.equal('one <br> three')
-          one.bodyText.should.equal('one \u2028 three')
-          one.bodyText(4, 1).should.equal(Constants.LineSeparatorCharacter)
+        it 'text content enocde <br> using "New Line Character"', ->
+          one.bodyHTML = 'one <br> three'
+          one.bodyText.should.equal("one #{Constants.LineSeparatorCharacter} three")
 
         it 'text content encode <img> and other void tags using "Object Replacement Character"', ->
           one.bodyHTML = 'one <img> three'
-          one.bodyText.should.equal('one \ufffc three')
+          one.bodyText.should.equal("one #{Constants.ObjectReplacementCharacter} three")

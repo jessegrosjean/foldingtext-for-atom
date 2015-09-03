@@ -15,11 +15,6 @@ class LineIndex extends SpanIndex
   getLineIndex: (child) ->
     @getSpanIndex(child)
 
-  getLineIndexOffset: (offset, index=0) ->
-    lineIndexOffset = @getSpanAtOffset(offset, index)
-    lineIndexOffset.line = lineIndexOffset.span
-    lineIndexOffset
-
   getLines: (start, count) ->
     @getSpans(start, count)
 
@@ -38,53 +33,43 @@ class LineIndex extends SpanIndex
   createSpan: (text) ->
     new Line(text)
 
-  deleteRange: (offset, length) ->
+  deleteRange: (location, length) ->
     unless length
       return
 
-    slice = @sliceSpansToRange(offset, length)
+    slice = @sliceSpansToRange(location, length)
     if length is @getLength()
       @getSpan(0).setString('')
-      @removeSpans(slice.index + 1, slice.count - 1)
+      @removeSpans(slice.spanIndex + 1, slice.count - 1)
     else
-      @removeSpans(slice.index, slice.count)
+      @removeSpans(slice.spanIndex, slice.count)
 
-    cur = @getSpanAtOffset(offset)
+    cur = @getSpanInfoAtLocation(location)
     if cur.span.getString().indexOf('\n') is -1
-      if next = @getSpan(cur.index + 1)
+      if next = @getSpan(cur.spanIndex + 1)
         cur.span.appendString(next.getString())
-        @removeSpans(cur.index + 1, 1)
+        @removeSpans(cur.spanIndex + 1, 1)
 
-  insertString: (offset, text) ->
+  insertString: (location, text) ->
     unless text
       return
 
     if @getSpanCount() is 0
       @insertSpans(0, [@createSpan('')])
 
-    start = @getSpanAtOffset(offset)
-    if start.offset is start.span.getLength()
-      if offset is @getLength()
-        if next = @getSpan(start.index + 1)
-          start.span = next
-          start.offset = 0
-          start.index++
-      else
-        start = @getSpanAtOffset(offset + 1)
-        start.offset = 0
-
+    start = @getSpanInfoAtLocation(location, true)
     lines = text.split('\n')
-    trail = start.span.getString().substr(start.offset)
-    start.span.deleteRange(start.offset, start.span.getLength() - start.offset)
-    start.span.insertString(start.offset, lines.shift())
+    trail = start.span.getString().substr(start.location)
+    start.span.deleteRange(start.location, start.span.getLength() - start.location)
+    start.span.insertString(start.location, lines.shift())
 
-    if start.index isnt @getSpanCount() - 1 and start.span.getString().indexOf('\n') is -1
+    if start.spanIndex isnt @getSpanCount() - 1 and start.span.getString().indexOf('\n') is -1
       start.span.appendString('\n')
 
     if lines.length
       lines[lines.length - 1] += trail
       spans = (@createSpan(each) for each in lines)
-      @insertSpans(start.index + 1, spans)
+      @insertSpans(start.spanIndex + 1, spans)
 
   insertSpans: (start, spans) ->
     for each in spans

@@ -26,8 +26,8 @@ class SpanBranch
   getLength: ->
     @length
 
-  getOffset: (child) ->
-    length = @parent?.getOffset(this) or 0
+  getLocation: (child) ->
+    length = @parent?.getLocation(this) or 0
     if child
       for each in @children
         if each is child
@@ -59,14 +59,14 @@ class SpanBranch
         index += each.getSpanCount()
     index
 
-  getSpanAtOffset: (offset, index=0) ->
+  getSpanInfoAtLocation: (location, spanIndex=0) ->
     for each in @children
       childLength = each.getLength()
-      if offset > childLength
-        offset -= childLength
-        index += each.getSpanCount()
+      if location > childLength
+        location -= childLength
+        spanIndex += each.getSpanCount()
       else
-        return each.getSpanAtOffset(offset, index)
+        return each.getSpanInfoAtLocation(location, spanIndex)
 
   getSpans: (start, count) ->
     start ?= 0

@@ -33,13 +33,13 @@ fdescribe 'SpanIndex', ->
 
   describe 'Spans', ->
 
-    it 'find spans by offset', ->
+    it 'find spans by location', ->
       spanIndex.insertSpans(0, [spanIndex.createSpan('one'), spanIndex.createSpan('two')])
-      spanIndex.getSpanAtOffset(0).should.eql(span: spanIndex.getSpan(0), index: 0, startOffset: 0, offset: 0)
-      spanIndex.getSpanAtOffset(2).should.eql(span: spanIndex.getSpan(0), index: 0, startOffset: 0, offset: 2)
-      spanIndex.getSpanAtOffset(3).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 0)
-      spanIndex.getSpanAtOffset(5).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 2)
-      spanIndex.getSpanAtOffset(6).should.eql(span: spanIndex.getSpan(1), index: 1, startOffset: 3, offset: 3)
+      spanIndex.getSpanInfoAtLocation(0).should.eql(span: spanIndex.getSpan(0), index: 0, spanLocation: 0, location: 0)
+      spanIndex.getSpanInfoAtLocation(2).should.eql(span: spanIndex.getSpan(0), index: 0, spanLocation: 0, location: 2)
+      spanIndex.getSpanInfoAtLocation(3).should.eql(span: spanIndex.getSpan(1), index: 1, spanLocation: 3, location: 0)
+      spanIndex.getSpanInfoAtLocation(5).should.eql(span: spanIndex.getSpan(1), index: 1, spanLocation: 3, location: 2)
+      spanIndex.getSpanInfoAtLocation(6).should.eql(span: spanIndex.getSpan(1), index: 1, spanLocation: 3, location: 3)
 
   xdescribe 'Performance', ->
 

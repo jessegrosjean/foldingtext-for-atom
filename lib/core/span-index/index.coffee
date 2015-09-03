@@ -7,8 +7,6 @@ Span = require './span'
 class SpanIndex extends SpanBranch
 
   emitter: null
-  inclusiveLeft: false
-  inclusiveRight: true
 
   constructor: (children) ->
     children ?= [new SpanLeaf([])]
@@ -51,26 +49,26 @@ class SpanIndex extends SpanBranch
   Section: Characters
   ###
 
-  deleteRange: (offset, length) ->
+  deleteRange: (location, length) ->
     unless length
       return
 
-    slice = @sliceSpansToRange(offset, length)
-    @removeSpans(slice.index, slice.count)
+    slice = @sliceSpansToRange(location, length)
+    @removeSpans(slice.spanIndex, slice.count)
 
-  insertString: (offset, string) ->
+  insertString: (location, string) ->
     unless string
       return
 
     if @getSpanCount() is 0
       @insertSpans(0, [@createSpan(string)])
     else
-      start = @getSpanAtOffset(offset)
-      start.span.insertString(start.offset, string)
+      start = @getSpanInfoAtLocation(location)
+      start.span.insertString(start.location, string)
 
-  replaceRange: (offset, length, string) ->
-    @insertString(offset, string)
-    @deleteRange(offset + string.length, length)
+  replaceRange: (location, length, string) ->
+    @insertString(location, string)
+    @deleteRange(location + string.length, length)
 
   ###
   Section: Spans
@@ -79,34 +77,54 @@ class SpanIndex extends SpanBranch
   createSpan: (text) ->
     new Span(text)
 
-  getSpanAtOffset: (offset, index=0) ->
-    result = super(offset, index)
-    result.startOffset = offset - result.offset
-    result
+  getSpanInfoAtCharacterIndex: (characterIndex) ->
+    if characterIndex < @getLength()
+      @getSpanInfoAtLocation(characterIndex, true)
+    else
+      throw new Error("Invalide character index: #{characterIndex}")
 
-  sliceSpanAtOffset: (offset) ->
-    start = @getSpanAtOffset(offset)
-    if startSplit = start.span.split(start.offset)
-      @insertSpans(start.index + 1, [startSplit])
+  getSpanInfoAtLocation: (location, chooseRight=false) ->
+    if location > @getLength()
+      throw new Error("Invalide cursor location: #{location}")
+    if chooseRight
+      if location is @getLength()
+        lastSpanIndex = @getSpanCount() - 1
+        lastSpan = @getSpan(lastSpanIndex)
+        spanInfo =
+          span: lastSpan
+          spanIndex: lastSpanIndex
+          location: lastSpan.getLength()
+          spanLocation: location - lastSpan.getLength()
+      else
+        spanInfo = super(location + 1)
+        spanInfo.location--
+    else
+      spanInfo = super(location)
+    spanInfo
+
+  sliceSpanAtLocation: (location) ->
+    start = @getSpanInfoAtLocation(location)
+    if startSplit = start.span.split(start.location)
+      @insertSpans(start.spanIndex + 1, [startSplit])
     start
 
-  sliceSpansToRange: (offset, length) ->
+  sliceSpansToRange: (location, length) ->
     assert(length > 0)
-    start = @sliceSpanAtOffset(offset)
-    if start.offset is start.span.getLength()
-      start.index++
-    end = @sliceSpanAtOffset(offset + length)
+    start = @sliceSpanAtLocation(location)
+    if start.location is start.span.getLength()
+      start.spanIndex++
+    end = @sliceSpanAtLocation(location + length)
     {} =
-      index: start.index
-      count: (end.index - start.index) + 1
+      spanIndex: start.spanIndex
+      count: (end.spanIndex - start.spanIndex) + 1
 
-  replaceSpansFromOffset: (offset, spans) ->
+  replaceSpansFromLocation: (location, spans) ->
     totalLength = 0
     for each in spans
       totalLength += each.getLength()
-    slice = @sliceSpansToRange(offset, totalLength)
-    @removeSpans(slice.index, slice.count)
-    @insertSpans(slice.index, spans)
+    slice = @sliceSpansToRange(location, totalLength)
+    @removeSpans(slice.spanIndex, slice.count)
+    @insertSpans(slice.spanIndex, spans)
 
   ###
   Section: Debug

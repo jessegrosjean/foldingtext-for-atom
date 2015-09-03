@@ -90,17 +90,17 @@ class Item
   # not exist will return `null`.
   #
   # - `name` The {String} attribute name.
-  # - `array` (optional) {Boolean} true if should split comma separated value to create an array.
-  # - `clazz` (optional) {Class} ({Number} or {Date}) to convert string values into.
+  # - `array` (optional) {Boolean} true if should split comma separated string value to create an array.
+  # - `clazz` (optional) {Class} ({Number} or {Date}) to parse string values to objects of given class.
   #
   # Returns attribute value.
   getAttribute: (name, array, clazz) ->
     if value = @attributes?[name]
-      if array
+      if array and _.isString(value)
         value = value.split /\s*,\s*/
         if clazz
           value = (Item.attributeValueStringToObject(each, clazz) for each in value)
-      else if clazz
+      else if clazz and _.isString(value)
         value = Item.attributeValueStringToObject value, clazz
     value
 
@@ -115,7 +115,6 @@ class Item
   setAttribute: (name, value) ->
     assert.ok(name isnt 'id', 'id is reserved attribute name')
 
-    value = Item.objectToAttributeValueString value
     oldValue = @getAttribute name
 
     if value is oldValue
@@ -233,44 +232,44 @@ class Item
 
   # Public: Returns an {TextStorage} substring of this item's body text.
   #
-  # - `offset` Substring's strart offset.
+  # - `index` Substring's strart index.
   # - `length` Length of substring to extract.
-  getAttributedBodyTextSubstring: (offset, length) ->
-    @attributedBodyText.subtextStorage(offset, length)
+  getAttributedBodyTextSubstring: (index, length) ->
+    @attributedBodyText.subtextStorage(index, length)
 
   # Public: Returns an {Object} with keys for each attribute at the given
-  # character offset, and by reference the range over which the elements
-  # apply.
+  # character characterIndex, and by reference the range over which the
+  # elements apply.
   #
-  # - `offset` The character offset.
-  # - `effectiveRange` (optional) {Object} whose `offset` and `length`
+  # - `characterIndex` The character index.
+  # - `effectiveRange` (optional) {Object} whose `index` and `length`
   #    properties will be set to effective range of element.
-  # - `longestEffectiveRange` (optional) {Object} whose `offset` and `length`
+  # - `longestEffectiveRange` (optional) {Object} whose `index` and `length`
   #    properties will be set to longest effective range of element.
-  getBodyTextAttributesAtOffset: (offset, effectiveRange, longestEffectiveRange) ->
-    @attributedBodyText.getAttributesAtOffset(offset, effectiveRange, longestEffectiveRange)
+  getBodyTextAttributesAtIndex: (characterIndex, effectiveRange, longestEffectiveRange) ->
+    @attributedBodyText.getAttributesAtIndex(characterIndex, effectiveRange, longestEffectiveRange)
 
   # Public: Returns the value for an attribute with a given name of the
-  # character at a given offset, and by reference the range over which the
-  # attribute applies.
+  # character at a given characterIndex, and by reference the range over which
+  # the attribute applies.
   #
   # - `attribute` Attribute name.
-  # - `offset` The character offset.
-  # - `effectiveRange` (optional) {Object} whose `offset` and `length`
+  # - `characterIndex` The character index.
+  # - `effectiveRange` (optional) {Object} whose `index` and `length`
   #    properties will be set to effective range of element.
-  # - `longestEffectiveRange` (optional) {Object} whose `offset` and `length`
+  # - `longestEffectiveRange` (optional) {Object} whose `index` and `length`
   #    properties will be set to longest effective range of element.
-  getBodyTextAttributeAtOffset: (attribute, offset, effectiveRange, longestEffectiveRange) ->
-    @attributedBodyText.getAttributeAtOffset(attribute, offset, effectiveRange, longestEffectiveRange)
+  getBodyTextAttributeAtIndex: (attribute, characterIndex, effectiveRange, longestEffectiveRange) ->
+    @attributedBodyText.getAttributeAtIndex(attribute, characterIndex, effectiveRange, longestEffectiveRange)
 
   # Sets the attributes for the characters in the specified range to the
   # specified attributes.
   #
   # - `attributes` {Object} with keys and values for each attribute
-  # - `offset` Start offset character offset.
+  # - `index` Start index character index.
   # - `length` Range length.
-  setBodyTextAttributesInRange: (attributes, offset, length) ->
-    @attributedBodyText.setAttributesInRange(attributes, offset, length)
+  setBodyTextAttributesInRange: (attributes, index, length) ->
+    @attributedBodyText.setAttributesInRange(attributes, index, length)
 
   # Public: Adds an element with the given tagName and attributes to the
   # characters in the specified range.
@@ -278,10 +277,10 @@ class Item
   # - `tagName` Tag name of the element.
   # - `attributes` Element attributes. Use `null` as a placeholder if element
   #    doesn't need attributes.
-  # - `offset` Start offset character offset.
+  # - `index` Start index character index.
   # - `length` Range length.
-  addBodyTextAttributeInRange: (attribute, value, offset, length) ->
-    @attributedBodyText.addAttributeInRange(attribute, value, offset, length)
+  addBodyTextAttributeInRange: (attribute, value, index, length) ->
+    @attributedBodyText.addAttributeInRange(attribute, value, index, length)
 
   # Public: Adds an element with the given tagName and attributes to the
   # characters in the specified range.
@@ -289,30 +288,30 @@ class Item
   # - `tagName` Tag name of the element.
   # - `attributes` Element attributes. Use `null` as a placeholder if element
   #    doesn't need attributes.
-  # - `offset` Start offset character offset.
+  # - `index` Start index.
   # - `length` Range length.
-  addBodyTextAttributesInRange: (attributes, offset, length) ->
-    @attributedBodyText.addAttributesInRange(attributes, offset, length)
+  addBodyTextAttributesInRange: (attributes, index, length) ->
+    @attributedBodyText.addAttributesInRange(attributes, index, length)
 
   # Public: Removes the element with the tagName from the characters in the
   # specified range.
   #
   # - `tagName` Tag name of the element.
-  # - `offset` Start offset character offset.
+  # - `index` Start index.
   # - `length` Range length.
-  removeBodyTextAttributeInRange: (attribute, offset, length) ->
-    @attributedBodyText.removeAttributeInRange(attribute, offset, length)
+  removeBodyTextAttributeInRange: (attribute, index, length) ->
+    @attributedBodyText.removeAttributeInRange(attribute, index, length)
 
-  insertLineBreakInBodyText: (offset) ->
+  insertLineBreakInBodyText: (index) ->
 
-  insertImageInBodyText: (offset, image) ->
+  insertImageInBodyText: (index, image) ->
 
   # Public: Replace body text in the given range.
   #
   # - `insertedText` {String} or {TextStorage}
-  # - `offset` Start offset character offset.
+  # - `index` Start index.
   # - `length` Range length.
-  replaceBodyTextInRange: (insertedText, offset, length) ->
+  replaceBodyTextInRange: (insertedText, index, length) ->
     if @isRoot
       return
 
@@ -330,18 +329,18 @@ class Item
     assert.ok(insertedString.indexOf('\n') is -1, 'Item body text cannot contain newlines')
 
     if isInOutline
-      replacedText = attributedBodyText.subtextStorage(offset, length)
+      replacedText = attributedBodyText.subtextStorage(index, length)
       if replacedText.length is 0 and insertedText.length is 0
         return
-      mutation = Mutation.createBodyTextMutation this, offset, insertedString.length, replacedText
+      mutation = Mutation.createBodyTextMutation this, index, insertedString.length, replacedText
       outline.emitter.emit 'will-change', mutation
       outline.beginChanges()
       outline.recordChange mutation
 
     if insertedText instanceof TextStorage
-      attributedBodyText.replaceRangeWithTextStorage(offset, length, insertedText)
+      attributedBodyText.replaceRangeWithTextStorage(index, length, insertedText)
     else
-      attributedBodyText.replaceRangeWithString(offset, length, insertedText)
+      attributedBodyText.replaceRangeWithString(index, length, insertedText)
 
     outline.syncBodyTextToAttributes(this, oldBodyText)
 

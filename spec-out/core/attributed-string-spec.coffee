@@ -305,52 +305,52 @@ describe 'AttributedString', ->
 
     describe 'Offset Mapping', ->
 
-      it 'should map from string to Inline FTML offsets', ->
+      it 'should map from string to Inline FTML locations', ->
         attributedString = AttributedString.fromInlineFTMLString('Hel<b data-my="test">lo wo</b>rld!')
         inlineFTMLContainer = attributedString.toInlineFTMLFragment()
 
-        AttributedString.textOffsetToInlineFTMLOffset(0, inlineFTMLContainer).should.eql
+        AttributedString.textIndexToInlineFTMLIndex(0, inlineFTMLContainer).should.eql
           node: inlineFTMLContainer.firstChild
-          offset: 0
+          location: 0
 
-        AttributedString.textOffsetToInlineFTMLOffset(3, inlineFTMLContainer).should.eql
+        AttributedString.textIndexToInlineFTMLIndex(3, inlineFTMLContainer).should.eql
           node: inlineFTMLContainer.firstChild
-          offset: 3
+          location: 3
 
-        AttributedString.textOffsetToInlineFTMLOffset(4, inlineFTMLContainer).should.eql
+        AttributedString.textIndexToInlineFTMLIndex(4, inlineFTMLContainer).should.eql
           node: inlineFTMLContainer.firstChild.nextSibling.firstChild
-          offset: 1
+          location: 1
 
-        AttributedString.textOffsetToInlineFTMLOffset(12, inlineFTMLContainer).should.eql
+        AttributedString.textIndexToInlineFTMLIndex(12, inlineFTMLContainer).should.eql
           node: inlineFTMLContainer.firstChild.nextSibling.nextSibling
-          offset: 4
+          location: 4
 
-      it 'should map from string to empty Inline FTML offsets', ->
+      it 'should map from string to empty Inline FTML locations', ->
         inlineFTMLContainer = document.createElement 'p'
-        AttributedString.textOffsetToInlineFTMLOffset(0, inlineFTMLContainer).should.eql
+        AttributedString.textIndexToInlineFTMLIndex(0, inlineFTMLContainer).should.eql
           node: inlineFTMLContainer
-          offset: 0
+          location: 0
 
-      it 'should map from Inline FTML offsets to string', ->
+      it 'should map from Inline FTML locations to string', ->
         attributedString = AttributedString.fromInlineFTMLString('Hel<b data-my="test">lo wo</b>rld!')
         inlineFTMLContainer = attributedString.toInlineFTMLFragment()
 
         node = inlineFTMLContainer.firstChild
-        offset = 0
-        AttributedString.inlineFTMLOffsetToTextOffset(node, offset, inlineFTMLContainer).should.equal(0)
+        location = 0
+        AttributedString.inlineFTMLIndexToTextIndex(node, location, inlineFTMLContainer).should.equal(0)
 
         node = inlineFTMLContainer.firstChild.nextSibling.firstChild
-        offset = 0
-        AttributedString.inlineFTMLOffsetToTextOffset(node, offset, inlineFTMLContainer).should.equal(3)
+        location = 0
+        AttributedString.inlineFTMLIndexToTextIndex(node, location, inlineFTMLContainer).should.equal(3)
 
         node = inlineFTMLContainer.firstChild.nextSibling.firstChild
-        offset = 1
-        AttributedString.inlineFTMLOffsetToTextOffset(node, offset, inlineFTMLContainer).should.equal(4)
+        location = 1
+        AttributedString.inlineFTMLIndexToTextIndex(node, location, inlineFTMLContainer).should.equal(4)
 
         node = inlineFTMLContainer.firstChild.nextSibling.nextSibling
-        offset = 4
-        AttributedString.inlineFTMLOffsetToTextOffset(node, offset, inlineFTMLContainer).should.equal(12)
+        location = 4
+        AttributedString.inlineFTMLIndexToTextIndex(node, location, inlineFTMLContainer).should.equal(12)
 
-      it 'should map from empty Inline FTML to string offsets', ->
+      it 'should map from empty Inline FTML to string locations', ->
         inlineFTMLContainer = document.createElement 'p'
-        AttributedString.inlineFTMLOffsetToTextOffset(inlineFTMLContainer, 0, inlineFTMLContainer).should.equal(0)
+        AttributedString.inlineFTMLIndexToTextIndex(inlineFTMLContainer, 0, inlineFTMLContainer).should.equal(0)

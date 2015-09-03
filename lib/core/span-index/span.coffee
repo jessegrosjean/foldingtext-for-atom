@@ -10,13 +10,13 @@ class Span
   clone: ->
     new @constructor(@string)
 
-  split: (offset) ->
-    if offset is 0 or offset is @getLength()
+  split: (location) ->
+    if location is 0 or location is @getLength()
       return null
 
     clone = @clone()
-    clone.setString(@string.substr(offset))
-    @setString(@string.substr(0, offset))
+    clone.setString(@string.substr(location))
+    @setString(@string.substr(0, location))
     clone
 
   mergeWithSpan: (span) ->
@@ -26,8 +26,8 @@ class Span
   Section: Characters
   ###
 
-  getOffset: ->
-    @parent.getOffset(this) or 0
+  getLocation: ->
+    @parent.getLocation(this) or 0
 
   getLength: ->
     @string.length
@@ -45,12 +45,12 @@ class Span
         each = each.parent
     @
 
-  deleteRange: (offset, length) ->
-    newString = @string.slice(0, offset) + @string.slice(offset + length)
+  deleteRange: (location, length) ->
+    newString = @string.slice(0, location) + @string.slice(location + length)
     @setString(newString)
 
-  insertString: (offset, text) ->
-    newString = @string.substr(0, offset) + text + @string.substr(offset)
+  insertString: (location, text) ->
+    newString = @string.substr(0, location) + text + @string.substr(location)
     @setString(newString)
 
   appendString: (string) ->

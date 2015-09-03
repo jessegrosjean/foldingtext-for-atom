@@ -65,6 +65,14 @@ createItem = (outline, LI, remapIDCallback) ->
   UL = LI.lastChild
   text = P.textContent
   item = outline.createItem(text, LI.id, remapIDCallback)
+
+  if LI.hasAttributes()
+    attributes = LI.attributes
+    for i in [0...attributes.length]
+      attr = attributes[i]
+      unless attr.name is 'id'
+        item.setAttribute(attr.name, attr.value)
+
   if P isnt UL
     eachLI = UL.firstElementChild
     children = []

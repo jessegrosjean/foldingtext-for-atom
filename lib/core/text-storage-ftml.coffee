@@ -259,7 +259,7 @@ TextStorage.inlineFTMLToText = (inlineFTMLContainer) ->
   else
     ''
 
-TextStorage.textOffsetToInlineFTMLOffset = (offset, inlineFTMLContainer) ->
+TextStorage.textIndexToInlineFTMLIndex = (index, inlineFTMLContainer) ->
   if inlineFTMLContainer
     end = dom.nodeNextBranch(inlineFTMLContainer)
     each = inlineFTMLContainer.firstChild or inlineFTMLContainer
@@ -277,31 +277,31 @@ TextStorage.textOffsetToInlineFTMLOffset = (offset, inlineFTMLContainer) ->
         if tagName is 'BR' or tagName is 'IMG'
           # Count void tags as 1
           length = 1
-          if length is offset
+          if length is index
             return {} =
               node: each.parentNode
-              offset: dom.childIndexOfNode(each) + 1
+              index: dom.childIndexOfNode(each) + 1
 
-      if length < offset
-        offset -= length
+      if length < index
+        index -= length
       else
-        #if downstreamAffinity and length is offset
+        #if downstreamAffinity and length is index
         #  next = dom.nextNode(each)
         #  if next
         #    if next.nodeType is Node.ELEMENT_NODE and not next.firstChild
         #      each = next.parentNode
-        #      offset = dom.childIndexOfNode(next)
+        #      index = dom.childIndexOfNode(next)
         #    else
         #      each = next
-        #      offset = 0
+        #      index = 0
         return {} =
           node: each
-          offset: offset
+          index: index
       each = dom.nextNode(each)
   else
     undefined
 
-TextStorage.inlineFTMLOffsetToTextOffset = (node, offset, inlineFTMLContainer) ->
+TextStorage.inlineFTMLIndexToTextIndex = (node, index, inlineFTMLContainer) ->
   unless inlineFTMLContainer
     # If inlineFTMLContainer is not provided then search up from node for
     # it. Search for 'P' tagname for model layer or 'contenteditable'
@@ -314,14 +314,14 @@ TextStorage.inlineFTMLOffsetToTextOffset = (node, offset, inlineFTMLContainer) -
       inlineFTMLContainer = inlineFTMLContainer.parentNode
 
   if node and inlineFTMLContainer and inlineFTMLContainer.contains(node)
-    # If offset is > 0 and node is an element then map to child node
+    # If index is > 0 and node is an element then map to child node
     # possition such that a backward walk from that node will cross over
     # all relivant text and void nodes.
-    if offset > 0 and node.nodeType is Node.ELEMENT_NODE
+    if index > 0 and node.nodeType is Node.ELEMENT_NODE
       childAtOffset = node.firstChild
-      while offset
+      while index
         childAtOffset = childAtOffset.nextSibling
-        offset--
+        index--
 
       if childAtOffset
         node = childAtOffset
@@ -337,14 +337,14 @@ TextStorage.inlineFTMLOffsetToTextOffset = (node, offset, inlineFTMLContainer) -
 
       if nodeType is Node.TEXT_NODE
         if each isnt node
-          offset += each.nodeValue.length
+          index += each.nodeValue.length
       else if nodeType is Node.ELEMENT_NODE and each.textContent.length is 0 and not each.firstElementChild
         tagName = each.tagName
         if tagName is 'BR' or tagName is 'IMG'
           # Count void tags as 1
-          offset++
+          index++
       each = dom.previousNode(each)
-    offset
+    index
   else
     undefined
 

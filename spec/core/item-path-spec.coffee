@@ -2,7 +2,7 @@ loadOutlineFixture = require '../load-outline-fixture'
 ItemPath = require '../../lib/core/item-path'
 Outline = require '../../lib/core/outline'
 
-xdescribe 'ItemPath', ->
+describe 'ItemPath', ->
   [outline, root, one, two, three, four, five, six] = []
 
   beforeEach ->

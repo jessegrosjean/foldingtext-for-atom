@@ -12,11 +12,6 @@ class RunIndex extends SpanIndex
   getRunIndex: (child) ->
     @getSpanIndex(child)
 
-  getRunIndexOffset: (offset, index=0) ->
-    runIndexOffset = @getSpanAtOffset(offset, index)
-    runIndexOffset.run = runIndexOffset.span
-    runIndexOffset
-
   getRuns: (start, count) ->
     @getSpans(start, count)
 
@@ -29,8 +24,8 @@ class RunIndex extends SpanIndex
   removeRuns: (start, deleteCount) ->
     @removeSpans(start, deleteCount)
 
-  sliceRunsToRange: (offset, length) ->
-    @sliceSpansToRange(offset, length)
+  sliceRunsToRange: (location, length) ->
+    @sliceSpansToRange(location, length)
 
   createRun: (text) ->
     @createSpan(text)
@@ -42,30 +37,30 @@ class RunIndex extends SpanIndex
   Reading attributes
   ###
 
-  getAttributesAtOffset: (offset, effectiveRange, longestEffectiveRange) ->
-    start = @getRunIndexOffset(offset)
-    result = start.run.attributes
+  getAttributesAtIndex: (characterIndex, effectiveRange, longestEffectiveRange) ->
+    start = @getSpanInfoAtCharacterIndex(characterIndex)
+    result = start.span.attributes
 
     if effectiveRange
-      effectiveRange.offset = start.startOffset
-      effectiveRange.length = start.run.getLength()
+      effectiveRange.location = start.spanLocation
+      effectiveRange.length = start.span.getLength()
 
     if longestEffectiveRange
-      @_longestEffectiveRange start.index, start.run, longestEffectiveRange, (run) ->
+      @_longestEffectiveRange start.spanIndex, start.span, longestEffectiveRange, (run) ->
         _.isEqual(run.attributes, result)
 
     result
 
-  getAttributeAtOffset: (attribute, offset, effectiveRange, longestEffectiveRange) ->
-    start = @getRunIndexOffset(offset)
-    result = start.run.attributes[attribute]
+  getAttributeAtIndex: (attribute, characterIndex, effectiveRange, longestEffectiveRange) ->
+    start = @getSpanInfoAtLocation(characterIndex)
+    result = start.span.attributes[attribute]
 
     if effectiveRange
-      effectiveRange.offset = start.startOffset
-      effectiveRange.length = start.run.getLength()
+      effectiveRange.location = start.spanLocation
+      effectiveRange.length = start.span.getLength()
 
     if longestEffectiveRange
-      @_longestEffectiveRange start.index, start.run, longestEffectiveRange, (run) ->
+      @_longestEffectiveRange start.spanIndex, start.span, longestEffectiveRange, (run) ->
         run.attributes[attribute] is result
 
     result
@@ -83,7 +78,7 @@ class RunIndex extends SpanIndex
       else
         break
 
-    range.offset = currentRun.getOffset()
+    range.location = currentRun.getLocation()
     nextIndex = runIndex + 1
     currentRun = attributeRun
 
@@ -96,37 +91,37 @@ class RunIndex extends SpanIndex
       else
         break
 
-    range.length = (currentRun.getOffset() + currentRun.getLength()) - range.offset
+    range.length = (currentRun.getLocation() + currentRun.getLength()) - range.location
     range
 
   ###
   Changing attributes
   ###
 
-  sliceAndIterateRunsByOffset: (offset, length, operation) ->
-    slice = @sliceRunsToRange(offset, length)
-    @iterateSpans(slice.index, slice.count, operation)
+  sliceAndIterateRunsByRange: (location, length, operation) ->
+    slice = @sliceRunsToRange(location, length)
+    @iterateSpans(slice.spanIndex, slice.count, operation)
 
-  setAttributesInRange: (attributes, offset, length) ->
-    @sliceAndIterateRunsByOffset offset, length, (run) ->
+  setAttributesInRange: (attributes, location, length) ->
+    @sliceAndIterateRunsByRange location, length, (run) ->
       run.setAttributes(attributes)
 
-  addAttributeInRange: (attribute, value, offset, length) ->
-    @sliceAndIterateRunsByOffset offset, length, (run) ->
+  addAttributeInRange: (attribute, value, location, length) ->
+    @sliceAndIterateRunsByRange location, length, (run) ->
       run.addAttribute(attribute, value)
 
-  addAttributesInRange: (attributes, offset, length) ->
-    @sliceAndIterateRunsByOffset offset, length, (run) ->
+  addAttributesInRange: (attributes, location, length) ->
+    @sliceAndIterateRunsByRange location, length, (run) ->
       run.addAttributes(attributes)
 
-  removeAttributeInRange: (attribute, offset, length) ->
-    @sliceAndIterateRunsByOffset offset, length, (run) ->
+  removeAttributeInRange: (attribute, location, length) ->
+    @sliceAndIterateRunsByRange location, length, (run) ->
       run.removeAttribute(attribute)
 
   ###
   Changing characters and attributes
   ###
 
-  insertRunIndex: (runIndex, offset) ->
+  insertRunIndex: (runIndex, index) ->
 
 module.exports = RunIndex

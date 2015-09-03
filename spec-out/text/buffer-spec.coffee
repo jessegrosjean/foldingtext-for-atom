@@ -164,7 +164,7 @@ describe 'Buffer', ->
       expect(lines[253].getRow()).toEqual(253)
       expect(lines[499].getRow()).toEqual(499)
 
-    it 'gets character offset from line', ->
+    it 'gets character location from line', ->
       buffer.insertLines(0, lines)
       expect(lines[0].getCharacterOffset()).toEqual(0)
       expect(lines[1].getCharacterOffset()).toEqual(6)
@@ -173,7 +173,7 @@ describe 'Buffer', ->
       expect(lines[253].getCharacterOffset()).toEqual(1518)
       expect(lines[499].getCharacterOffset()).toEqual(2994)
 
-    it 'gets line character offset at global character offset', ->
+    it 'gets line character location at global character location', ->
       buffer.insertLines(0, lines)
       expect(buffer.getLineRowColumn(0)).toEqual({line: lines[0], row: 0, column: 0})
       expect(buffer.getLineRowColumn(3)).toEqual({line: lines[0], row: 0, column: 3})
