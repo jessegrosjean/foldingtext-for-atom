@@ -59,14 +59,15 @@ class SpanBranch
         index += each.getSpanCount()
     index
 
-  getSpanInfoAtLocation: (location, spanIndex=0) ->
+  getSpanInfoAtLocation: (location, spanIndex=0, spanLocation=0) ->
     for each in @children
       childLength = each.getLength()
       if location > childLength
         location -= childLength
         spanIndex += each.getSpanCount()
+        spanLocation += childLength
       else
-        return each.getSpanInfoAtLocation(location, spanIndex)
+        return each.getSpanInfoAtLocation(location, spanIndex, spanLocation)
 
   getSpans: (start, count) ->
     start ?= 0
@@ -77,20 +78,20 @@ class SpanBranch
       spans.push(span)
     spans
 
-  iterateSpans: (start, count, operation) ->
+  iterateSpans: (spanIndex, count, operation) ->
     for child in @children
       childSpanCount = child.getSpanCount()
-      if start < childSpanCount
-        used = Math.min(count, childSpanCount - start)
-        if child.iterateSpans(start, used, operation) is false
+      if spanIndex < childSpanCount
+        used = Math.min(count, childSpanCount - spanIndex)
+        if child.iterateSpans(spanIndex, used, operation) is false
           return false
         if (count -= used) is 0
           break
-        start = 0
+        spanIndex = 0
       else
-        start -= childSpanCount
+        spanIndex -= childSpanCount
 
-  insertSpans: (start, spans) ->
+  insertSpans: (spanIndex, spans) ->
     @spanCount += spans.length
 
     for each in spans
@@ -98,8 +99,8 @@ class SpanBranch
 
     for child, i in @children
       childSpanCount = child.getSpanCount()
-      if start <= childSpanCount
-        child.insertSpans(start, spans)
+      if spanIndex <= childSpanCount
+        child.insertSpans(spanIndex, spans)
         if child instanceof SpanLeaf and child.children.length > 50
           while child.children.length > 50
             spilled = child.children.splice(child.children.length - 25, 25)
@@ -109,45 +110,45 @@ class SpanBranch
             newleaf.parent = this
           @maybeSpill()
         break
-      start -= childSpanCount
+      spanIndex -= childSpanCount
 
-  removeSpans: (start, deleteCount) ->
+  removeSpans: (spanIndex, deleteCount) ->
     @spanCount -= deleteCount
     i = 0
     while child = @children[i]
       childSpanCount = child.getSpanCount()
-      if start < childSpanCount
-        childDeleteCount = Math.min(deleteCount, childSpanCount - start)
+      if spanIndex < childSpanCount
+        childDeleteCount = Math.min(deleteCount, childSpanCount - spanIndex)
         childOldCharactersCount = child.getLength()
-        child.removeSpans(start, childDeleteCount)
+        child.removeSpans(spanIndex, childDeleteCount)
         @length -= (childOldCharactersCount - child.getLength())
         if childSpanCount is childDeleteCount
           @children.splice(i--, 1)
           child.parent = null
         if (deleteCount -= childDeleteCount) is 0
           break
-        start = 0
+        spanIndex = 0
       else
-        start -= childSpanCount
+        spanIndex -= childSpanCount
       i++
     @maybeCollapse(deleteCount)
 
-  mergeSpans: (start, count) ->
+  mergeSpans: (spanIndex, count) ->
     prev = null
-    removeStart = start
+    removeStart = spanIndex
     removeRanges = []
     removeRange = null
-    @iterateSpans start, count, (each) ->
+    @iterateSpans spanIndex, count, (each) ->
       if prev?.mergeWithSpan(each)
         unless removeRange
+          removeRange = spanIndex: removeStart count: 0
           removeRanges.push(removeRange)
-          removeRange.start = removeStart
         removeRange.count++
       else
         removeRange = null
         removeStart++
     for each in removeRanges
-      @removeSpans(each.start, each.count)
+      @removeSpans(each.spanIndex, each.count)
 
   ###
   Section: Tree Balance

@@ -71,25 +71,25 @@ class LineIndex extends SpanIndex
       spans = (@createSpan(each) for each in lines)
       @insertSpans(start.spanIndex + 1, spans)
 
-  insertSpans: (start, spans) ->
+  insertSpans: (spanIndex, spans) ->
     for each in spans
       if each.getString().indexOf('\n') is -1
         each.appendString('\n')
 
-    if start is @getSpanCount()
-      if oldLast = @getSpan(start - 1)
+    if spanIndex is @getSpanCount()
+      if oldLast = @getSpan(spanIndex - 1)
         if oldLast.getString().indexOf('\n') is -1
           oldLast.appendString('\n')
       newLast = spans[spans.length - 1]
       newLast.deleteRange(newLast.getLength() - 1, 1)
 
-    super(start, spans)
+    super(spanIndex, spans)
 
-  removeSpans: (start, deleteCount) ->
-    super(start, deleteCount)
+  removeSpans: (spanIndex, deleteCount) ->
+    super(spanIndex, deleteCount)
 
-    if start is @getSpanCount()
-      if newLast = @getSpan(start - 1)
+    if spanIndex is @getSpanCount()
+      if newLast = @getSpan(spanIndex - 1)
         if newLast.getString().indexOf('\n') isnt -1
           newLast.deleteRange(newLast.getLength() - 1, 1)
 
