@@ -52,11 +52,11 @@ describe 'SpanIndex', ->
       sp2 = spanIndex.getSpan(2)
 
       spanIndex.deleteRange(0, 1)
-      expect(sp0.parent).toBe(null)
+      expect(sp0.indexParent).toBe(null)
       spanIndex.toString().should.equal('(b)(c)')
 
       spanIndex.deleteRange(1, 1)
-      expect(sp2.parent).toBe(null)
+      expect(sp2.indexParent).toBe(null)
       spanIndex.toString().should.equal('(b)')
 
     it 'delete text to empty deletes last span', ->
@@ -144,7 +144,7 @@ describe 'SpanIndex', ->
       spanIndex.getSpanInfoAtLocation(6, true).should.eql(span: spanIndex.getSpan(1), spanIndex: 1, spanLocation: 3, location: 3)
       (-> spanIndex.getSpanInfoAtLocation(7, true)).should.throw()
 
-  describe 'Performance', ->
+  xdescribe 'Performance', ->
 
     it 'should handle 10,000 spans', ->
       console.profile('Create Spans')

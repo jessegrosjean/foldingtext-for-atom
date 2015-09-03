@@ -38,7 +38,7 @@ describe 'TextStorage', ->
     append = new TextStorage()
     append.insertString(0, 'two')
     append.addAttributeInRange('b', 'b', 0, 3)
-    textStorage.appendTextStorage(append)
+    textStorage.appendText(append)
     textStorage.toString().should.equal('[string: onetwo] [lines: length: 6 spans: 0-5] [runs: length: 6 spans: 0-2/a=a, 3-5/b=b]')
 
   it 'inserts textStorage', ->
@@ -47,5 +47,5 @@ describe 'TextStorage', ->
     insert = new TextStorage()
     insert.insertString(0, 'two')
     insert.addAttributeInRange('b', 'b', 0, 3)
-    textStorage.insertTextStorage(2, insert)
+    textStorage.insertText(2, insert)
     textStorage.toString().should.equal('[string: ontwoe] [lines: length: 6 spans: 0-5] [runs: length: 6 spans: 0-1/a=a, 2-4/b=b, 5/a=a]')

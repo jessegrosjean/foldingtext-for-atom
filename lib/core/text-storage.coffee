@@ -1,5 +1,6 @@
 LineIndex = require './line-index'
 RunIndex = require './run-index'
+_ = require 'underscore-plus'
 {Emitter} = require 'atom'
 Rope = require './rope'
 
@@ -87,6 +88,7 @@ class TextStorage
   deleteRange: (location, length) ->
     unless length
       return
+
     unless @rope.remove
       @rope = new Rope(@rope)
       @lineIndex?.string = @rope
@@ -94,21 +96,39 @@ class TextStorage
     @runIndex?.deleteRange(location, length)
     @lineIndex?.deleteRange(location, length)
 
-  insertString: (location, text) ->
-    unless text
+  insertText: (location, text) ->
+    unless text.length
       return
 
     unless @rope.insert
       @rope = new Rope(@rope)
       @lineIndex?.string = @rope
-    text = text.split(/\u000d(?:\u000a)?|\u000a|\u2029|\u000c|\u0085/).join('\n')
-    @rope.insert(location, text)
-    @runIndex?.insertString(location, text)
-    @lineIndex?.insertString(location, text)
 
-  replaceRangeWithString: (location, length, string) ->
-    @insertString(location, string)
-    @deleteRange(location + string.length, length)
+    if text instanceof TextStorage
+      insertString = text.string
+      insertRunIndex = text._getRunIndex()
+    else
+      insertString = text
+
+    insertString = insertString.split(/\u000d(?:\u000a)?|\u000a|\u2029|\u000c|\u0085/).join('\n')
+
+    @rope.insert(location, insertString)
+    @runIndex?.insertString(location, insertString)
+    @lineIndex?.insertString(location, insertString)
+
+    if insertRunIndex
+      @setAttributesInRange({}, location, text.length)
+      insertRuns = []
+      insertRunIndex.iterateRuns 0, insertRunIndex.getRunCount(), (run) ->
+        insertRuns.push(run.clone())
+      @_getRunIndex().replaceSpansFromLocation(location, insertRuns)
+
+  appendText: (text) ->
+    @insertText(@rope.length, text)
+
+  replaceRangeWithText: (location, length, text) ->
+    @insertText(location, text)
+    @deleteRange(location + text.length, length)
 
   ###
   Attributes
@@ -127,13 +147,36 @@ class TextStorage
       []
 
   getAttributesAtIndex: (index, effectiveRange, longestEffectiveRange) ->
-    @_getRunIndex().getAttributesAtIndex(index, effectiveRange, longestEffectiveRange)
+    if index >= @length
+      throw new Error("Invalide character index: #{characterIndex}")
+    if @runIndex
+      @runIndex.getAttributesAtIndex(index, effectiveRange, longestEffectiveRange)
+    else
+      if effectiveRange
+        effectiveRange.location = 0
+        effectiveRange.length = @length
+      if longestEffectiveRange
+        longestEffectiveRange.location = 0
+        longestEffectiveRange.length = @length
+      {}
 
   getAttributeAtIndex: (attribute, index, effectiveRange, longestEffectiveRange) ->
-    @_getRunIndex().getAttributeAtIndex(attribute, index, effectiveRange, longestEffectiveRange)
+    if index >= @length
+      throw new Error("Invalide character index: #{characterIndex}")
+    if @runIndex
+      @runIndex.getAttributeAtIndex(attribute, index, effectiveRange, longestEffectiveRange)
+    else
+      if effectiveRange
+        effectiveRange.location = 0
+        effectiveRange.length = @length
+      if longestEffectiveRange
+        longestEffectiveRange.location = 0
+        longestEffectiveRange.length = @length
+      undefined
 
   setAttributesInRange: (attributes, index, length) ->
-    @_getRunIndex().setAttributesInRange(attributes, index, length)
+    if @runIndex and not _.isEmpty(attributes)
+      @runIndex.setAttributesInRange(attributes, index, length)
 
   addAttributeInRange: (attribute, value, index, length) ->
     @_getRunIndex().addAttributeInRange(attribute, value, index, length)
@@ -160,24 +203,6 @@ class TextStorage
         insertRuns.push(run.clone())
       subtextStorage._getRunIndex().replaceSpansFromLocation(0, insertRuns)
     subtextStorage
-
-  appendTextStorage: (textStorage) ->
-    @insertTextStorage(@rope.length, textStorage)
-
-  insertTextStorage: (location, textStorage) ->
-    unless textStorage.length
-      return
-    @insertString(location, textStorage.getString())
-    @setAttributesInRange({}, location, textStorage.getLength())
-    if otherRunIndex = textStorage.runIndex
-      insertRuns = []
-      otherRunIndex.iterateRuns 0, otherRunIndex.getRunCount(), (run) ->
-        insertRuns.push(run.clone())
-      @_getRunIndex().replaceSpansFromLocation(location, insertRuns)
-
-  replaceRangeWithTextStorage: (location, length, textStorage) ->
-    @deleteRange(location, length)
-    @insertTextStorage(location, textStorage)
 
   ###
   Lines

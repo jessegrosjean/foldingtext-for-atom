@@ -3,11 +3,11 @@ SpanLeaf = require './span-leaf'
 class SpanBranch
 
   constructor: (@children) ->
-    @parent = null
+    @indexParent = null
     spanCount = 0
     length = 0
     for each in @children
-      each.parent = this
+      each.indexParent = this
       spanCount += each.getSpanCount()
       length += each.getLength()
     @spanCount = spanCount
@@ -27,7 +27,7 @@ class SpanBranch
     @length
 
   getLocation: (child) ->
-    length = @parent?.getLocation(this) or 0
+    length = @indexParent?.getLocation(this) or 0
     if child
       for each in @children
         if each is child
@@ -51,7 +51,7 @@ class SpanBranch
         return each.getSpan(index)
 
   getSpanIndex: (child) ->
-    index = @parent?.getSpanIndex(this) or 0
+    index = @indexParent?.getSpanIndex(this) or 0
     if child
       for each in @children
         if each is child
@@ -107,7 +107,7 @@ class SpanBranch
             newleaf = new SpanLeaf(spilled)
             child.length -= newleaf.length
             @children.splice(i + 1, 0, newleaf)
-            newleaf.parent = this
+            newleaf.indexParent = this
           @maybeSpill()
         break
       spanIndex -= childSpanCount
@@ -124,7 +124,7 @@ class SpanBranch
         @length -= (childOldCharactersCount - child.getLength())
         if childSpanCount is childDeleteCount
           @children.splice(i--, 1)
-          child.parent = null
+          child.indexParent = null
         if (deleteCount -= childDeleteCount) is 0
           break
         spanIndex = 0
@@ -162,18 +162,18 @@ class SpanBranch
     while current.children.length > 10
       spilled = current.children.splice(current.children.length - 5, 5)
       sibling = new SpanBranch(spilled)
-      if current.parent
+      if current.indexParent
         current.spanCount -= sibling.spanCount
         current.length -= sibling.length
-        index = current.parent.children.indexOf(current)
-        current.parent.children.splice(index + 1, 0, sibling)
+        index = current.indexParent.children.indexOf(current)
+        current.indexParent.children.splice(index + 1, 0, sibling)
       else
         copy = new SpanBranch(current.children)
-        copy.parent = current
+        copy.indexParent = current
         current.children = [copy, sibling]
         current = copy
-      sibling.parent = current.parent
-    current.parent.maybeSpill()
+      sibling.indexParent = current.indexParent
+    current.indexParent.maybeSpill()
 
   maybeCollapse: (deleteCount) ->
     if (@spanCount - deleteCount) > 25
@@ -183,7 +183,7 @@ class SpanBranch
       spans = []
       @collapse(spans)
       @children = [new SpanLeaf(spans)]
-      @children[0].parent = this
+      @children[0].indexParent = this
 
   collapse: (spans) ->
     for each in @children

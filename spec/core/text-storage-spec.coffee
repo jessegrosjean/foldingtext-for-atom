@@ -94,51 +94,51 @@ describe 'TextStorage', ->
   describe 'Insert String', ->
 
     it 'should insert at start', ->
-      textStorage.insertString(0, 'Boo!')
+      textStorage.insertText(0, 'Boo!')
       textStorage.toString().should.equal('lines: (Boo!Hello world!) runs: (Boo!Hello world!)')
 
     it 'should insert at end', ->
-      textStorage.insertString(12, 'Boo!')
+      textStorage.insertText(12, 'Boo!')
       textStorage.toString().should.equal('lines: (Hello world!Boo!) runs: (Hello world!Boo!)')
 
     it 'should insert in middle', ->
-      textStorage.insertString(6, 'Boo!')
+      textStorage.insertText(6, 'Boo!')
       textStorage.toString().should.equal('lines: (Hello Boo!world!) runs: (Hello Boo!world!)')
 
     it 'should insert into empty string', ->
       textStorage.deleteRange(0, 12)
-      textStorage.insertString(0, 'Boo!')
+      textStorage.insertText(0, 'Boo!')
       textStorage.toString().should.equal('lines: (Boo!) runs: (Boo!)')
 
     it 'should adjust attribute run when inserting at run start', ->
       textStorage.addAttributeInRange('b', null, 0, 5)
-      textStorage.insertString(0, 'Boo!')
+      textStorage.insertText(0, 'Boo!')
       textStorage.toString().should.equal('lines: (Boo!Hello world!) runs: (Boo!Hello/b:null)( world!)')
 
     it 'should adjust attribute run when inserting at run end', ->
       textStorage.addAttributeInRange('b', null, 0, 5)
-      textStorage.insertString(5, 'Boo!')
+      textStorage.insertText(5, 'Boo!')
       textStorage.toString().should.equal('lines: (HelloBoo! world!) runs: (HelloBoo!/b:null)( world!)')
 
     it 'should adjust attribute run when inserting in run middle', ->
       textStorage.addAttributeInRange('b', null, 0, 5)
-      textStorage.insertString(3, 'Boo!')
+      textStorage.insertText(3, 'Boo!')
       textStorage.toString().should.equal('lines: (HelBoo!lo world!) runs: (HelBoo!lo/b:null)( world!)')
 
     it 'should insert attributed string including runs', ->
       insert = new TextStorage('Boo!')
       insert.addAttributeInRange('i', null, 0, 3)
       insert.addAttributeInRange('b', null, 1, 3)
-      textStorage.insertTextStorage(0, insert)
+      textStorage.insertText(0, insert)
       textStorage.toString().should.equal('lines: (Boo!Hello world!) runs: (B/i:null)(oo/b:null/i:null)(!/b:null)(Hello world!)')
 
   describe 'Replace Substrings', ->
 
     it 'should update attribute runs when attributed string is modified', ->
       textStorage.addAttributeInRange('name', 'jesse', 0, 12)
-      textStorage.replaceRangeWithString(0, 12, 'Hello')
+      textStorage.replaceRangeWithText(0, 12, 'Hello')
       textStorage.toString().should.equal('lines: (Hello) runs: (Hello/name:"jesse")')
-      textStorage.replaceRangeWithString(5, 0, ' World!')
+      textStorage.replaceRangeWithText(5, 0, ' World!')
       textStorage.toString().should.equal('lines: (Hello World!) runs: (Hello World!/name:"jesse")')
 
     it 'should update attribute runs when node text is paritially updated', ->
@@ -146,22 +146,22 @@ describe 'TextStorage', ->
       textStorage.addAttributeInRange('name', 'joe', 5, 7)
       textStorage.toString(true).should.equal('lines: (Hello world!) runs: (Hello/name:"jesse")( world!/name:"joe")')
 
-      textStorage.replaceRangeWithString(3, 5, '')
+      textStorage.replaceRangeWithText(3, 5, '')
       textStorage.toString(true).should.equal('lines: (orld!) runs: (Hel/name:"jesse")(rld!/name:"joe")')
 
-      textStorage.replaceRangeWithString(3, 0, 'lo wo')
+      textStorage.replaceRangeWithText(3, 0, 'lo wo')
       textStorage.toString(true).should.equal('lines: (orllo wo) runs: (Hello wo/name:"jesse")(rld!/name:"joe")')
 
     it 'should remove leading attribute run if text in run is fully replaced', ->
       textStorage = new TextStorage('\ttwo')
       textStorage.addAttributeInRange('name', 'jesse', 0, 1)
-      textStorage.replaceRangeWithString(0, 1, '')
+      textStorage.replaceRangeWithText(0, 1, '')
       textStorage.toString().should.equal('lines: (two) runs: (two)')
 
     it 'should retain attributes of fully replaced range if replacing string length is not zero.', ->
       textStorage = new TextStorage('\ttwo')
       textStorage.addAttributeInRange('name', 'jesse', 0, 1)
-      textStorage.replaceRangeWithString(0, 1, 'h')
+      textStorage.replaceRangeWithText(0, 1, 'h')
       textStorage.toString().should.equal('lines: (htwo) runs: (h/name:"jesse")(two)')
 
     it 'should allow inserting of another attributed string', ->
@@ -169,7 +169,7 @@ describe 'TextStorage', ->
       newString.addAttributeInRange('b', null, 0, 3)
 
       textStorage.addAttributeInRange('i', null, 0, 12)
-      textStorage.replaceRangeWithTextStorage(5, 1, newString)
+      textStorage.replaceRangeWithText(5, 1, newString)
       textStorage.toString().should.equal('lines: (Hellotwoworld!) runs: (Hello/i:null)(two/b:null)(world!/i:null)')
 
   describe 'Add/Remove/Find Attributes', ->
@@ -199,6 +199,7 @@ describe 'TextStorage', ->
       range.length.should.equal(6)
 
     it 'should find longest effective range for attribute', ->
+      debugger
       longestEffectiveRange = {}
       textStorage.addAttributeInRange('one', 'one', 0, 12)
       textStorage.addAttributeInRange('two', 'two', 6, 6)
@@ -249,7 +250,7 @@ describe 'TextStorage', ->
     it 'should throw when accessing attributes past end of string', ->
       (-> textStorage.getAttributesAtIndex(11)).should.not.throw()
       (-> textStorage.getAttributesAtIndex(12)).should.throw()
-      textStorage.replaceRangeWithString(0, 12, '')
+      textStorage.replaceRangeWithText(0, 12, '')
       (-> textStorage.getAttributesAtIndex(0)).should.throw()
 
   describe 'Inline FTML', ->

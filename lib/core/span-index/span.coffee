@@ -2,7 +2,7 @@ _ = require 'underscore-plus'
 
 class Span
 
-  @parent: null
+  @indexParent: null
   @string: ''
 
   constructor: (@string='') ->
@@ -27,7 +27,7 @@ class Span
   ###
 
   getLocation: ->
-    @parent.getLocation(this) or 0
+    @indexParent.getLocation(this) or 0
 
   getLength: ->
     @string.length
@@ -39,10 +39,10 @@ class Span
     delta = (string.length - @string.length)
     @string = string
     if delta
-      each = @parent
+      each = @indexParent
       while each
         each.length += delta
-        each = each.parent
+        each = each.indexParent
     @
 
   deleteRange: (location, length) ->
@@ -61,7 +61,7 @@ class Span
   ###
 
   getSpanIndex: ->
-    @parent.getSpanIndex(this)
+    @indexParent.getSpanIndex(this)
 
   getSpanCount: ->
     1

@@ -63,8 +63,6 @@ Q = require 'q'
 # ```
 class Outline
 
-  textStorage: null
-
   root: null
   idsToItems: null
   refcount: 0

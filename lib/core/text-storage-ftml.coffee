@@ -185,7 +185,7 @@ TextStorage._addDOMNodeToTextStorage = (node, textStorage) ->
   nodeType = node.nodeType
 
   if nodeType is Node.TEXT_NODE
-    textStorage.appendTextStorage(new TextStorage(node.nodeValue.replace(/(\r\n|\n|\r)/gm,'')))
+    textStorage.appendText(new TextStorage(node.nodeValue.replace(/(\r\n|\n|\r)/gm,'')))
   else if nodeType is Node.ELEMENT_NODE
     tagStart = textStorage.getLength()
     each = node.firstChild
@@ -200,11 +200,11 @@ TextStorage._addDOMNodeToTextStorage = (node, textStorage) ->
       if node.tagName is 'BR'
         lineBreak = new TextStorage(Constants.LineSeparatorCharacter)
         lineBreak.addAttributeInRange('BR', @_getElementAttributes(node), 0, 1)
-        textStorage.appendTextStorage(lineBreak)
+        textStorage.appendText(lineBreak)
       else if node.tagName is 'IMG'
         image = new TextStorage(Constants.ObjectReplacementCharacter)
         image.addAttributeInRange('IMG', @_getElementAttributes(node), 0, 1)
-        textStorage.appendTextStorage(image)
+        textStorage.appendText(image)
 
 TextStorage._getElementAttributes = (element) ->
   if element.hasAttributes()

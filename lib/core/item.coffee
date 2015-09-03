@@ -322,7 +322,7 @@ class Item
     insertedString
 
     if insertedText instanceof TextStorage
-      insertedString = insertedText.getString()
+      insertedString = insertedText.string
     else
       insertedString = insertedText
 
@@ -337,11 +337,7 @@ class Item
       outline.beginChanges()
       outline.recordChange mutation
 
-    if insertedText instanceof TextStorage
-      attributedBodyText.replaceRangeWithTextStorage(index, length, insertedText)
-    else
-      attributedBodyText.replaceRangeWithString(index, length, insertedText)
-
+    attributedBodyText.replaceRangeWithText(index, length, insertedText)
     outline.syncBodyTextToAttributes(this, oldBodyText)
 
     if isInOutline

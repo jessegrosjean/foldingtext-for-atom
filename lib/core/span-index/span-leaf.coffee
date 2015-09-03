@@ -1,10 +1,10 @@
 class SpanLeaf
 
   constructor: (@children) ->
-    @parent = null
+    @indexParent = null
     length = 0
     for each in @children
-      each.parent = this
+      each.indexParent = this
       length += each.getLength()
     @length = length
 
@@ -22,7 +22,7 @@ class SpanLeaf
     @length
 
   getLocation: (child) ->
-    length = @parent?.getLocation(this) or 0
+    length = @indexParent?.getLocation(this) or 0
     if child
       for each in @children
         if each is child
@@ -41,7 +41,7 @@ class SpanLeaf
     @children[index]
 
   getSpanIndex: (child) ->
-    index = @parent?.getSpanIndex(this) or 0
+    index = @indexParent?.getSpanIndex(this) or 0
     if child
       index += @children.indexOf(child)
     index
@@ -67,7 +67,7 @@ class SpanLeaf
 
   insertSpans: (index, spans) ->
     for each in spans
-      each.parent = this
+      each.indexParent = this
       @length += each.getLength()
     @children = @children.slice(0, index).concat(spans).concat(@children.slice(index))
 
@@ -75,7 +75,7 @@ class SpanLeaf
     end = start + deleteCount
     for i in [start...end]
       each = @children[i]
-      each.parent = null
+      each.indexParent = null
       @length -= each.getLength()
     @children.splice(start, deleteCount)
 
