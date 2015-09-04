@@ -199,7 +199,6 @@ describe 'TextStorage', ->
       range.length.should.equal(6)
 
     it 'should find longest effective range for attribute', ->
-      debugger
       longestEffectiveRange = {}
       textStorage.addAttributeInRange('one', 'one', 0, 12)
       textStorage.addAttributeInRange('two', 'two', 6, 6)

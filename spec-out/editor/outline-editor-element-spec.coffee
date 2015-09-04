@@ -47,7 +47,7 @@ describe 'OutlineEditorElement', ->
       it 'should update when body text is changed', ->
         viewLI = document.getElementById(one.id)
         one.bodyText = 'one two three'
-        one.addElementInBodyTextRange('B', null, 4, 3)
+        one.addBodyTextAttributeInRange('B', null, 4, 3)
         ItemRenderer.renderedBodyTextSPANForRenderedLI(viewLI).innerHTML.should.equal('one <b>two</b> three')
 
       it 'should not crash when offscreen item is changed', ->
@@ -144,7 +144,7 @@ describe 'OutlineEditorElement', ->
       # starts an attribute run.
       length = appendText.length - 1
       start = one.bodyText.length - length
-      one.addElementInBodyTextRange('I', null, start, length)
+      one.addBodyTextAttributeInRange('I', null, start, length)
       SPAN = ItemRenderer.renderedBodyTextSPANForRenderedLI(LI)
 
       newBounds = SPAN.getBoundingClientRect()

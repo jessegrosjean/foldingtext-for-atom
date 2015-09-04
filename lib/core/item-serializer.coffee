@@ -58,7 +58,7 @@ readItemsFromDataTransfer = (editor, dataTransfer, mimeType) ->
       item = editor.outline.createItem file.name
       fileURL = UrlUtil.getFileURLFromPathnameAndOptions(file.path)
       fileHREF = UrlUtil.getHREFFromFileURLs(editor.outline.getFileURL(), fileURL)
-      item.addElementInBodyTextRange 'A', href: fileHREF, 0, file.name.length
+      item.addBodyTextAttributeInRange 'A', href: fileHREF, 0, file.name.length
       items.push item
   items
 

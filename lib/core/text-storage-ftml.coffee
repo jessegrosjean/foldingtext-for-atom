@@ -221,11 +221,14 @@ TextStorage.fromInlineFTMLString = (inlineFTMLString) ->
   @fromInlineFTML div
 
 TextStorage.fromInlineFTML = (inlineFTMLContainer) ->
-  textStorage = new TextStorage()
   each = inlineFTMLContainer.firstChild
-  while each
-    @_addDOMNodeToTextStorage(each, textStorage)
-    each = each.nextSibling
+  if not each or (each is inlineFTMLContainer.lastChild and each.nodeType is Node.TEXT_NODE)
+    textStorage = new TextStorage(each?.nodeValue)
+  else
+    textStorage = new TextStorage()
+    while each
+      @_addDOMNodeToTextStorage(each, textStorage)
+      each = each.nextSibling
   textStorage
 
 TextStorage.validateInlineFTML = (inlineFTMLContainer) ->

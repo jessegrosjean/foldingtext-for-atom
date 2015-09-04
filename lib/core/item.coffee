@@ -36,8 +36,8 @@ assert = require 'assert'
 #
 # ```coffeescript
 # item = outline.createItem('Hello World!')
-# item.addElementInBodyTextRange('B', {}, 6, 5)
-# item.addElementInBodyTextRange('I', {}, 0, 11)
+# item.addBodyTextAttributeInRange('B', {}, 6, 5)
+# item.addBodyTextAttributeInRange('I', {}, 0, 11)
 # ```
 #
 # Read body text formatting:
@@ -76,7 +76,10 @@ class Item
   attributeNames: null
   Object.defineProperty @::, 'attributeNames',
     get: ->
-      Object.keys(@attributes)
+      if @attributes
+        Object.keys(@attributes)
+      else
+        []
 
   # Public: Test to see if this item has an attribute with the given name.
   #

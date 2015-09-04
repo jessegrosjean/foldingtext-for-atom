@@ -1,4 +1,6 @@
+TextStorage = require '../text-storage'
 Constants = require '../constants'
+assert = require 'assert'
 dom = require '../dom'
 
 serializeItems = (items, editor) ->
@@ -38,8 +40,27 @@ serializeItems = (items, editor) ->
   rootUL.id = Constants.RootID
   htmlDocument.documentElement.lastChild.appendChild rootUL
 
+  itemToFTML = (item) ->
+    liElement = htmlDocument.createElement('li')
+    liElement.setAttribute 'id', item.id
+    for eachName in item.attributeNames
+      liElement.setAttribute eachName, item.getAttribute(eachName)
+
+    pElement = htmlDocument.createElement('p')
+    pElement.innerHTML = item.bodyHTML
+    liElement.appendChild(pElement)
+
+    if current = item.firstChild
+      ulElement = htmlDocument.createElement('ul')
+      liElement.appendChild(ulElement)
+      while current
+        childLi = itemToFTML current
+        ulElement.appendChild childLi
+        current = current.nextSibling
+    liElement
+
   for each in items
-    rootUL.appendChild each._liOrRootUL.cloneNode(true)
+    rootUL.appendChild itemToFTML(each)
 
   require('./tidy-dom')(htmlDocument.documentElement, '\n')
   new XMLSerializer().serializeToString(htmlDocument)
@@ -60,14 +81,32 @@ cleanFTMLDOM = (element) ->
       else
         each = dom.nextNode each
 
-createItem = (outline, LI, remapIDCallback) ->
-  P = LI.firstElementChild
-  UL = LI.lastChild
-  text = P.textContent
-  item = outline.createItem(text, LI.id, remapIDCallback)
+createItem = (outline, liOrRootUL, remapIDCallback) ->
+  tagName = liOrRootUL.tagName
+  if tagName is 'LI'
+    p = liOrRootUL.firstChild
+    pOrUL = liOrRootUL.lastChild
+    pTagName = p?.tagName
+    pOrULTagName = pOrUL?.tagName
+    assert.ok(pTagName is 'P', "Expected 'P', but got #{pTagName}")
+    if pTagName is pOrULTagName
+      assert.ok(pOrUL is p, "Expect single 'P' child in 'LI'")
+    else
+      assert.ok(pOrULTagName is 'UL', "Expected 'UL', but got #{pOrULTagName}")
+      assert.ok(pOrUL.previousSibling is p, "Expected previous sibling of 'UL' to be 'P'")
+    TextStorage.validateInlineFTML(p)
+  else if tagName is 'UL'
+    assert.ok(liOrRootUL.id is Constants.RootID)
+  else
+    assert.ok(false, "Expected 'LI' or 'UL', but got #{tagName}")
 
-  if LI.hasAttributes()
-    attributes = LI.attributes
+  P = liOrRootUL.firstElementChild
+  UL = liOrRootUL.lastChild
+  text = TextStorage.fromInlineFTML(P)
+  item = outline.createItem(text, liOrRootUL.id, remapIDCallback)
+
+  if liOrRootUL.hasAttributes()
+    attributes = liOrRootUL.attributes
     for i in [0...attributes.length]
       attr = attributes[i]
       unless attr.name is 'id'

@@ -14,7 +14,7 @@ class TextStorage
   constructor: (text='') ->
     if text instanceof TextStorage
       @rope = text.getString()
-      @runIndex = text.runIndex?.cloneIndex()
+      @runIndex = text.runIndex?.clone()
     else
       @rope = text
 
@@ -89,20 +89,21 @@ class TextStorage
     unless length
       return
 
-    unless @rope.remove
-      @rope = new Rope(@rope)
-      @lineIndex?.string = @rope
-    @rope.remove(location, location + length)
+    if @rope.remove
+      @rope.remove(location, location + length)
+    else
+      if @length + length > Rope.SPLIT_LENGTH
+        @rope = new Rope(@rope)
+        @rope.remove(location, location + length)
+      else
+        @rope = @rope.substr(0, location) + @rope.substr(location + length)
+
     @runIndex?.deleteRange(location, length)
     @lineIndex?.deleteRange(location, length)
 
   insertText: (location, text) ->
     unless text.length
       return
-
-    unless @rope.insert
-      @rope = new Rope(@rope)
-      @lineIndex?.string = @rope
 
     if text instanceof TextStorage
       insertString = text.string
@@ -112,7 +113,15 @@ class TextStorage
 
     insertString = insertString.split(/\u000d(?:\u000a)?|\u000a|\u2029|\u000c|\u0085/).join('\n')
 
-    @rope.insert(location, insertString)
+    if @rope.insert
+      @rope.insert(location, insertString)
+    else
+      if @length + insertString.length > Rope.SPLIT_LENGTH
+        @rope = new Rope(@rope)
+        @rope.insert(location, insertString)
+      else
+        @rope = @rope.slice(0, location) + insertString + @rope.slice(location)
+
     @runIndex?.insertString(location, insertString)
     @lineIndex?.insertString(location, insertString)
 

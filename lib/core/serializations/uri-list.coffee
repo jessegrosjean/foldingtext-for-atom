@@ -21,7 +21,7 @@ deserializeItems = (uriList, outline) ->
       bodyHTML ?= each
       item = outline.createItem()
       item.bodyHTML = bodyHTML
-      item.addElementInBodyTextRange 'A', { href: each }, 0, item.bodyText.length
+      item.addBodyTextAttributeInRange 'A', { href: each }, 0, item.bodyText.length
       bodyHTML = null
       items.push item
 

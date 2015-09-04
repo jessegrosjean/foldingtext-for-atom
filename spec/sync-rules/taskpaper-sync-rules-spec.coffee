@@ -30,8 +30,8 @@ describe 'TaskPaper Sync Rules', ->
       one.getAttribute('data-jesse').should.equal('washere')
       one.getAttribute('data-moose').should.equal('')
       one.bodyText = 'no tags here'
-      expect(one.getAttribute('data-jesse')).toBeNull()
-      expect(one.getAttribute('data-moose')).toBeNull()
+      expect(one.getAttribute('data-jesse')).toBeUndefined()
+      expect(one.getAttribute('data-moose')).toBeUndefined()
 
   describe 'Attributes to body text', ->
 
