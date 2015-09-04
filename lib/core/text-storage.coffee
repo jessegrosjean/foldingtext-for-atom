@@ -6,7 +6,7 @@ Rope = require './rope'
 
 class TextStorage
 
-  stringStore: null
+  rope: null
   runIndex: null
   lineIndex: null
   emitter: null

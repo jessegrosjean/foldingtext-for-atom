@@ -21,6 +21,12 @@ class SpanLeaf
   getLength: ->
     @length
 
+  getString: ->
+    strings = []
+    for each in @children
+      strings.push(each.getString())
+    strings.join()
+
   getLocation: (child) ->
     length = @indexParent?.getLocation(this) or 0
     if child

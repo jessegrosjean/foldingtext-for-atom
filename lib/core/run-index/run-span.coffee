@@ -1,7 +1,7 @@
 Span = require '../span-index/span'
 _ = require 'underscore-plus'
 
-class Run extends Span
+class RunSpan extends Span
 
   @attributes: null
 
@@ -39,4 +39,4 @@ class Run extends Span
     nameValues = ("#{name}:#{JSON.stringify(@attributes[name])}" for name in sortedNames)
     super(nameValues.join('/'))
 
-module.exports = Run
+module.exports = RunSpan

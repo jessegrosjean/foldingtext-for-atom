@@ -40,6 +40,7 @@ describe 'SpanIndex', ->
       spanIndex.toString().should.equal('(aaa)(b)')
       spanIndex.insertString(4, 'b')
       spanIndex.toString().should.equal('(aaa)(bb)')
+      spanIndex.getString().should.equal('aaabb')
 
     it 'removes appropriate spans when text is deleted', ->
       spanIndex.insertSpans 0, [

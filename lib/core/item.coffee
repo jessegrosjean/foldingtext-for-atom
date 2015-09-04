@@ -454,15 +454,12 @@ class Item
   row: null
   Object.defineProperty @::, 'row',
     get: ->
-      if @inOutline
-        @outline.rowForItem(this)
-      else
-        row = 0
+      row = 0
+      each = @previousItem
+      while each
+        row++
         each = each.previousItem
-        while each
-          row++
-          each = each.previousItem
-        row
+      row
 
   # Public: Read-only parent {Item}.
   parent: null

@@ -386,12 +386,6 @@ class Outline
         items.push each
     items
 
-  rowForItem: (item) ->
-    @getItems().indexOf(item)
-
-  itemForRow: (row) ->
-    @getItems()[row]
-
   ###
   Section: Creating Items
   ###

@@ -1,10 +1,10 @@
 SpanIndex = require '../span-index'
-Line = require './Line'
+LineSpan = require './line-span'
 
 class LineIndex extends SpanIndex
 
-  constructor: (string) ->
-    super(string)
+  constructor: (children) ->
+    super(children)
 
   getLineCount: ->
     @spanCount
@@ -31,7 +31,7 @@ class LineIndex extends SpanIndex
     @createSpan(text)
 
   createSpan: (text) ->
-    new Line(text)
+    new LineSpan(text)
 
   deleteRange: (location, length) ->
     unless length

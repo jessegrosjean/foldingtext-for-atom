@@ -1,7 +1,10 @@
 SpanIndex = require '../span-index'
-Run = require './run'
+RunSpan = require './run-span'
 
 class RunIndex extends SpanIndex
+
+  constructor: (children) ->
+    super(children)
 
   getRunCount: ->
     @spanCount
@@ -31,7 +34,7 @@ class RunIndex extends SpanIndex
     @createSpan(text)
 
   createSpan: (text) ->
-    new Run(text)
+    new RunSpan(text)
 
   ###
   Reading attributes
