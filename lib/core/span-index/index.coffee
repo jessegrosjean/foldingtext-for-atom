@@ -6,7 +6,7 @@ Span = require './span'
 
 class SpanIndex extends SpanBranch
 
-  emitter: null
+  @isRoot: true;
 
   constructor: (children) ->
     children ?= [new SpanLeaf([])]

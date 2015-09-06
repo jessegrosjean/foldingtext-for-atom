@@ -2,10 +2,8 @@ _ = require 'underscore-plus'
 
 class Span
 
-  @indexParent: null
-  @string: ''
-
   constructor: (@string='') ->
+    @indexParent = null
 
   clone: ->
     new @constructor(@string)
@@ -15,8 +13,8 @@ class Span
       return null
 
     clone = @clone()
-    clone.setString(@string.substr(location))
-    @setString(@string.substr(0, location))
+    clone.deleteRange(0, location)
+    @deleteRange(location, @getLength() - location)
     clone
 
   mergeWithSpan: (span) ->
@@ -53,12 +51,24 @@ class Span
     newString = @string.substr(0, location) + text + @string.substr(location)
     @setString(newString)
 
+  replaceRange: (location, length, string) ->
+    @insertString(location, string)
+    @deleteRange(location + string.length, length)
+
   appendString: (string) ->
     @insertString(@getLength(), string)
 
   ###
   Section: Spans
   ###
+
+  getRoot: ->
+    each = @indexParent
+    while each
+      if each.isRoot
+        return each
+      each = each.indexParent
+    null
 
   getSpanIndex: ->
     @indexParent.getSpanIndex(this)
