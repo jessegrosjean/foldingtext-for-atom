@@ -796,7 +796,7 @@ class OutlineEditor
       clonedItems = []
 
       for each in items
-        clonedItems.push each.cloneItem (oldID, cloneID, cloneItem) =>
+        clonedItems.push each.cloneItem true, (oldID, cloneID, cloneItem) =>
           oldItem = outline.getItemForID(oldID)
           if oldItem is itemRange.startItem
             itemRange.startItem = cloneItem

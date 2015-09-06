@@ -591,8 +591,8 @@ class Item
   # Public: Deep clones this item.
   #
   # Returns a duplicate {Item}.
-  cloneItem: (remappedIDCallback) ->
-    @outline.cloneItem(this, remappedIDCallback)
+  cloneItem: (deep, remappedIDCallback) ->
+    @outline.cloneItem(this, deep, remappedIDCallback)
 
   # Public: Given an array of items determines and returns the common
   # ancestors of those items.
