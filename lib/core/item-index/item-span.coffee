@@ -15,39 +15,48 @@ class ItemSpan extends LineSpan
   setString: (string='') ->
     super(string)
 
-  deleteRange: (location, length) ->
-    super(location, length)
-
-    if location + length > @item.bodyText.length
-      length--
-
+    content = @getLineContent()
     if root = @getRoot()
       unless root.isUpdatingIndex
         root.isUpdatingItems++
-        @item.replaceBodyTextInRange('', location, length)
+        @item.bodyText = content
         root.isUpdatingItems--
     else
-      @item.replaceBodyTextInRange('', location, length)
+      @item.bodyText = content
+
+  deleteRange: (location, length) ->
+    super(location, length)
+
+    #if location + length > @item.bodyText.length
+    #  length--
+
+    #if root = @getRoot()
+    #  unless root.isUpdatingIndex
+    #    root.isUpdatingItems++
+    #    @item.replaceBodyTextInRange('', location, length)
+    #    root.isUpdatingItems--
+    #else
+    #  @item.replaceBodyTextInRange('', location, length)
 
   insertString: (location, text) ->
     super(location, text)
 
-    if location is @getLength() - 1 and text[text.length -1] is '\n'
-      text = text.substr(-1)
+    #if location is @getLength() - 1 and text[text.length - 1] is '\n'
+    #  text = text.substr(0, -1)
 
-    if root = @getRoot()
-      unless root.isUpdatingIndex
-        root.isUpdatingItems++
-        @item.replaceBodyTextInRange(text, location, 0)
-        root.isUpdatingItems--
-    else
-      @item.replaceBodyTextInRange(text, location, 0)
+    #if root = @getRoot()
+    #  unless root.isUpdatingIndex
+    #    root.isUpdatingItems++
+    #    @item.replaceBodyTextInRange(text, location, 0)
+    #    root.isUpdatingItems--
+    #else
+    #  @item.replaceBodyTextInRange(text, location, 0)
 
   ###
   Section: Debug
   ###
 
-  toString: (extra) ->
+  toString: ->
     super(@item.id)
 
 module.exports = ItemSpan

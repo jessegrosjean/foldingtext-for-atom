@@ -147,10 +147,10 @@ describe 'TextStorage', ->
       textStorage.toString(true).should.equal('lines: (Hello world!) runs: (Hello/name:"jesse")( world!/name:"joe")')
 
       textStorage.replaceRangeWithText(3, 5, '')
-      textStorage.toString(true).should.equal('lines: (orld!) runs: (Hel/name:"jesse")(rld!/name:"joe")')
+      textStorage.toString(true).should.equal('lines: (Helrld!) runs: (Hel/name:"jesse")(rld!/name:"joe")')
 
       textStorage.replaceRangeWithText(3, 0, 'lo wo')
-      textStorage.toString(true).should.equal('lines: (orllo wo) runs: (Hello wo/name:"jesse")(rld!/name:"joe")')
+      textStorage.toString(true).should.equal('lines: (Hello world!) runs: (Hello wo/name:"jesse")(rld!/name:"joe")')
 
     it 'should remove leading attribute run if text in run is fully replaced', ->
       textStorage = new TextStorage('\ttwo')

@@ -105,12 +105,11 @@ createItem = (outline, liOrRootUL, remapIDCallback) ->
   text = TextStorage.fromInlineFTML(P)
   item = outline.createItem(text, liOrRootUL.id, remapIDCallback)
 
-  if liOrRootUL.hasAttributes()
-    attributes = liOrRootUL.attributes
-    for i in [0...attributes.length]
-      attr = attributes[i]
-      unless attr.name is 'id'
-        item.setAttribute(attr.name, attr.value)
+  attributes = liOrRootUL.attributes
+  for i in [0...attributes.length]
+    attr = attributes[i]
+    unless attr.name is 'id'
+      item.setAttribute(attr.name, attr.value)
 
   if P isnt UL
     eachLI = UL.firstElementChild

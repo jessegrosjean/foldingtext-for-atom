@@ -57,7 +57,7 @@ class ItemIndex extends LineIndex
       @removeLines(removeStartIndex, removeCount)
       removeStartIndex = undefined
       removeCount = 0
-    
+
     for each in removedDescendants
       if itemSpan = @getItemSpanForItem(each)
         removeStartIndex ?= itemSpan.getSpanIndex()

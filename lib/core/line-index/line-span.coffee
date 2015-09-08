@@ -3,14 +3,37 @@ assert = require 'assert'
 
 class LineSpan extends Span
 
-  
   constructor: (text) ->
     super(text)
 
+  getLineContent: ->
+    @string
+
+  getLength: ->
+    length = @string.length
+    if @isLast
+      length
+    else
+      length + 1
+
+  getString: ->
+    if @isLast
+      @string
+    else
+      @string + '\n'
+
   setString: (string='') ->
-    i = string.indexOf('\n')
-    assert(i is -1 or i is string.length - 1)
+    assert(string.indexOf('\n') is -1)
     super(string)
+
+  setIsLast: (isLast) ->
+    if @isLast isnt isLast
+      delta = if isLast then -1 else 1
+      each = @indexParent
+      while each
+        each.length += delta
+        each = each.indexParent
+      @isLast = isLast
 
   deleteRange: (location, length) ->
     super(location, length)

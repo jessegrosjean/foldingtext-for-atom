@@ -5,6 +5,7 @@ class LineIndex extends SpanIndex
 
   constructor: (children) ->
     super(children)
+    @lastSpan = null
 
   getLineCount: ->
     @spanCount
@@ -37,18 +38,16 @@ class LineIndex extends SpanIndex
     unless length
       return
 
-    slice = @sliceSpansToRange(location, length)
-    if length is @getLength()
-      @getSpan(0).setString('')
-      @removeSpans(slice.spanIndex + 1, slice.count - 1)
-    else
-      @removeSpans(slice.spanIndex, slice.count)
+    start = @getSpanInfoAtLocation(location, true)
+    end = @getSpanInfoAtLocation(location + length, true)
 
-    cur = @getSpanInfoAtLocation(location)
-    if cur.span.getString().indexOf('\n') is -1
-      if next = @getSpan(cur.spanIndex + 1)
-        cur.span.appendString(next.getString())
-        @removeSpans(cur.spanIndex + 1, 1)
+    if start.span is end.span
+      start.span.deleteRange(start.location, end.location - start.location)
+    else
+      trail = end.span.getLineContent().substr(end.location)
+      start.span.deleteRange(start.location, start.span.getLineContent().length - start.location)
+      start.span.insertString(start.span.getLineContent().length, trail)
+      @removeSpans(start.spanIndex + 1, end.spanIndex - start.spanIndex)
 
   insertString: (location, text) ->
     unless text
@@ -59,38 +58,46 @@ class LineIndex extends SpanIndex
 
     start = @getSpanInfoAtLocation(location, true)
     lines = text.split('\n')
-    trail = start.span.getString().substr(start.location)
-    start.span.deleteRange(start.location, start.span.getLength() - start.location)
-    start.span.insertString(start.location, lines.shift())
 
-    if start.spanIndex isnt @getSpanCount() - 1 and start.span.getString().indexOf('\n') is -1
-      start.span.appendString('\n')
-
-    if lines.length
-      lines[lines.length - 1] += trail
+    if lines.length is 1
+      start.span.insertString(start.location, lines[0])
+    else
+      insertingAtEnd = start.spanIndex is @getSpanCount() - 1
+      leed = lines.shift()
+      trail = start.span.getLineContent().substr(start.location)
+      lastLine = lines.pop() + trail
+      start.span.deleteRange(start.location, start.span.getLength() - start.location)
+      start.span.insertString(start.location, leed)
       spans = (@createSpan(each) for each in lines)
+      spans.push(@createSpan(lastLine))
+
       @insertSpans(start.spanIndex + 1, spans)
 
   insertSpans: (spanIndex, spans) ->
-    for each in spans
-      if each.getString().indexOf('\n') is -1
-        each.appendString('\n')
+    isAtEnd = spanIndex is @getSpanCount()
 
-    if spanIndex is @getSpanCount()
+    if isAtEnd
       if oldLast = @getSpan(spanIndex - 1)
-        if oldLast.getString().indexOf('\n') is -1
-          oldLast.appendString('\n')
-      newLast = spans[spans.length - 1]
-      newLast.deleteRange(newLast.getLength() - 1, 1)
+        oldLast.setIsLast(false)
 
     super(spanIndex, spans)
 
+    if isAtEnd
+      if newLast = @getSpan(spanIndex + spans.length - 1)
+        newLast.setIsLast(true)
+
   removeSpans: (spanIndex, deleteCount) ->
+    end = spanIndex + deleteCount
+    isAtEnd = end is @getSpanCount()
+
+    if isAtEnd
+      if oldLast = @getSpan(end - 1)
+        oldLast.setIsLast(false)
+
     super(spanIndex, deleteCount)
 
-    if spanIndex is @getSpanCount()
+    if isAtEnd
       if newLast = @getSpan(spanIndex - 1)
-        if newLast.getString().indexOf('\n') isnt -1
-          newLast.deleteRange(newLast.getLength() - 1, 1)
+        newLast.setIsLast(true)
 
 module.exports = LineIndex

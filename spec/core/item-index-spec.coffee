@@ -1,7 +1,7 @@
 loadOutlineFixture = require '../load-outline-fixture'
 ItemIndex = require '../../lib/core/item-index'
 
-fdescribe 'ItemIndex', ->
+describe 'ItemIndex', ->
   [itemIndex, outline, root, one, two, three, four, five, six] = []
 
   beforeEach ->
@@ -40,10 +40,9 @@ fdescribe 'ItemIndex', ->
 
     it 'update item text when span text changes from start', ->
       itemIndex.deleteRange(0, 1)
-      itemIndex.toString().should.equal('(one\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+      itemIndex.toString().should.equal('(ne\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     it 'update item text when span text changes from middle', ->
-      debugger
       itemIndex.deleteRange(1, 1)
       itemIndex.toString().should.equal('(oe\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
@@ -52,8 +51,14 @@ fdescribe 'ItemIndex', ->
       itemIndex.toString().should.equal('(on\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     it 'remove item in outline when span is removed', ->
+      itemIndex.removeSpans(0, 1)
+      itemIndex.toString().should.equal('(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
-    it 'add item in outline when is added', ->
+    it 'add item in outline when span is added', ->
+      span = itemIndex.createSpan('new')
+      itemIndex.insertSpans(2, [span])
+      span.item.id = 'NEWID'
+      itemIndex.toString(false).should.equal('(one\n/1)(two\n/2)(new\n/NEWID)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
 ###
 describe 'OutlineBuffer', ->

@@ -60,6 +60,13 @@ describe 'LineIndex', ->
       lineIndex.deleteRange(4, 4)
       lineIndex.toString().should.equal('(one\n)(three)')
 
+  describe 'Replace Text', ->
+
+    it 'replaces text', ->
+      lineIndex.insertString(0, 'Hello world!')
+      lineIndex.replaceRange(3, 5, '')
+      lineIndex.toString().should.equal('(Helrld!)')
+
   describe 'Spans', ->
 
     it 'adds newline to last span when spans inserted after it', ->

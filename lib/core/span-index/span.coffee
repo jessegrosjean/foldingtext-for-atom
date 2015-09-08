@@ -82,8 +82,8 @@ class Span
 
   toString: (extra) ->
     if extra
-      "(#{@string}/#{extra})"
+      "(#{@getString()}/#{extra})"
     else
-      "(#{@string})"
+      "(#{@getString()})"
 
 module.exports = Span
