@@ -6,11 +6,10 @@ Span = require './span'
 
 class SpanIndex extends SpanBranch
 
-  @isRoot: true;
-
   constructor: (children) ->
     children ?= [new SpanLeaf([])]
     super(children)
+    @isRoot = true
     @changing = 0
 
   clone: ->

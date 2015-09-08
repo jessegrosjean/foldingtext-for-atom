@@ -11,27 +11,49 @@ fdescribe 'ItemIndex', ->
   afterEach ->
     itemIndex.destroy()
 
-  it 'maps items to item spans', ->
-    itemIndex.toString().should.equal('(one\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+  describe 'Outline to Index', ->
 
-  it 'can change the item that is mapped', ->
-    itemIndex.setItem(two)
-    itemIndex.toString().should.equal('(three\n/3)(four/4)')
+    it 'maps items to item spans', ->
+      itemIndex.toString().should.equal('(one\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
-  it 'updates index when item text changes', ->
-    debugger
-    one.bodyText = 'moose'
-    one.replaceBodyTextInRange('s', 5, 0)
-    one.appendBodyText('!')
-    itemIndex.toString().should.equal('(mooses!\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+    it 'can change the item that is mapped', ->
+      itemIndex.setItem(two)
+      itemIndex.toString().should.equal('(three\n/3)(four/4)')
 
-  it 'removing item spans from index removes items in outline', ->
-    two.removeFromParent()
-    itemIndex.toString().should.equal('(one\n/1)(five\n/5)(six/6)')
+    it 'updates index span when item text changes', ->
+      one.bodyText = 'moose'
+      one.replaceBodyTextInRange('s', 5, 0)
+      one.appendBodyText('!')
+      itemIndex.toString().should.equal('(mooses!\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
-  it 'removing item spans from index removes items in outline', ->
+    it 'removes index spans when item is removed from outline', ->
+      two.removeFromParent()
+      itemIndex.toString().should.equal('(one\n/1)(five\n/5)(six/6)')
+      six.removeFromParent()
+      itemIndex.toString().should.equal('(one\n/1)(five/5)')
+      five.removeFromParent()
+      itemIndex.toString().should.equal('(one/1)')
+      one.removeFromParent()
+      itemIndex.toString().should.equal('')
 
-  it 'removing items in outline removes item spans in index', ->
+  describe 'Index to Outline', ->
+
+    it 'update item text when span text changes from start', ->
+      itemIndex.deleteRange(0, 1)
+      itemIndex.toString().should.equal('(one\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+
+    it 'update item text when span text changes from middle', ->
+      debugger
+      itemIndex.deleteRange(1, 1)
+      itemIndex.toString().should.equal('(oe\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+
+    it 'update item text when span text changes from end', ->
+      itemIndex.deleteRange(2, 1)
+      itemIndex.toString().should.equal('(on\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+
+    it 'remove item in outline when span is removed', ->
+
+    it 'add item in outline when is added', ->
 
 ###
 describe 'OutlineBuffer', ->

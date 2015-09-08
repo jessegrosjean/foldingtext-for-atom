@@ -8,7 +8,6 @@ class ItemIndex extends LineIndex
 
   constructor: (@item, @editor) ->
     super()
-
     @isUpdatingIndex = 0
     @isUpdatingItems = 0
     @setItem(@item)
@@ -16,13 +15,11 @@ class ItemIndex extends LineIndex
   setItem: (@item) ->
     @isUpdatingIndex++
     @removeSpans(0, @getSpanCount())
-
     @subscriptions?.dispose()
-    @subscriptions = new CompositeDisposable()
+    @subscriptions = new CompositeDisposable
     @subscriptions.add @item.outline.onDidChange @outlineDidChange.bind(this)
     @subscriptions.add @item.outline.onDidDestroy => @destroy()
     @itemsToItemSpansMap = new Map
-
     if @item
       assert(@item.isInOutline)
       itemSpans = []
@@ -35,6 +32,7 @@ class ItemIndex extends LineIndex
     if @isUpdatingItems
       return
 
+    @isUpdatingIndex++
     target = mutation.target
     switch mutation.type
       when Mutation.BODT_TEXT_CHANGED
@@ -42,26 +40,24 @@ class ItemIndex extends LineIndex
           localLocation = mutation.insertedTextLocation
           insertedString = target.bodyText.substr(localLocation, mutation.insertedTextLength)
           location = itemSpan.getLocation() + localLocation
-          @isUpdatingIndex++
-          @replaceRange(location, mutation.replacedText.length, insertedString)
-          @isUpdatingIndex--
+          itemSpan.replaceRange(location, mutation.replacedText.length, insertedString)
 
       when Mutation.CHILDREN_CHANGED
         if mutation.removedItems.length
           @_outlineDidRemoveItems(target, mutation.getFlattendedRemovedItems())
         if mutation.addedItems.length
           @_outlineDidRemoveItems(target, mutation.addedItems)
+    @isUpdatingIndex--
 
   _outlineDidRemoveItems: (target, removedDescendants) ->
     removeStartIndex = undefined
     removeCount = 0
+
     removeRangeIfDefined = =>
-      @isUpdatingIndex++
       @removeLines(removeStartIndex, removeCount)
-      @isUpdatingIndex--
       removeStartIndex = undefined
       removeCount = 0
-
+    
     for each in removedDescendants
       if itemSpan = @getItemSpanForItem(each)
         removeStartIndex ?= itemSpan.getSpanIndex()
@@ -91,26 +87,25 @@ class ItemIndex extends LineIndex
       insertBeforeItem = addedItemSpans[addedItemSpans.length - 1].item.nextItem
       while insertBeforeItem and not (insertBeforeLine = @getItemSpanForItem(insertBeforeItem))
         insertBeforeItem = insertBeforeItem.nextItem
-
       if insertBeforeLine
         insertIndex = insertBeforeLine.getSpanIndex()
       else
         insertAfterItem = addedItemSpans[0].item.previousItem
         while insertAfterItem and not (insertAfterLine = @getItemSpanForItem(insertAfterItem))
           insertAfterItem = insertAfterItem.nextItem
-
         if insertAfterLine
           insertIndex = insertAfterLine.getSpanIndex() + 1
         else
           insertIndex = @getLineCount()
-
-      @isUpdatingIndex++
       @insertSpans(insertIndex, addedItemSpans)
-      @isUpdatingIndex--
 
   destroy: ->
     @subscriptions.dispose()
     super()
+
+  ###
+  Section: Visibility
+  ###
 
   isVisible: (item) ->
     @editor?.isVisible(item) ? true
@@ -118,8 +113,9 @@ class ItemIndex extends LineIndex
   isExpanded: (item) ->
     @editor?.isExpanded(item) ? true
 
-  createSpan: (text) ->
-    new ItemSpan(@item.outline.createItem(text))
+  ###
+  Section: Characters
+  ###
 
   deleteRange: (location, length) ->
     unless length
@@ -130,6 +126,13 @@ class ItemIndex extends LineIndex
     unless text
       return
     super(location, text)
+
+  ###
+  Section: Spans
+  ###
+
+  createSpan: (text) ->
+    new ItemSpan(@item.outline.createItem(text))
 
   getItemSpanForItem: (item) ->
     @itemsToItemSpansMap.get(item)

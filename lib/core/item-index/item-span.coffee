@@ -6,19 +6,7 @@ class ItemSpan extends LineSpan
     super(@item.bodyText)
 
   clone: ->
-    new @constructor(@item.cloneItem())
-
-  split: (location) ->
-    if location is 0 or location is @getLength()
-      return null
-
-    clone = @clone()
-    clone.setString(@string.substr(location))
-    @setString(@string.substr(0, location))
-    clone
-
-    debugger
-    super(location)
+    new @constructor(@item.cloneItem(false))
 
   ###
   Section: Characters
@@ -30,8 +18,30 @@ class ItemSpan extends LineSpan
   deleteRange: (location, length) ->
     super(location, length)
 
+    if location + length > @item.bodyText.length
+      length--
+
+    if root = @getRoot()
+      unless root.isUpdatingIndex
+        root.isUpdatingItems++
+        @item.replaceBodyTextInRange('', location, length)
+        root.isUpdatingItems--
+    else
+      @item.replaceBodyTextInRange('', location, length)
+
   insertString: (location, text) ->
     super(location, text)
+
+    if location is @getLength() - 1 and text[text.length -1] is '\n'
+      text = text.substr(-1)
+
+    if root = @getRoot()
+      unless root.isUpdatingIndex
+        root.isUpdatingItems++
+        @item.replaceBodyTextInRange(text, location, 0)
+        root.isUpdatingItems--
+    else
+      @item.replaceBodyTextInRange(text, location, 0)
 
   ###
   Section: Debug
