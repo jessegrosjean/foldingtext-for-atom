@@ -1,12 +1,19 @@
 LineIndex = require '../../lib/core/line-index'
 
 describe 'LineIndex', ->
-  [lineIndex] = []
+  [lineIndex, indexSubscription, indexDidChangeExpects] = []
 
   beforeEach ->
     lineIndex = new LineIndex()
+    indexSubscription = lineIndex.onDidChange (e) ->
+      if indexDidChangeExpects?.length
+        exp = indexDidChangeExpects.shift()
+        exp(e)
 
   afterEach ->
+    expect(indexDidChangeExpects?.length).toBeFalsy()
+    indexDidChangeExpects = null
+    indexSubscription.dispose()
     lineIndex.destroy()
 
   it 'starts empty', ->
@@ -81,3 +88,67 @@ describe 'LineIndex', ->
       lineIndex.toString().should.equal('(two\n)(three)')
       lineIndex.removeSpans(1, 1)
       lineIndex.toString().should.equal('(two)')
+
+  describe 'Events', ->
+
+    it 'posts change events when updating text in line', ->
+      lineIndex.insertSpans 0, [
+        lineIndex.createSpan('a'),
+        lineIndex.createSpan('b'),
+        lineIndex.createSpan('c')
+      ]
+      indexDidChangeExpects = [
+        (e) ->
+          e.location.should.equal(0)
+          e.replacedLength.should.equal(1)
+          e.insertedString.should.equal('moose')
+      ]
+      lineIndex.replaceRange(0, 1, 'moose')
+
+    it 'posts change events when inserting lines', ->
+      indexDidChangeExpects = [
+        (e) ->
+          e.location.should.equal(0)
+          e.replacedLength.should.equal(0)
+          e.insertedString.should.equal('a\nb\nc')
+        (e) ->
+          e.location.should.equal(5)
+          e.replacedLength.should.equal(0)
+          e.insertedString.should.equal('\nd')
+      ]
+      lineIndex.insertSpans 0, [
+        lineIndex.createSpan('a'),
+        lineIndex.createSpan('b'),
+        lineIndex.createSpan('c')
+      ]
+      lineIndex.insertSpans 3, [
+        lineIndex.createSpan('d')
+      ]
+
+    it 'posts change events when removing lines', ->
+      lineIndex.insertSpans 0, [
+        lineIndex.createSpan('a'),
+        lineIndex.createSpan('b'),
+        lineIndex.createSpan('c')
+      ]
+      indexDidChangeExpects = [
+        (e) ->
+          e.location.should.equal(3)
+          e.replacedLength.should.equal(2)
+          e.insertedString.should.equal('')
+      ]
+      lineIndex.removeSpans(2, 1)
+
+    it 'posts change events when removing all lines', ->
+      lineIndex.insertSpans 0, [
+        lineIndex.createSpan('a'),
+        lineIndex.createSpan('b'),
+        lineIndex.createSpan('c')
+      ]
+      indexDidChangeExpects = [
+        (e) ->
+          e.location.should.equal(0)
+          e.replacedLength.should.equal(5)
+          e.insertedString.should.equal('')
+      ]
+      lineIndex.removeSpans(0, 3)

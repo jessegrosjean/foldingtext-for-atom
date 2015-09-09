@@ -24,8 +24,8 @@ class RunIndex extends SpanIndex
   insertRuns: (start, lines) ->
     @insertSpans(start, lines)
 
-  removeRuns: (start, deleteCount) ->
-    @removeSpans(start, deleteCount)
+  removeRuns: (start, removeCount) ->
+    @removeSpans(start, removeCount)
 
   sliceRunsToRange: (location, length) ->
     @sliceSpansToRange(location, length)

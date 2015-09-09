@@ -10,6 +10,7 @@ class SpanIndex extends SpanBranch
     children ?= [new SpanLeaf([])]
     super(children)
     @isRoot = true
+    @emitter = null
     @changing = 0
 
   clone: ->
@@ -29,17 +30,11 @@ class SpanIndex extends SpanBranch
       @emitter = emitter = new Emitter
     emitter
 
-  onDidBeginChanges: (callback) ->
-    @_getEmitter().on 'did-begin-changes', callback
-
   onWillChange: (callback) ->
     @_getEmitter().on 'will-change', callback
 
   onDidChange: (callback) ->
     @_getEmitter().on 'did-change', callback
-
-  onDidEndChanges: (callback) ->
-    @_getEmitter().on 'did-end-changes', callback
 
   onDidDestroy: (callback) ->
     @_getEmitter().on 'did-destroy', callback
@@ -51,25 +46,47 @@ class SpanIndex extends SpanBranch
   deleteRange: (location, length) ->
     unless length
       return
-
-    slice = @sliceSpansToRange(location, length)
-    @removeSpans(slice.spanIndex, slice.count)
+    @replaceRange(location, length, '')
 
   insertString: (location, string) ->
     unless string
       return
+    @replaceRange(location, 0, string)
 
+  replaceRange: (location, length, string) ->
+    if location < 0 or (location + length) > @getLength()
+      throw new Error("Invalide text range: #{location}-#{location + length}")
+
+    if @emitter and not @changing
+      changeEvent =
+        location: location
+        replacedLength: length
+        insertedString: string
+      @emitter.emit 'will-change', changeEvent
+
+    @changing++
     if @getSpanCount() is 0
       @insertSpans(0, [@createSpan(string)])
     else
       start = @getSpanInfoAtLocation(location)
-      start.span.insertString(start.location, string)
+      spanLength = start.span.getLength()
 
-  replaceRange: (location, length, string) ->
-    if string
-      @insertString(location, string)
-    if length
-      @deleteRange(location + string.length, length)
+      if start.location + length <= spanLength and length isnt spanLength
+        start.span.replaceRange(start.location, length, string)
+      else
+        slice = @sliceSpansToRange(location, length)
+        if start.location is 0 and string.length
+          start.span.replaceRange(0, start.span.getLength(), string)
+          @removeSpans(slice.spanIndex + 1, slice.count - 1)
+        else
+          @removeSpans(slice.spanIndex, slice.count)
+          if string
+            start = @getSpanInfoAtLocation(location)
+            start.span.appendString(string)
+    @changing--
+
+    if changeEvent
+      @emitter.emit 'did-change', changeEvent
 
   ###
   Section: Spans
@@ -77,6 +94,54 @@ class SpanIndex extends SpanBranch
 
   createSpan: (text) ->
     new Span(text)
+
+  insertSpans: (spanIndex, spans, adjustChangeEvent) ->
+    if spanIndex < 0 or spanIndex > @getSpanCount()
+      throw new Error("Invalide span index: #{spanIndex}")
+
+    unless spans.length
+      return
+
+    if @emitter and not @changing
+      insertedString = (each.getString() for each in spans).join('')
+      changeEvent =
+        location: @getSpan(spanIndex)?.getLocation() ? @getLength()
+        replacedLength: 0
+        insertedString: insertedString
+      adjustChangeEvent?(changeEvent)
+      @emitter.emit 'will-change', changeEvent
+
+    @changing++
+    super(spanIndex, spans)
+    @changing--
+
+    if changeEvent
+      @emitter.emit 'did-change', changeEvent
+
+  removeSpans: (spanIndex, removeCount, adjustChangeEvent) ->
+    if spanIndex < 0 or (spanIndex + removeCount) > @getSpanCount()
+      throw new Error("Invalide span range: #{spanIndex}-#{spanIndex + removeCount}")
+
+    unless removeCount
+      return
+
+    if @emitter and not @changing
+      replacedLength = 0
+      @iterateSpans spanIndex, removeCount, (span) ->
+        replacedLength += span.getLength()
+      changeEvent =
+        location: @getSpan(spanIndex).getLocation()
+        replacedLength: replacedLength
+        insertedString: ''
+      adjustChangeEvent?(changeEvent)
+      @emitter.emit 'will-change', changeEvent
+
+    @changing++
+    super(spanIndex, removeCount)
+    @changing--
+
+    if changeEvent
+      @emitter.emit 'did-change', changeEvent
 
   getSpanInfoAtCharacterIndex: (characterIndex) ->
     if characterIndex < @getLength()

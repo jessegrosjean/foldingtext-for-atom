@@ -25,8 +25,8 @@ class LineIndex extends SpanIndex
   insertLines: (start, lines) ->
     @insertSpans(start, lines)
 
-  removeLines: (start, deleteCount) ->
-    @removeSpans(start, deleteCount)
+  removeLines: (start, removeCount) ->
+    @removeSpans(start, removeCount)
 
   createLine: (text) ->
     @createSpan(text)
@@ -34,70 +34,69 @@ class LineIndex extends SpanIndex
   createSpan: (text) ->
     new LineSpan(text)
 
-  deleteRange: (location, length) ->
-    unless length
-      return
+  replaceRange: (location, length, string) ->
+    if location < 0 or (location + length) > @getLength()
+      throw new Error("Invalide text range: #{location}-#{location + length}")
 
-    start = @getSpanInfoAtLocation(location, true)
-    end = @getSpanInfoAtLocation(location + length, true)
+    if @emitter and not @changing
+      changeEvent =
+        location: location
+        replacedLength: length
+        insertedString: string
+      @emitter.emit 'will-change', changeEvent
 
-    if start.span is end.span
-      start.span.deleteRange(start.location, end.location - start.location)
-    else
-      trail = end.span.getLineContent().substr(end.location)
-      start.span.deleteRange(start.location, start.span.getLineContent().length - start.location)
-      start.span.insertString(start.span.getLineContent().length, trail)
-      @removeSpans(start.spanIndex + 1, end.spanIndex - start.spanIndex)
+    lines = string.split('\n')
 
-  insertString: (location, text) ->
-    unless text
-      return
-
+    @changing++
     if @getSpanCount() is 0
-      @insertSpans(0, [@createSpan('')])
-
-    start = @getSpanInfoAtLocation(location, true)
-    lines = text.split('\n')
-
-    if lines.length is 1
-      start.span.insertString(start.location, lines[0])
+      @insertSpans(0, (@createSpan(each) for each in lines))
     else
-      insertingAtEnd = start.spanIndex is @getSpanCount() - 1
-      leed = lines.shift()
-      trail = start.span.getLineContent().substr(start.location)
-      lastLine = lines.pop() + trail
-      start.span.deleteRange(start.location, start.span.getLength() - start.location)
-      start.span.insertString(start.location, leed)
-      spans = (@createSpan(each) for each in lines)
-      spans.push(@createSpan(lastLine))
+      start = @getSpanInfoAtLocation(location, true)
+      end = @getSpanInfoAtLocation(location + length, true)
 
-      @insertSpans(start.spanIndex + 1, spans)
+      if start.span is end.span and lines.length is 1
+        start.span.replaceRange(start.location, length, lines[0])
+      else
+        endSuffix = end.span.getLineContent().substr(end.location)
+        start.span.replaceRange(start.location, start.span.getLength() - start.location, lines.shift())
+        @removeSpans(start.spanIndex + 1, end.spanIndex - start.spanIndex)
+        insertedLines = (@createLine(each) for each in lines)
+        @insertLines(start.spanIndex + 1, insertedLines)
+        if endSuffix.length
+          lastLine = insertedLines[insertedLines.length - 1] ? start.span
+          lastLine.appendString(endSuffix)
+    @changing--
+
+    if changeEvent
+      @emitter.emit 'did-change', changeEvent
 
   insertSpans: (spanIndex, spans) ->
-    isAtEnd = spanIndex is @getSpanCount()
+    unless spans.length
+      return
 
-    if isAtEnd
-      if oldLast = @getSpan(spanIndex - 1)
-        oldLast.setIsLast(false)
+    if spanIndex is @getSpanCount()
+      @getSpan(spanIndex - 1)?.setIsLast(false)
+      spans[spans.length - 1]?.setIsLast(true)
+      super spanIndex, spans, (changeEvent) ->
+        unless spanIndex is 0
+          changeEvent.location--
+          changeEvent.insertedString = '\n' + changeEvent.insertedString
+    else
+      super(spanIndex, spans)
 
-    super(spanIndex, spans)
+  removeSpans: (spanIndex, removeCount) ->
+    unless removeCount
+      return
 
-    if isAtEnd
-      if newLast = @getSpan(spanIndex + spans.length - 1)
-        newLast.setIsLast(true)
-
-  removeSpans: (spanIndex, deleteCount) ->
-    end = spanIndex + deleteCount
-    isAtEnd = end is @getSpanCount()
-
-    if isAtEnd
-      if oldLast = @getSpan(end - 1)
-        oldLast.setIsLast(false)
-
-    super(spanIndex, deleteCount)
-
-    if isAtEnd
-      if newLast = @getSpan(spanIndex - 1)
-        newLast.setIsLast(true)
+    removeTo = spanIndex + removeCount
+    if removeTo is @getSpanCount()
+      super spanIndex, removeCount, (changeEvent) ->
+        unless spanIndex is 0
+          changeEvent.location--
+          changeEvent.replacedLength++
+      @getSpan(spanIndex - 1)?.setIsLast(true)
+      @getSpan(removeTo - 1)?.setIsLast(false)
+    else
+      super(spanIndex, removeCount)
 
 module.exports = LineIndex

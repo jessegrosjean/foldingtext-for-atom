@@ -40,13 +40,13 @@ class ItemIndex extends LineIndex
           localLocation = mutation.insertedTextLocation
           insertedString = target.bodyText.substr(localLocation, mutation.insertedTextLength)
           location = itemSpan.getLocation() + localLocation
-          itemSpan.replaceRange(location, mutation.replacedText.length, insertedString)
+          @replaceRange(location, mutation.replacedText.length, insertedString)
 
       when Mutation.CHILDREN_CHANGED
         if mutation.removedItems.length
           @_outlineDidRemoveItems(target, mutation.getFlattendedRemovedItems())
         if mutation.addedItems.length
-          @_outlineDidRemoveItems(target, mutation.addedItems)
+          @_outlineDidAddItems(target, mutation.addedItems)
     @isUpdatingIndex--
 
   _outlineDidRemoveItems: (target, removedDescendants) ->
@@ -67,7 +67,7 @@ class ItemIndex extends LineIndex
     removeRangeIfDefined()
 
   _outlineDidAddItems: (target, addedChildren) ->
-    if target isnt @getHoistedItem()
+    if target isnt @item
       if not @isVisible(target) or not @isExpanded(target)
         return
 
@@ -151,9 +151,9 @@ class ItemIndex extends LineIndex
 
     super(spanIndex, itemSpans)
 
-  removeSpans: (spanIndex, deleteCount) ->
+  removeSpans: (spanIndex, removeCount) ->
     lineSpans = []
-    @iterateLines spanIndex, deleteCount, (each) =>
+    @iterateLines spanIndex, removeCount, (each) =>
       @itemsToItemSpansMap.delete(each.item)
       lineSpans.push(each)
 
@@ -163,7 +163,7 @@ class ItemIndex extends LineIndex
         @item.outline.removeItem(each.item)
       @isUpdatingItems--
 
-    super(spanIndex, deleteCount)
+    super(spanIndex, removeCount)
 
 module.exports = ItemIndex
 

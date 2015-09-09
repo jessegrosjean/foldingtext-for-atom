@@ -88,56 +88,43 @@ class TextStorage
   deleteRange: (location, length) ->
     unless length
       return
-
-    if @rope.remove
-      @rope.remove(location, location + length)
-    else
-      if @length + length > Rope.SPLIT_LENGTH
-        @rope = new Rope(@rope)
-        @rope.remove(location, location + length)
-      else
-        @rope = @rope.substr(0, location) + @rope.substr(location + length)
-
-    @runIndex?.deleteRange(location, length)
-    @lineIndex?.deleteRange(location, length)
+    @replaceRangeWithText(location, length, '')
 
   insertText: (location, text) ->
     unless text.length
       return
-
-    if text instanceof TextStorage
-      insertString = text.string
-      insertRunIndex = text._getRunIndex()
-    else
-      insertString = text
-
-    insertString = insertString.split(/\u000d(?:\u000a)?|\u000a|\u2029|\u000c|\u0085/).join('\n')
-
-    if @rope.insert
-      @rope.insert(location, insertString)
-    else
-      if @length + insertString.length > Rope.SPLIT_LENGTH
-        @rope = new Rope(@rope)
-        @rope.insert(location, insertString)
-      else
-        @rope = @rope.slice(0, location) + insertString + @rope.slice(location)
-
-    @runIndex?.insertString(location, insertString)
-    @lineIndex?.insertString(location, insertString)
-
-    if insertRunIndex
-      @setAttributesInRange({}, location, text.length)
-      insertRuns = []
-      insertRunIndex.iterateRuns 0, insertRunIndex.getRunCount(), (run) ->
-        insertRuns.push(run.clone())
-      @_getRunIndex().replaceSpansFromLocation(location, insertRuns)
+    @replaceRangeWithText(location, 0, text)
 
   appendText: (text) ->
     @insertText(@rope.length, text)
 
   replaceRangeWithText: (location, length, text) ->
-    @insertText(location, text)
-    @deleteRange(location + text.length, length)
+    if text instanceof TextStorage
+      insertString = text.string
+      textRunIndex = text._getRunIndex()
+    else
+      insertString = text
+
+    insertString = insertString.split(/\u000d(?:\u000a)?|\u000a|\u2029|\u000c|\u0085/).join('\n')
+
+    if @rope instanceof Rope
+      @rope.replace(location, length, insertString)
+    else
+      if @length + length > Rope.SPLIT_LENGTH
+        @rope = new Rope(@rope)
+        @rope.replace(location, length, insertString)
+      else
+        @rope = @rope.substr(0, location) + insertString + @rope.substr(location + length)
+
+    @runIndex?.replaceRange(location, length, insertString)
+    @lineIndex?.replaceRange(location, length, insertString)
+
+    if textRunIndex and text.length
+      @setAttributesInRange({}, location, text.length)
+      insertRuns = []
+      textRunIndex.iterateRuns 0, textRunIndex.getRunCount(), (run) ->
+        insertRuns.push(run.clone())
+      @_getRunIndex().replaceSpansFromLocation(location, insertRuns)
 
   ###
   Attributes

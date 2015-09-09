@@ -77,13 +77,13 @@ class SpanLeaf
       @length += each.getLength()
     @children = @children.slice(0, index).concat(spans).concat(@children.slice(index))
 
-  removeSpans: (start, deleteCount) ->
-    end = start + deleteCount
+  removeSpans: (start, removeCount) ->
+    end = start + removeCount
     for i in [start...end]
       each = @children[i]
       each.indexParent = null
       @length -= each.getLength()
-    @children.splice(start, deleteCount)
+    @children.splice(start, removeCount)
 
   ###
   Section: Util

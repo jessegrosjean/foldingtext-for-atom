@@ -92,26 +92,26 @@ class BufferBranch
         break
       start -= childLineCount
 
-  removeLines: (start, deleteCount) ->
-    @lineCount -= deleteCount
+  removeLines: (start, removeCount) ->
+    @lineCount -= removeCount
     i = 0
     while child = @children[i]
       childLineCount = child.getLineCount()
       if start < childLineCount
-        childDeleteCount = Math.min(deleteCount, childLineCount - start)
+        childDeleteCount = Math.min(removeCount, childLineCount - start)
         childOldCharactersCount = child.getCharacterCount()
         child.removeLines(start, childDeleteCount)
         @characterCount -= (childOldCharactersCount - child.getCharacterCount())
         if childLineCount is childDeleteCount
           @children.splice(i--, 1)
           child.parent = null
-        if (deleteCount -= childDeleteCount) is 0
+        if (removeCount -= childDeleteCount) is 0
           break
         start = 0
       else
         start -= childLineCount
       i++
-    @maybeCollapse(deleteCount)
+    @maybeCollapse(removeCount)
 
   ###
   Section: Tree Balance
@@ -138,8 +138,8 @@ class BufferBranch
       sibling.parent = current.parent
     current.parent.maybeSpill()
 
-  maybeCollapse: (deleteCount) ->
-    if (@lineCount - deleteCount) > 25
+  maybeCollapse: (removeCount) ->
+    if (@lineCount - removeCount) > 25
       return
 
     if @children.length > 1 or not (@children[0] instanceof BufferLeaf)

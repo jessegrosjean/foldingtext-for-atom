@@ -69,7 +69,7 @@ describe 'TextStorage', ->
     it 'should adjust attribute run when deleting from middle', ->
       textStorage.addAttributeInRange('b', null, 0, 5)
       textStorage.deleteRange(2, 2)
-      textStorage.toString().should.equal('lines: (Heo world!) runs: (He/b:null)(o/b:null)( world!)')
+      textStorage.toString().should.equal('lines: (Heo world!) runs: (Heo/b:null)( world!)')
 
     it 'should adjust attribute run when overlapping start', ->
       textStorage.addAttributeInRange('b', null, 6, 6)

@@ -118,26 +118,26 @@ class SpanBranch
         break
       spanIndex -= childSpanCount
 
-  removeSpans: (spanIndex, deleteCount) ->
-    @spanCount -= deleteCount
+  removeSpans: (spanIndex, removeCount) ->
+    @spanCount -= removeCount
     i = 0
     while child = @children[i]
       childSpanCount = child.getSpanCount()
       if spanIndex < childSpanCount
-        childDeleteCount = Math.min(deleteCount, childSpanCount - spanIndex)
+        childDeleteCount = Math.min(removeCount, childSpanCount - spanIndex)
         childOldCharactersCount = child.getLength()
         child.removeSpans(spanIndex, childDeleteCount)
         @length -= (childOldCharactersCount - child.getLength())
         if childSpanCount is childDeleteCount
           @children.splice(i--, 1)
           child.indexParent = null
-        if (deleteCount -= childDeleteCount) is 0
+        if (removeCount -= childDeleteCount) is 0
           break
         spanIndex = 0
       else
         spanIndex -= childSpanCount
       i++
-    @maybeCollapse(deleteCount)
+    @maybeCollapse(removeCount)
 
   mergeSpans: (spanIndex, count) ->
     prev = null
@@ -181,8 +181,8 @@ class SpanBranch
       sibling.indexParent = current.indexParent
     current.indexParent.maybeSpill()
 
-  maybeCollapse: (deleteCount) ->
-    if (@spanCount - deleteCount) > 25
+  maybeCollapse: (removeCount) ->
+    if (@spanCount - removeCount) > 25
       return
 
     if @children.length > 1 or not (@children[0] instanceof SpanLeaf)

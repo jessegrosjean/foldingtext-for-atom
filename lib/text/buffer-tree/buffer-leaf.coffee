@@ -60,13 +60,13 @@ class BufferLeaf
       @characterCount += each.getCharacterCount()
     @children = @children.slice(0, index).concat(lines).concat(@children.slice(index))
 
-  removeLines: (start, deleteCount) ->
-    end = start + deleteCount
+  removeLines: (start, removeCount) ->
+    end = start + removeCount
     for i in [start...end]
       each = @children[i]
       each.parent = null
       @characterCount -= each.getCharacterCount()
-    @children.splice(start, deleteCount)
+    @children.splice(start, removeCount)
 
   ###
   Section: Util

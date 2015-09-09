@@ -1,12 +1,19 @@
 SpanIndex = require '../../lib/core/span-index'
 
 describe 'SpanIndex', ->
-  [spanIndex] = []
+  [spanIndex, indexSubscription, indexDidChangeExpects] = []
 
   beforeEach ->
     spanIndex = new SpanIndex()
+    indexSubscription = spanIndex.onDidChange (e) ->
+      if indexDidChangeExpects?.length
+        exp = indexDidChangeExpects.shift()
+        exp(e)
 
   afterEach ->
+    expect(indexDidChangeExpects?.length).toBeFalsy()
+    indexDidChangeExpects = null
+    indexSubscription.dispose()
     spanIndex.destroy()
 
   it 'starts empty', ->
@@ -144,6 +151,63 @@ describe 'SpanIndex', ->
       spanIndex.getSpanInfoAtLocation(5, true).should.eql(span: spanIndex.getSpan(1), spanIndex: 1, spanLocation: 3, location: 2)
       spanIndex.getSpanInfoAtLocation(6, true).should.eql(span: spanIndex.getSpan(1), spanIndex: 1, spanLocation: 3, location: 3)
       (-> spanIndex.getSpanInfoAtLocation(7, true)).should.throw()
+
+  describe 'Events', ->
+
+    it 'posts change events when updating text in span', ->
+      spanIndex.insertSpans 0, [
+        spanIndex.createSpan('a'),
+        spanIndex.createSpan('b'),
+        spanIndex.createSpan('c')
+      ]
+      indexDidChangeExpects = [
+        (e) ->
+          e.location.should.equal(0)
+          e.replacedLength.should.equal(1)
+          e.insertedString.should.equal('moose')
+      ]
+      spanIndex.replaceRange(0, 1, 'moose')
+
+    it 'posts change events when inserting spans', ->
+      indexDidChangeExpects = [
+        (e) ->
+          e.location.should.equal(0)
+          e.replacedLength.should.equal(0)
+          e.insertedString.should.equal('abc')
+      ]
+      spanIndex.insertSpans 0, [
+        spanIndex.createSpan('a'),
+        spanIndex.createSpan('b'),
+        spanIndex.createSpan('c')
+      ]
+
+    it 'posts change events when removing spans', ->
+      spanIndex.insertSpans 0, [
+        spanIndex.createSpan('a'),
+        spanIndex.createSpan('b'),
+        spanIndex.createSpan('c')
+      ]
+      indexDidChangeExpects = [
+        (e) ->
+          e.location.should.equal(2)
+          e.replacedLength.should.equal(1)
+          e.insertedString.should.equal('')
+      ]
+      spanIndex.removeSpans(2, 1)
+
+    it 'posts change events when removing all', ->
+      spanIndex.insertSpans 0, [
+        spanIndex.createSpan('a'),
+        spanIndex.createSpan('b'),
+        spanIndex.createSpan('c')
+      ]
+      indexDidChangeExpects = [
+        (e) ->
+          e.location.should.equal(0)
+          e.replacedLength.should.equal(3)
+          e.insertedString.should.equal('')
+      ]
+      spanIndex.removeSpans(0, 3)
 
   xdescribe 'Performance', ->
 
