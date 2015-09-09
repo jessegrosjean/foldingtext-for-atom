@@ -66,8 +66,10 @@ class SpanIndex extends SpanBranch
       start.span.insertString(start.location, string)
 
   replaceRange: (location, length, string) ->
-    @insertString(location, string)
-    @deleteRange(location + string.length, length)
+    if string
+      @insertString(location, string)
+    if length
+      @deleteRange(location + string.length, length)
 
   ###
   Section: Spans

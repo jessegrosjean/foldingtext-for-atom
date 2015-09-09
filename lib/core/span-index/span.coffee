@@ -43,17 +43,15 @@ class Span
         each = each.indexParent
     @
 
-  deleteRange: (location, length) ->
-    newString = @string.slice(0, location) + @string.slice(location + length)
-    @setString(newString)
-
-  insertString: (location, text) ->
-    newString = @string.substr(0, location) + text + @string.substr(location)
-    @setString(newString)
-
   replaceRange: (location, length, string) ->
-    @insertString(location, string)
-    @deleteRange(location + string.length, length)
+    newString = @string.substr(0, location) + string + @string.slice(location + length)
+    @setString(newString)
+
+  deleteRange: (location, length) ->
+    @replaceRange(location, length, '')
+
+  insertString: (location, string) ->
+    @replaceRange(location, 0, string)
 
   appendString: (string) ->
     @insertString(@getLength(), string)

@@ -2,13 +2,28 @@ loadOutlineFixture = require '../load-outline-fixture'
 ItemIndex = require '../../lib/core/item-index'
 
 describe 'ItemIndex', ->
-  [itemIndex, outline, root, one, two, three, four, five, six] = []
+  [itemIndex, indexSubscription, itemIndexDidChangeExpects, outline, outlineSubscription, outlineDidChangeExpects, root, one, two, three, four, five, six] = []
 
   beforeEach ->
     {outline, root, one, two, three, four, five, six} = loadOutlineFixture()
     itemIndex = new ItemIndex(outline.root)
+    outlineSubscription = outline.onDidChange (mutation) ->
+      if outlineDidChangeExpects?.length
+        exp = outlineDidChangeExpects.shift()
+        exp(mutation)
+
+    indexSubscription = itemIndex.onDidChange (e) ->
+      if itemIndexDidChangeExpects?.length
+        exp = itemIndexDidChangeExpects.shift()
+        exp(e)
 
   afterEach ->
+    expect(outlineDidChangeExpects?.length).toBeFalsy()
+    outlineDidChangeExpects = null
+    outlineSubscription.dispose()
+    expect(itemIndexDidChangeExpects?.length).toBeFalsy()
+    itemIndexDidChangeExpects = null
+    indexSubscription.dispose()
     itemIndex.destroy()
 
   describe 'Outline to Index', ->
@@ -59,6 +74,49 @@ describe 'ItemIndex', ->
       itemIndex.insertSpans(2, [span])
       span.item.id = 'NEWID'
       itemIndex.toString(false).should.equal('(one\n/1)(two\n/2)(new\n/NEWID)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+
+    describe 'Generate Outline Mutations', ->
+
+      it 'should generate mutation for simple text insert', ->
+        outlineDidChangeExpects = [
+          (mutation) ->
+            expect(mutation.type).toBe('bodyText')
+            expect(mutation.replacedText.getString()).toBe('')
+            expect(mutation.insertedTextLocation).toBe(0)
+            expect(mutation.insertedTextLength).toBe(5)
+        ]
+        itemIndex.insertString(0, 'hello')
+        one.bodyText.should.equal('helloone')
+        one.depth.should.equal(1)
+
+      it 'should generate mutation for simple text delete', ->
+        outlineDidChangeExpects = [
+          (mutation) ->
+            expect(mutation.type).toBe('bodyText')
+            expect(mutation.replacedText.getString()).toBe('o')
+            expect(mutation.insertedTextLocation).toBe(0)
+            expect(mutation.insertedTextLength).toBe(0)
+        ]
+        itemIndex.deleteRange(0, 1)
+        one.bodyText.should.equal('ne')
+        one.depth.should.equal(1)
+
+      it 'should generate mutation for simple text replace', ->
+        outlineDidChangeExpects = [
+          (mutation) ->
+            expect(mutation.type).toBe('bodyText')
+            expect(mutation.replacedText.getString()).toBe('')
+            expect(mutation.insertedTextLocation).toBe(0)
+            expect(mutation.insertedTextLength).toBe(1)
+          (mutation) ->
+            expect(mutation.type).toBe('bodyText')
+            expect(mutation.replacedText.getString()).toBe('o')
+            expect(mutation.insertedTextLocation).toBe(1)
+            expect(mutation.insertedTextLength).toBe(0)
+        ]
+        itemIndex.replaceRange(0, 1, 'b')
+        one.bodyText.should.equal('bne')
+        one.depth.should.equal(1)
 
 ###
 describe 'OutlineBuffer', ->
