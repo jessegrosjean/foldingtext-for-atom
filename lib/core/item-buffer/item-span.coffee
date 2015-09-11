@@ -1,4 +1,4 @@
-LineSpan = require '../line-index/line-span'
+LineSpan = require '../line-buffer/line-span'
 
 class ItemSpan extends LineSpan
 

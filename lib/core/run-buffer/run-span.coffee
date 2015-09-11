@@ -1,4 +1,4 @@
-Span = require '../span-index/span'
+Span = require '../span-buffer/span'
 _ = require 'underscore-plus'
 
 class RunSpan extends Span

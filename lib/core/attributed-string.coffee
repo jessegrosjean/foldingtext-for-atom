@@ -1,33 +1,33 @@
-LineIndex = require './line-index'
-RunIndex = require './run-index'
+LineBuffer = require './line-buffer'
+RunBuffer = require './run-buffer'
 _ = require 'underscore-plus'
 {Emitter} = require 'atom'
 
 class AttributedString
 
   string: null
-  runIndex: null
-  lineIndex: null
+  runBuffer: null
+  lineBuffer: null
   emitter: null
 
   constructor: (text='') ->
     if text instanceof AttributedString
       @string = text.getString()
-      @runIndex = text.runIndex?.clone()
+      @runBuffer = text.runBuffer?.clone()
     else
       @string = text
 
   clone: ->
     clone = new AttributedString(@string)
-    clone.runIndex = @runIndex?.clone()
-    clone.lineIndex = @lineIndex?.clone()
+    clone.runBuffer = @runBuffer?.clone()
+    clone.lineBuffer = @lineBuffer?.clone()
     clone
 
   destroy: ->
     unless @destroyed
       @destroyed = true
-      @runIndex?.destroy()
-      @lineIndex?.destroy()
+      @runBuffer?.destroy()
+      @lineBuffer?.destroy()
       @emitter?.emit 'did-destroy'
 
   ###
@@ -99,47 +99,47 @@ class AttributedString
 
     if text instanceof AttributedString
       insertString = text.string
-      if @runIndex
-        textRunIndex = text._getRunIndex()
+      if @runBuffer
+        textRunBuffer = text._getRunBuffer()
       else
-        textRunIndex = text.runIndex
+        textRunBuffer = text.runBuffer
     else
       insertString = text
 
     insertString = insertString.split(/\u000d(?:\u000a)?|\u000a|\u2029|\u000c|\u0085/).join('\n')
 
     @string = @string.substr(0, location) + insertString + @string.substr(location + length)
-    @runIndex?.replaceRange(location, length, insertString)
-    @lineIndex?.replaceRange(location, length, insertString)
+    @runBuffer?.replaceRange(location, length, insertString)
+    @lineBuffer?.replaceRange(location, length, insertString)
 
-    if textRunIndex and text.length
+    if textRunBuffer and text.length
       @setAttributesInRange({}, location, text.length)
       insertRuns = []
-      textRunIndex.iterateRuns 0, textRunIndex.getRunCount(), (run) ->
+      textRunBuffer.iterateRuns 0, textRunBuffer.getRunCount(), (run) ->
         insertRuns.push(run.clone())
-      @_getRunIndex().replaceSpansFromLocation(location, insertRuns)
+      @_getRunBuffer().replaceSpansFromLocation(location, insertRuns)
 
   ###
   Attributes
   ###
 
-  _getRunIndex: ->
-    unless runIndex = @runIndex
-      @runIndex = runIndex = new RunIndex
-      @runIndex.insertString(0, @string.toString())
-    runIndex
+  _getRunBuffer: ->
+    unless runBuffer = @runBuffer
+      @runBuffer = runBuffer = new RunBuffer
+      @runBuffer.insertString(0, @string.toString())
+    runBuffer
 
   getRuns: ->
-    if @runIndex
-      @runIndex.getRuns()
+    if @runBuffer
+      @runBuffer.getRuns()
     else
       []
 
   getAttributesAtIndex: (index, effectiveRange, longestEffectiveRange) ->
     if index >= @length
       throw new Error("Invalide character index: #{characterIndex}")
-    if @runIndex
-      @runIndex.getAttributesAtIndex(index, effectiveRange, longestEffectiveRange)
+    if @runBuffer
+      @runBuffer.getAttributesAtIndex(index, effectiveRange, longestEffectiveRange)
     else
       if effectiveRange
         effectiveRange.location = 0
@@ -152,8 +152,8 @@ class AttributedString
   getAttributeAtIndex: (attribute, index, effectiveRange, longestEffectiveRange) ->
     if index >= @length
       throw new Error("Invalide character index: #{characterIndex}")
-    if @runIndex
-      @runIndex.getAttributeAtIndex(attribute, index, effectiveRange, longestEffectiveRange)
+    if @runBuffer
+      @runBuffer.getAttributeAtIndex(attribute, index, effectiveRange, longestEffectiveRange)
     else
       if effectiveRange
         effectiveRange.location = 0
@@ -164,17 +164,17 @@ class AttributedString
       undefined
 
   setAttributesInRange: (attributes, index, length) ->
-    @_getRunIndex().setAttributesInRange(attributes, index, length)
+    @_getRunBuffer().setAttributesInRange(attributes, index, length)
 
   addAttributeInRange: (attribute, value, index, length) ->
-    @_getRunIndex().addAttributeInRange(attribute, value, index, length)
+    @_getRunBuffer().addAttributeInRange(attribute, value, index, length)
 
   addAttributesInRange: (attributes, index, length) ->
-    @_getRunIndex().addAttributesInRange(attributes, index, length)
+    @_getRunBuffer().addAttributesInRange(attributes, index, length)
 
   removeAttributeInRange: (attribute, index, length) ->
-    if @runIndex
-      @runIndex.removeAttributeInRange(attribute, index, length)
+    if @runBuffer
+      @runBuffer.removeAttributeInRange(attribute, index, length)
 
   ###
   String and attributes
@@ -188,44 +188,44 @@ class AttributedString
       length = @getLength() - location
 
     subattributedString = new AttributedString(@string.substr(location, length))
-    if @runIndex
-      slice = @runIndex.sliceSpansToRange(location, length)
+    if @runBuffer
+      slice = @runBuffer.sliceSpansToRange(location, length)
       insertRuns = []
-      @runIndex.iterateRuns slice.spanIndex, slice.count, (run) ->
+      @runBuffer.iterateRuns slice.spanIndex, slice.count, (run) ->
         insertRuns.push(run.clone())
-      subattributedString._getRunIndex().replaceSpansFromLocation(0, insertRuns)
+      subattributedString._getRunBuffer().replaceSpansFromLocation(0, insertRuns)
     subattributedString
 
   ###
   Lines
   ###
 
-  _getLineIndex: ->
-    unless lineIndex = @lineIndex
-      @lineIndex = lineIndex = new LineIndex
-      @lineIndex.insertString(0, @string.toString())
-    lineIndex
+  _getLineBuffer: ->
+    unless lineBuffer = @lineBuffer
+      @lineBuffer = lineBuffer = new LineBuffer
+      @lineBuffer.insertString(0, @string.toString())
+    lineBuffer
 
   getLineCount: ->
-    @_getLineIndex().getLineCount()
+    @_getLineBuffer().getLineCount()
 
   getLine: (row) ->
-    @_getLineIndex().getLine(row)
+    @_getLineBuffer().getLine(row)
 
   getRow: (line) ->
-    @_getLineIndex().getLineIndex(line)
+    @_getLineBuffer().getLineBuffer(line)
 
   getLines: (row, count) ->
-    @_getLineIndex().getLines(row, count)
+    @_getLineBuffer().getLines(row, count)
 
   iterateLines: (row, count, operation) ->
-    @_getLineIndex().iterateLines(row, count, operation)
+    @_getLineBuffer().iterateLines(row, count, operation)
 
   ###
   Debug
   ###
 
   toString: ->
-    "lines: #{@_getLineIndex().toString()} runs: #{@_getRunIndex().toString()}"
+    "lines: #{@_getLineBuffer().toString()} runs: #{@_getRunBuffer().toString()}"
 
 module.exports = AttributedString

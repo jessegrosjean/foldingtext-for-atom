@@ -68,8 +68,8 @@ class Span
       each = each.indexParent
     null
 
-  getSpanIndex: ->
-    @indexParent.getSpanIndex(this)
+  getSpanBuffer: ->
+    @indexParent.getSpanBuffer(this)
 
   getSpanCount: ->
     1

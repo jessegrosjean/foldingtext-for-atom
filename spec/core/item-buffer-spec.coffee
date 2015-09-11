@@ -1,58 +1,59 @@
 loadOutlineFixture = require '../load-outline-fixture'
-ItemIndex = require '../../lib/core/item-index'
+ItemBuffer = require '../../lib/core/item-buffer'
 
-describe 'ItemIndex', ->
-  [itemIndex, indexSubscription, itemIndexDidChangeExpects, outline, outlineSubscription, outlineDidChangeExpects, root, one, two, three, four, five, six] = []
+describe 'ItemBuffer', ->
+  [itemBuffer, bufferSubscription, itemBufferDidChangeExpects, outline, outlineSubscription, outlineDidChangeExpects, root, one, two, three, four, five, six] = []
 
   beforeEach ->
     {outline, root, one, two, three, four, five, six} = loadOutlineFixture()
-    itemIndex = new ItemIndex(outline.root)
+    itemBuffer = new ItemBuffer(outline)
+    itemBuffer.setHoistedItem(outline.root)
     outlineSubscription = outline.onDidChange (mutation) ->
       if outlineDidChangeExpects?.length
         exp = outlineDidChangeExpects.shift()
         exp(mutation)
 
-    indexSubscription = itemIndex.onDidChange (e) ->
-      if itemIndexDidChangeExpects?.length
-        exp = itemIndexDidChangeExpects.shift()
+    bufferSubscription = itemBuffer.onDidChange (e) ->
+      if itemBufferDidChangeExpects?.length
+        exp = itemBufferDidChangeExpects.shift()
         exp(e)
 
   afterEach ->
     expect(outlineDidChangeExpects?.length).toBeFalsy()
     outlineDidChangeExpects = null
     outlineSubscription.dispose()
-    expect(itemIndexDidChangeExpects?.length).toBeFalsy()
-    itemIndexDidChangeExpects = null
-    indexSubscription.dispose()
-    itemIndex.destroy()
+    expect(itemBufferDidChangeExpects?.length).toBeFalsy()
+    itemBufferDidChangeExpects = null
+    bufferSubscription.dispose()
+    itemBuffer.destroy()
 
   it 'can be fully emptied', ->
     one.removeFromParent()
-    expect(itemIndex.getString()).toBe('')
-    expect(itemIndex.getLineCount()).toBe(0)
-    expect(itemIndex.getLength()).toBe(0)
+    expect(itemBuffer.getString()).toBe('')
+    expect(itemBuffer.getLineCount()).toBe(0)
+    expect(itemBuffer.getLength()).toBe(0)
     expect(outline.root.firstChild).toBe(null)
 
   describe 'Outline to Index', ->
 
     it 'maps items to item spans', ->
-      itemIndex.toString().should.equal('(one\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+      itemBuffer.toString().should.equal('(one\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     it 'can change the item that is mapped', ->
-      itemIndex.setHoistedItem(two)
-      itemIndex.toString().should.equal('(three\n/3)(four/4)')
+      itemBuffer.setHoistedItem(two)
+      itemBuffer.toString().should.equal('(three\n/3)(four/4)')
 
     it 'updates index span when item text changes', ->
       one.bodyText = 'moose'
       one.replaceBodyTextInRange('s', 5, 0)
       one.appendBodyText('!')
-      itemIndex.toString().should.equal('(mooses!\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+      itemBuffer.toString().should.equal('(mooses!\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     it 'adds index spans when item is added to outline', ->
       newItem = outline.createItem('new')
       newItem.id = 'a'
       two.appendChild(newItem)
-      itemIndex.toString().should.equal('(one\n/1)(two\n/2)(three\n/3)(four\n/4)(new\n/a)(five\n/5)(six/6)')
+      itemBuffer.toString().should.equal('(one\n/1)(two\n/2)(three\n/3)(four\n/4)(new\n/a)(five\n/5)(six/6)')
 
       newItem = outline.createItem('new')
       newItem.id = 'b'
@@ -60,62 +61,62 @@ describe 'ItemIndex', ->
       newItemChild.id = 'bchild'
       newItem.appendChild(newItemChild)
       five.appendChild(newItem)
-      itemIndex.toString().should.equal('(one\n/1)(two\n/2)(three\n/3)(four\n/4)(new\n/a)(five\n/5)(six\n/6)(new\n/b)(new child/bchild)')
+      itemBuffer.toString().should.equal('(one\n/1)(two\n/2)(three\n/3)(four\n/4)(new\n/a)(five\n/5)(six\n/6)(new\n/b)(new child/bchild)')
 
     it 'removes index spans when item is removed from outline', ->
       two.removeFromParent()
-      itemIndex.toString().should.equal('(one\n/1)(five\n/5)(six/6)')
+      itemBuffer.toString().should.equal('(one\n/1)(five\n/5)(six/6)')
       six.removeFromParent()
-      itemIndex.toString().should.equal('(one\n/1)(five/5)')
+      itemBuffer.toString().should.equal('(one\n/1)(five/5)')
       five.removeFromParent()
-      itemIndex.toString().should.equal('(one/1)')
+      itemBuffer.toString().should.equal('(one/1)')
       one.removeFromParent()
-      itemIndex.toString().should.equal('')
+      itemBuffer.toString().should.equal('')
 
   describe 'Index to Outline', ->
 
     it 'update item text when span text changes from start', ->
-      itemIndex.deleteRange(0, 1)
-      itemIndex.toString().should.equal('(ne\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+      itemBuffer.deleteRange(0, 1)
+      itemBuffer.toString().should.equal('(ne\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     it 'update item text when span text changes from middle', ->
-      itemIndex.deleteRange(1, 1)
-      itemIndex.toString().should.equal('(oe\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+      itemBuffer.deleteRange(1, 1)
+      itemBuffer.toString().should.equal('(oe\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     it 'update item text when span text changes from end', ->
-      itemIndex.deleteRange(2, 1)
-      itemIndex.toString().should.equal('(on\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+      itemBuffer.deleteRange(2, 1)
+      itemBuffer.toString().should.equal('(on\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     it 'adds item when newline is inserted into index', ->
-      itemIndex.insertString(1, 'z\nz')
+      itemBuffer.insertString(1, 'z\nz')
       one.nextItem.id = 'a'
-      itemIndex.toString().should.equal('(oz\n/1)(zne\n/a)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+      itemBuffer.toString().should.equal('(oz\n/1)(zne\n/a)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     it 'adds multiple items when multiple newlines are inserted into index', ->
-      itemIndex.insertString(1, '\nz\nz\n')
+      itemBuffer.insertString(1, '\nz\nz\n')
       one.nextItem.id = 'a'
       one.nextItem.nextItem.id = 'b'
       one.nextItem.nextItem.nextItem.id = 'c'
-      itemIndex.toString().should.equal('(o\n/1)(z\n/a)(z\n/b)(ne\n/c)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+      itemBuffer.toString().should.equal('(o\n/1)(z\n/a)(z\n/b)(ne\n/c)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     it 'removes item when newline is removed', ->
-      itemIndex.deleteRange(3, 1)
-      itemIndex.toString().should.equal('(onetwo\n/1)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+      itemBuffer.deleteRange(3, 1)
+      itemBuffer.toString().should.equal('(onetwo\n/1)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     it 'remove item in outline when span is removed', ->
-      itemIndex.removeSpans(0, 1)
-      itemIndex.toString().should.equal('(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+      itemBuffer.removeSpans(0, 1)
+      itemBuffer.toString().should.equal('(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     it 'add item in outline when span is added', ->
-      span = itemIndex.createSpan('new')
-      itemIndex.insertSpans(2, [span])
+      span = itemBuffer.createSpan('new')
+      itemBuffer.insertSpans(2, [span])
       span.item.id = 'NEWID'
-      itemIndex.toString(false).should.equal('(one\n/1)(two\n/2)(new\n/NEWID)(three\n/3)(four\n/4)(five\n/5)(six/6)')
+      itemBuffer.toString(false).should.equal('(one\n/1)(two\n/2)(new\n/NEWID)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     describe 'Generate Index Mutations', ->
 
       it 'should generate mutation for item body text change', ->
-        itemIndexDidChangeExpects = [
+        itemBufferDidChangeExpects = [
           (e) ->
             e.location.should.equal(0)
             e.replacedLength.should.equal(3)
@@ -138,7 +139,7 @@ describe 'ItemIndex', ->
             expect(mutation.insertedTextLocation).toBe(0)
             expect(mutation.insertedTextLength).toBe(5)
         ]
-        itemIndex.insertString(0, 'hello')
+        itemBuffer.insertString(0, 'hello')
         one.bodyText.should.equal('helloone')
         one.depth.should.equal(1)
 
@@ -150,7 +151,7 @@ describe 'ItemIndex', ->
             expect(mutation.insertedTextLocation).toBe(0)
             expect(mutation.insertedTextLength).toBe(0)
         ]
-        itemIndex.deleteRange(0, 1)
+        itemBuffer.deleteRange(0, 1)
         one.bodyText.should.equal('ne')
         one.depth.should.equal(1)
 
@@ -162,7 +163,7 @@ describe 'ItemIndex', ->
             expect(mutation.insertedTextLocation).toBe(0)
             expect(mutation.insertedTextLength).toBe(1)
         ]
-        itemIndex.replaceRange(0, 1, 'b')
+        itemBuffer.replaceRange(0, 1, 'b')
         one.bodyText.should.equal('bne')
         one.depth.should.equal(1)
 

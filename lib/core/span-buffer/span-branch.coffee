@@ -56,8 +56,8 @@ class SpanBranch
       else
         return each.getSpan(index)
 
-  getSpanIndex: (child) ->
-    index = @indexParent?.getSpanIndex(this) or 0
+  getSpanBuffer: (child) ->
+    index = @indexParent?.getSpanBuffer(this) or 0
     if child
       for each in @children
         if each is child

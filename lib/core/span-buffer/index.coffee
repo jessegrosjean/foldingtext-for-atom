@@ -4,7 +4,7 @@ SpanLeaf = require './span-leaf'
 assert = require 'assert'
 Span = require './span'
 
-class SpanIndex extends SpanBranch
+class SpanBuffer extends SpanBranch
 
   constructor: (children) ->
     children ?= [new SpanLeaf([])]
@@ -159,11 +159,11 @@ class SpanIndex extends SpanBranch
       throw new Error("Invalide cursor location: #{location}")
     if chooseRight
       if location is @getLength()
-        lastSpanIndex = @getSpanCount() - 1
-        lastSpan = @getSpan(lastSpanIndex)
+        lastSpanBuffer = @getSpanCount() - 1
+        lastSpan = @getSpan(lastSpanBuffer)
         spanInfo =
           span: lastSpan
-          spanIndex: lastSpanIndex
+          spanIndex: lastSpanBuffer
           location: lastSpan.getLength()
           spanLocation: location - lastSpan.getLength()
       else
@@ -207,4 +207,4 @@ class SpanIndex extends SpanBranch
       spanStrings.push(span.toString())
     "#{spanStrings.join('')}"
 
-module.exports = SpanIndex
+module.exports = SpanBuffer

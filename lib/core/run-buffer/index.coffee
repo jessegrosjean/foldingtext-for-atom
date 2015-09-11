@@ -1,7 +1,7 @@
-SpanIndex = require '../span-index'
+SpanBuffer = require '../span-buffer'
 RunSpan = require './run-span'
 
-class RunIndex extends SpanIndex
+class RunBuffer extends SpanBuffer
 
   constructor: (children) ->
     super(children)
@@ -12,8 +12,8 @@ class RunIndex extends SpanIndex
   getRun: (index) ->
     @getSpan(index)
 
-  getRunIndex: (child) ->
-    @getSpanIndex(child)
+  getRunBuffer: (child) ->
+    @getSpanBuffer(child)
 
   getRuns: (start, count) ->
     @getSpans(start, count)
@@ -125,6 +125,6 @@ class RunIndex extends SpanIndex
   Changing characters and attributes
   ###
 
-  insertRunIndex: (runIndex, index) ->
+  insertRunBuffer: (runIndex, index) ->
 
-module.exports = RunIndex
+module.exports = RunBuffer

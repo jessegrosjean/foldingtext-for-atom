@@ -1,17 +1,22 @@
 {CompositeDisposable} = require 'atom'
-LineIndex = require '../line-index'
+LineBuffer = require '../line-buffer'
 ItemSpan = require './item-span'
 Mutation = require '../mutation'
 assert = require 'assert'
 Item = require '../item'
 
-class ItemIndex extends LineIndex
+class ItemBuffer extends LineBuffer
 
-  constructor: (@hoistedItem, @editor) ->
+  constructor: (@outline, @editor) ->
     super()
+    @outline ?= new Outline
     @isUpdatingIndex = 0
     @isUpdatingItems = 0
-    @setHoistedItem(@hoistedItem)
+    @hoistedItem = null
+
+    @subscriptions = new CompositeDisposable
+    @subscriptions.add @outline.onDidChange @outlineDidChange.bind(this)
+    @subscriptions.add @outline.onDidDestroy => @destroy()
 
   destroy: ->
     @subscriptions.dispose()
@@ -35,15 +40,11 @@ class ItemIndex extends LineIndex
     @hoistedItem
 
   setHoistedItem: (@hoistedItem) ->
-    @outline = @hoistedItem?.outline
+    assert(@hoistedItem.outline is @outline)
     @isUpdatingIndex++
     @removeSpans(0, @getSpanCount())
-    @subscriptions?.dispose()
-    @subscriptions = new CompositeDisposable
     @itemsToItemSpansMap = new Map
     if @hoistedItem
-      @subscriptions.add @outline.onDidChange @outlineDidChange.bind(this)
-      @subscriptions.add @outline.onDidDestroy => @destroy()
       assert(@hoistedItem.isInOutline)
       itemSpans = (new ItemSpan(each) for each in @hoistedItem.descendants when @isVisible(each))
       @insertSpans(0, itemSpans)
@@ -83,7 +84,7 @@ class ItemIndex extends LineIndex
 
     for each in removedDescendants
       if itemSpan = @getItemSpanForItem(each)
-        removeStartIndex ?= itemSpan.getSpanIndex()
+        removeStartIndex ?= itemSpan.getSpanBuffer()
         removeCount++
       else if removeStartIndex
         removeRangeIfDefined()
@@ -111,13 +112,13 @@ class ItemIndex extends LineIndex
       while insertBeforeItem and not (insertBeforeLine = @getItemSpanForItem(insertBeforeItem))
         insertBeforeItem = insertBeforeItem.nextItem
       if insertBeforeLine
-        insertIndex = insertBeforeLine.getSpanIndex()
+        insertIndex = insertBeforeLine.getSpanBuffer()
       else
         insertAfterItem = addedItemSpans[0].item.previousItem
         while insertAfterItem and not (insertAfterLine = @getItemSpanForItem(insertAfterItem))
           insertAfterItem = insertAfterItem.nextItem
         if insertAfterLine
-          insertIndex = insertAfterLine.getSpanIndex() + 1
+          insertIndex = insertAfterLine.getSpanBuffer() + 1
         else
           insertIndex = @getLineCount()
       @insertSpans(insertIndex, addedItemSpans)
@@ -253,4 +254,4 @@ class ItemIndex extends LineIndex
 
     super(spanIndex, removeCount)
 
-module.exports = ItemIndex
+module.exports = ItemBuffer

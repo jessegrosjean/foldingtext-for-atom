@@ -24,10 +24,10 @@ AttributedString._calculateInitialNodeRanges = (attributedString, ownerDocument)
   # applied. Return sorted node ranages.
   nodeRanges = []
 
-  if attributedString.runIndex
+  if attributedString.runBuffer
     tagsToRanges = {}
     runLocation = 0
-    runIndex = 0
+    runBuffer = 0
 
     for run in attributedString.getRuns()
       for tag, tagAttributes of run.attributes
@@ -43,7 +43,7 @@ AttributedString._calculateInitialNodeRanges = (attributedString, ownerDocument)
           nodeRange =
             node: element
             start: runLocation
-            end: @_seekTagRangeEnd tag, tagAttributes, runIndex, runLocation, attributedString
+            end: @_seekTagRangeEnd tag, tagAttributes, runBuffer, runLocation, attributedString
 
           tagsToRanges[tag] = nodeRange
           nodeRanges.push nodeRange
@@ -56,7 +56,7 @@ AttributedString._calculateInitialNodeRanges = (attributedString, ownerDocument)
           node: ownerDocument.createTextNode(text)
 
       runLocation += run.getLength()
-      runIndex++
+      runBuffer++
 
     nodeRanges.sort @_compareNodeRanges
   else
@@ -69,16 +69,16 @@ AttributedString._calculateInitialNodeRanges = (attributedString, ownerDocument)
 
   nodeRanges
 
-AttributedString._seekTagRangeEnd = (tagName, seekTagAttributes, runIndex, runLocation, attributedString) ->
+AttributedString._seekTagRangeEnd = (tagName, seekTagAttributes, runBuffer, runLocation, attributedString) ->
   attributeRuns = attributedString.getRuns()
   end = attributeRuns.length
   while true
-    run = attributeRuns[runIndex++]
+    run = attributeRuns[runBuffer++]
     runTagAttributes = run.attributes[tagName]
     equalAttributes = runTagAttributes is seekTagAttributes or _.isEqual(runTagAttributes, seekTagAttributes)
     unless equalAttributes
       return runLocation
-    else if runIndex is end
+    else if runBuffer is end
       return runLocation + run.getLength()
     runLocation += run.getLength()
 

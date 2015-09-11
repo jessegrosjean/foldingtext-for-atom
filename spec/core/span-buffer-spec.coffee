@@ -1,11 +1,11 @@
-SpanIndex = require '../../lib/core/span-index'
+SpanBuffer = require '../../lib/core/span-buffer'
 
-describe 'SpanIndex', ->
-  [spanIndex, indexSubscription, indexDidChangeExpects] = []
+describe 'SpanBuffer', ->
+  [spanIndex, bufferSubscription, indexDidChangeExpects] = []
 
   beforeEach ->
-    spanIndex = new SpanIndex()
-    indexSubscription = spanIndex.onDidChange (e) ->
+    spanIndex = new SpanBuffer()
+    bufferSubscription = spanIndex.onDidChange (e) ->
       if indexDidChangeExpects?.length
         exp = indexDidChangeExpects.shift()
         exp(e)
@@ -13,7 +13,7 @@ describe 'SpanIndex', ->
   afterEach ->
     expect(indexDidChangeExpects?.length).toBeFalsy()
     indexDidChangeExpects = null
-    indexSubscription.dispose()
+    bufferSubscription.dispose()
     spanIndex.destroy()
 
   it 'starts empty', ->

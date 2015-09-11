@@ -9,10 +9,10 @@ module.exports = {
     'foldingtext': "./lib-browser/foldingtext"
   },
   output: {
-    path: path.join(__dirname, "lib-browser/dist"),
-    publicPath: "browser/dist/",
     filename: "[name].js",
-    chunkFilename: "[chunkhash].js"
+    publicPath: "browser/dist/",
+    chunkFilename: "[chunkhash].js",
+    path: path.join(__dirname, "lib-browser/dist")
   },
   module: {
     loaders: [
@@ -22,9 +22,9 @@ module.exports = {
   },
   resolve: {
     alias: {
+      fs: path.join(__dirname, '/lib-browser/shims/fs'),
       less: path.join(__dirname, '/lib-browser/shims/less'),
       atom: path.join(__dirname, '/lib-browser/shims/atom'),
-      fs: path.join(__dirname, '/lib-browser/shims/fs'),
       grim: path.join(__dirname, '/lib-browser/shims/grim')
     },
     extensions: ['', '.js', '.json', '.coffee']

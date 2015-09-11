@@ -1,7 +1,7 @@
-SpanIndex = require '../span-index'
+SpanBuffer = require '../span-buffer'
 LineSpan = require './line-span'
 
-class LineIndex extends SpanIndex
+class LineBuffer extends SpanBuffer
 
   constructor: (children) ->
     super(children)
@@ -12,8 +12,8 @@ class LineIndex extends SpanIndex
   getLine: (index) ->
     @getSpan(index)
 
-  getLineIndex: (child) ->
-    @getSpanIndex(child)
+  getLineBuffer: (child) ->
+    @getSpanBuffer(child)
 
   getLines: (start, count) ->
     @getSpans(start, count)
@@ -97,4 +97,4 @@ class LineIndex extends SpanIndex
     else
       super(spanIndex, removeCount)
 
-module.exports = LineIndex
+module.exports = LineBuffer

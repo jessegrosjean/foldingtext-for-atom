@@ -1,4 +1,4 @@
-Span = require '../span-index/span'
+Span = require '../span-buffer/span'
 assert = require 'assert'
 
 class LineSpan extends Span
