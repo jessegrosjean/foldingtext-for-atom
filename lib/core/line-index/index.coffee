@@ -5,7 +5,6 @@ class LineIndex extends SpanIndex
 
   constructor: (children) ->
     super(children)
-    @lastSpan = null
 
   getLineCount: ->
     @spanCount
@@ -90,12 +89,11 @@ class LineIndex extends SpanIndex
 
     removeTo = spanIndex + removeCount
     if removeTo is @getSpanCount()
-      super spanIndex, removeCount, (changeEvent) ->
-        unless spanIndex is 0
-          changeEvent.location--
-          changeEvent.replacedLength++
       @getSpan(spanIndex - 1)?.setIsLast(true)
       @getSpan(removeTo - 1)?.setIsLast(false)
+      super spanIndex, removeCount, (changeEvent) ->
+        if spanIndex is 0
+          changeEvent.replacedLength--
     else
       super(spanIndex, removeCount)
 

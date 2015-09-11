@@ -1,4 +1,4 @@
-TextStorage = require '../text-storage'
+AttributedString = require '../attributed-string'
 Constants = require '../constants'
 assert = require 'assert'
 dom = require '../dom'
@@ -94,7 +94,7 @@ createItem = (outline, liOrRootUL, remapIDCallback) ->
     else
       assert.ok(pOrULTagName is 'UL', "Expected 'UL', but got #{pOrULTagName}")
       assert.ok(pOrUL.previousSibling is p, "Expected previous sibling of 'UL' to be 'P'")
-    TextStorage.validateInlineFTML(p)
+    AttributedString.validateInlineFTML(p)
   else if tagName is 'UL'
     assert.ok(liOrRootUL.id is Constants.RootID)
   else
@@ -102,7 +102,7 @@ createItem = (outline, liOrRootUL, remapIDCallback) ->
 
   P = liOrRootUL.firstElementChild
   UL = liOrRootUL.lastChild
-  text = TextStorage.fromInlineFTML(P)
+  text = AttributedString.fromInlineFTML(P)
   item = outline.createItem(text, liOrRootUL.id, remapIDCallback)
 
   attributes = liOrRootUL.attributes

@@ -1,10 +1,9 @@
 # Copyright (c) 2015 Jesse Grosjean. All rights reserved.
 
-TextStorage = require './text-storage-ftml'
+AttributedString = require './attributed-string-ftml'
 Constants = require './constants'
-Mutation = require './mutation'
 ItemPath = require './item-path'
-UrlUtil = require './url-util'
+Mutation = require './mutation'
 _ = require 'underscore-plus'
 assert = require 'assert'
 
@@ -16,7 +15,7 @@ assert = require 'assert'
 # When you move an item all of its children are moved with it.
 #
 # Items have a single paragraph of body text. You can access it as plain text,
-# a HTML string, or an {TextStorage}. You can add formatting to make parts
+# a HTML string, or an {AttributedString}. You can add formatting to make parts
 # of the text bold, italic, etc.
 #
 # You can assign item level attributes to items. For example you might store a
@@ -57,7 +56,7 @@ class Item
   constructor: (outline, text, id, remappedIDCallback) ->
     @outline = outline
     @id = outline.nextOutlineUniqueItemID(id)
-    @textStorage = new TextStorage(text)
+    @attributedString = new AttributedString(text)
     if id isnt @id
       if remappedIDCallback and id
         remappedIDCallback(id, @id, this)
@@ -198,13 +197,13 @@ class Item
   Section: Body Text
   ###
 
-  textStorage: null
+  attributedString: null
 
   # Public: Body text as plain text {String}.
   bodyText: null
   Object.defineProperty @::, 'bodyText',
     get: ->
-      @textStorage.string.toString()
+      @attributedString.string.toString()
     set: (text='') ->
       @replaceBodyTextInRange text, 0, @bodyTextLength
 
@@ -212,7 +211,7 @@ class Item
   bodyTextLength: null
   Object.defineProperty @::, 'bodyTextLength',
     get: ->
-      @textStorage.string.length
+      @attributedString.string.length
 
   # Public: Body as HTML {String}.
   bodyHTML: null
@@ -221,24 +220,24 @@ class Item
     set: (html) ->
       p = document.createElement 'P'
       p.innerHTML = html
-      @attributedBodyText = TextStorage.fromInlineFTML(p)
+      @attributedBodyText = AttributedString.fromInlineFTML(p)
 
-  # Public: Body text as read-only {TextStorage}.
+  # Public: Body text as read-only {AttributedString}.
   attributedBodyText: null
   Object.defineProperty @::, 'attributedBodyText',
     get: ->
       if @isRoot
-        return new TextStorage
-      @textStorage
+        return new AttributedString
+      @attributedString
     set: (attributedText) ->
       @replaceBodyTextInRange attributedText, 0, @bodyTextLength
 
-  # Public: Returns an {TextStorage} substring of this item's body text.
+  # Public: Returns an {AttributedString} substring of this item's body text.
   #
   # - `index` Substring's strart index.
   # - `length` Length of substring to extract.
   getAttributedBodyTextSubstring: (index, length) ->
-    @attributedBodyText.subtextStorage(index, length)
+    @attributedBodyText.subattributedString(index, length)
 
   # Public: Returns an {Object} with keys for each attribute at the given
   # character characterIndex, and by reference the range over which the
@@ -273,6 +272,7 @@ class Item
   # - `length` Range length.
   setBodyTextAttributesInRange: (attributes, index, length) ->
     @attributedBodyText.setAttributesInRange(attributes, index, length)
+    # Needs mutation event!
 
   # Public: Adds an element with the given tagName and attributes to the
   # characters in the specified range.
@@ -284,6 +284,7 @@ class Item
   # - `length` Range length.
   addBodyTextAttributeInRange: (attribute, value, index, length) ->
     @attributedBodyText.addAttributeInRange(attribute, value, index, length)
+    # Needs mutation event!
 
   # Public: Adds an element with the given tagName and attributes to the
   # characters in the specified range.
@@ -295,6 +296,7 @@ class Item
   # - `length` Range length.
   addBodyTextAttributesInRange: (attributes, index, length) ->
     @attributedBodyText.addAttributesInRange(attributes, index, length)
+    # Needs mutation event!
 
   # Public: Removes the element with the tagName from the characters in the
   # specified range.
@@ -304,6 +306,7 @@ class Item
   # - `length` Range length.
   removeBodyTextAttributeInRange: (attribute, index, length) ->
     @attributedBodyText.removeAttributeInRange(attribute, index, length)
+    # Needs mutation event!
 
   insertLineBreakInBodyText: (index) ->
 
@@ -311,7 +314,7 @@ class Item
 
   # Public: Replace body text in the given range.
   #
-  # - `insertedText` {String} or {TextStorage}
+  # - `insertedText` {String} or {AttributedString}
   # - `index` Start index.
   # - `length` Range length.
   replaceBodyTextInRange: (insertedText, index, length) ->
@@ -324,7 +327,7 @@ class Item
     outline = @outline
     insertedString
 
-    if insertedText instanceof TextStorage
+    if insertedText instanceof AttributedString
       insertedString = insertedText.string
     else
       insertedString = insertedText
@@ -332,7 +335,7 @@ class Item
     assert.ok(insertedString.indexOf('\n') is -1, 'Item body text cannot contain newlines')
 
     if isInOutline
-      replacedText = attributedBodyText.subtextStorage(index, length)
+      replacedText = attributedBodyText.subattributedString(index, length)
       if replacedText.length is 0 and insertedText.length is 0
         return
       mutation = Mutation.createBodyTextMutation this, index, insertedString.length, replacedText
@@ -349,14 +352,14 @@ class Item
 
   # Public: Append body text.
   #
-  # - `text` {String} or {TextStorage}
+  # - `text` {String} or {AttributedString}
   # - `elements` (optional) {Object} whose keys are formatting element
   #   tagNames and values are attributes for those elements. If specified the
   #   appended text will include these elements.
   appendBodyText: (text, elements) ->
     if elements
-      unless text instanceof TextStorage
-        text = new TextStorage text
+      unless text instanceof AttributedString
+        text = new AttributedString text
       text.addAttributesInRange elements, 0, text.length
     @replaceBodyTextInRange text, @bodyText.length, 0
 
@@ -581,7 +584,7 @@ class Item
   #
   # Returns {Boolean}.
   contains: (item) ->
-    ancestor = item.parent
+    ancestor = item?.parent
     while ancestor
       if ancestor is this
         return true
@@ -790,4 +793,4 @@ class Item
 
   # Extended: Returns debug string for this item.
   toString: (depthString) ->
-    (depthString or '') + '(' + @id + ') ' + @textStorage.toString()
+    (depthString or '') + '(' + @id + ') ' + @attributedString.toString()

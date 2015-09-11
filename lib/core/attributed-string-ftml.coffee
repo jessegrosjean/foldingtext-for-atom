@@ -1,35 +1,35 @@
-TextStorage = require './text-storage'
+AttributedString = require './attributed-string'
 Constants = require './constants'
 _ = require 'underscore-plus'
 assert = require 'assert'
 dom = require './dom'
 
-TextStorage.prototype.toInlineFTMLString = (ownerDocument=document) ->
+AttributedString.prototype.toInlineFTMLString = (ownerDocument=document) ->
   div = document.createElement 'div'
   div.appendChild @toInlineFTMLFragment(ownerDocument)
   div.innerHTML
 
-TextStorage.prototype.toInlineFTMLFragment = (ownerDocument=document) ->
-  nodeRanges = TextStorage._calculateInitialNodeRanges @, ownerDocument
+AttributedString.prototype.toInlineFTMLFragment = (ownerDocument=document) ->
+  nodeRanges = AttributedString._calculateInitialNodeRanges @, ownerDocument
   nodeRangeStack = [
     start: 0
     end: @getLength()
     node: ownerDocument.createDocumentFragment()
   ]
-  TextStorage._buildFragmentFromNodeRanges nodeRanges, nodeRangeStack
+  AttributedString._buildFragmentFromNodeRanges nodeRanges, nodeRangeStack
 
-TextStorage._calculateInitialNodeRanges = (textStorage, ownerDocument) ->
+AttributedString._calculateInitialNodeRanges = (attributedString, ownerDocument) ->
   # For each attribute run create element nodes for each attribute and text node
   # for the text content. Store node along with range over which is should be
   # applied. Return sorted node ranages.
   nodeRanges = []
 
-  if textStorage.runIndex
+  if attributedString.runIndex
     tagsToRanges = {}
     runLocation = 0
     runIndex = 0
 
-    for run in textStorage.getRuns()
+    for run in attributedString.getRuns()
       for tag, tagAttributes of run.attributes
         nodeRange = tagsToRanges[tag]
         if not nodeRange or nodeRange.end <= runLocation
@@ -43,7 +43,7 @@ TextStorage._calculateInitialNodeRanges = (textStorage, ownerDocument) ->
           nodeRange =
             node: element
             start: runLocation
-            end: @_seekTagRangeEnd tag, tagAttributes, runIndex, runLocation, textStorage
+            end: @_seekTagRangeEnd tag, tagAttributes, runIndex, runLocation, attributedString
 
           tagsToRanges[tag] = nodeRange
           nodeRanges.push nodeRange
@@ -60,7 +60,7 @@ TextStorage._calculateInitialNodeRanges = (textStorage, ownerDocument) ->
 
     nodeRanges.sort @_compareNodeRanges
   else
-    string = textStorage.getString()
+    string = attributedString.getString()
     nodeRanges = [{
       start: 0
       end: string.length
@@ -69,8 +69,8 @@ TextStorage._calculateInitialNodeRanges = (textStorage, ownerDocument) ->
 
   nodeRanges
 
-TextStorage._seekTagRangeEnd = (tagName, seekTagAttributes, runIndex, runLocation, textStorage) ->
-  attributeRuns = textStorage.getRuns()
+AttributedString._seekTagRangeEnd = (tagName, seekTagAttributes, runIndex, runLocation, attributedString) ->
+  attributeRuns = attributedString.getRuns()
   end = attributeRuns.length
   while true
     run = attributeRuns[runIndex++]
@@ -82,7 +82,7 @@ TextStorage._seekTagRangeEnd = (tagName, seekTagAttributes, runIndex, runLocatio
       return runLocation + run.getLength()
     runLocation += run.getLength()
 
-TextStorage._compareNodeRanges = (a, b) ->
+AttributedString._compareNodeRanges = (a, b) ->
   if a.start < b.start
     -1
   else if a.start > b.start
@@ -109,7 +109,7 @@ TextStorage._compareNodeRanges = (a, b) ->
     else
       0
 
-TextStorage._buildFragmentFromNodeRanges = (nodeRanges, nodeRangeStack) ->
+AttributedString._buildFragmentFromNodeRanges = (nodeRanges, nodeRangeStack) ->
   i = 0
   while i < nodeRanges.length
     range = nodeRanges[i++]
@@ -181,32 +181,32 @@ InlineFTMLTags =
   'DEL': true
   'INS': true
 
-TextStorage._addDOMNodeToTextStorage = (node, textStorage) ->
+AttributedString._addDOMNodeToAttributedString = (node, attributedString) ->
   nodeType = node.nodeType
 
   if nodeType is Node.TEXT_NODE
-    textStorage.appendText(new TextStorage(node.nodeValue.replace(/(\r\n|\n|\r)/gm,'')))
+    attributedString.appendText(new AttributedString(node.nodeValue.replace(/(\r\n|\n|\r)/gm,'')))
   else if nodeType is Node.ELEMENT_NODE
-    tagStart = textStorage.getLength()
+    tagStart = attributedString.getLength()
     each = node.firstChild
 
     if each
       while each
-        @_addDOMNodeToTextStorage(each, textStorage)
+        @_addDOMNodeToAttributedString(each, attributedString)
         each = each.nextSibling
       if InlineFTMLTags[node.tagName]
-        textStorage.addAttributeInRange(node.tagName, @_getElementAttributes(node), tagStart, textStorage.getLength() - tagStart)
+        attributedString.addAttributeInRange(node.tagName, @_getElementAttributes(node), tagStart, attributedString.getLength() - tagStart)
     else if InlineFTMLTags[node.tagName]
       if node.tagName is 'BR'
-        lineBreak = new TextStorage(Constants.LineSeparatorCharacter)
+        lineBreak = new AttributedString(Constants.LineSeparatorCharacter)
         lineBreak.addAttributeInRange('BR', @_getElementAttributes(node), 0, 1)
-        textStorage.appendText(lineBreak)
+        attributedString.appendText(lineBreak)
       else if node.tagName is 'IMG'
-        image = new TextStorage(Constants.ObjectReplacementCharacter)
+        image = new AttributedString(Constants.ObjectReplacementCharacter)
         image.addAttributeInRange('IMG', @_getElementAttributes(node), 0, 1)
-        textStorage.appendText(image)
+        attributedString.appendText(image)
 
-TextStorage._getElementAttributes = (element) ->
+AttributedString._getElementAttributes = (element) ->
   if element.hasAttributes()
     result = {}
     for each in element.attributes
@@ -215,23 +215,23 @@ TextStorage._getElementAttributes = (element) ->
   else
     null
 
-TextStorage.fromInlineFTMLString = (inlineFTMLString) ->
+AttributedString.fromInlineFTMLString = (inlineFTMLString) ->
   div = document.createElement 'div'
   div.innerHTML = inlineFTMLString
   @fromInlineFTML div
 
-TextStorage.fromInlineFTML = (inlineFTMLContainer) ->
+AttributedString.fromInlineFTML = (inlineFTMLContainer) ->
   each = inlineFTMLContainer.firstChild
   if not each or (each is inlineFTMLContainer.lastChild and each.nodeType is Node.TEXT_NODE)
-    textStorage = new TextStorage(each?.nodeValue)
+    attributedString = new AttributedString(each?.nodeValue)
   else
-    textStorage = new TextStorage()
+    attributedString = new AttributedString()
     while each
-      @_addDOMNodeToTextStorage(each, textStorage)
+      @_addDOMNodeToAttributedString(each, attributedString)
       each = each.nextSibling
-  textStorage
+  attributedString
 
-TextStorage.validateInlineFTML = (inlineFTMLContainer) ->
+AttributedString.validateInlineFTML = (inlineFTMLContainer) ->
   end = dom.nodeNextBranch inlineFTMLContainer
   each = dom.nextNode inlineFTMLContainer
   while each isnt end
@@ -239,7 +239,7 @@ TextStorage.validateInlineFTML = (inlineFTMLContainer) ->
       assert.ok(InlineFTMLTags[tagName], "Unexpected tagName '#{tagName}' in 'P'")
     each = dom.nextNode each
 
-TextStorage.inlineFTMLToText = (inlineFTMLContainer) ->
+AttributedString.inlineFTMLToText = (inlineFTMLContainer) ->
   if inlineFTMLContainer
     end = dom.nodeNextBranch(inlineFTMLContainer)
     each = dom.nextNode inlineFTMLContainer
@@ -262,7 +262,7 @@ TextStorage.inlineFTMLToText = (inlineFTMLContainer) ->
   else
     ''
 
-TextStorage.textIndexToInlineFTMLIndex = (index, inlineFTMLContainer) ->
+AttributedString.textIndexToInlineFTMLIndex = (index, inlineFTMLContainer) ->
   if inlineFTMLContainer
     end = dom.nodeNextBranch(inlineFTMLContainer)
     each = inlineFTMLContainer.firstChild or inlineFTMLContainer
@@ -304,7 +304,7 @@ TextStorage.textIndexToInlineFTMLIndex = (index, inlineFTMLContainer) ->
   else
     undefined
 
-TextStorage.inlineFTMLIndexToTextIndex = (node, index, inlineFTMLContainer) ->
+AttributedString.inlineFTMLIndexToTextIndex = (node, index, inlineFTMLContainer) ->
   unless inlineFTMLContainer
     # If inlineFTMLContainer is not provided then search up from node for
     # it. Search for 'P' tagname for model layer or 'contenteditable'
@@ -351,4 +351,4 @@ TextStorage.inlineFTMLIndexToTextIndex = (node, index, inlineFTMLContainer) ->
   else
     undefined
 
-module.exports = TextStorage
+module.exports = AttributedString

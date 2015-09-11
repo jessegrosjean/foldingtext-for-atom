@@ -143,6 +143,11 @@ class SpanIndex extends SpanBranch
     if changeEvent
       @emitter.emit 'did-change', changeEvent
 
+  getSpansInRange: (location, length, chooseRight=false) ->
+    start = @getSpanInfoAtLocation(location, chooseRight)
+    end = @getSpanInfoAtLocation(location + length, chooseRight)
+    @getSpans(start.spanIndex, (end.spanIndex - start.spanIndex) + 1)
+
   getSpanInfoAtCharacterIndex: (characterIndex) ->
     if characterIndex < @getLength()
       @getSpanInfoAtLocation(characterIndex, true)

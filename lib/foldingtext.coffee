@@ -3,19 +3,19 @@
 {Disposable, CompositeDisposable} = require 'atom'
 foldingTextService = require './foldingtext-service'
 ItemSerializer = null
-OutlineEditor = null
 Outline = null
+Editor = null
 path = null
 url = null
 Q = null
 _ = null
 
 atom.deserializers.add
-  name: 'OutlineEditorDeserializer'
+  name: 'EditorDeserializer'
   deserialize: (data={}) ->
-    OutlineEditor ?= require('./editor/outline-editor')
+    Editor ?= require('./editor/outline-editor')
     outline = require('./core/outline').getOutlineForPathSync(data.filePath)
-    new OutlineEditor(outline, data)
+    new Editor(outline, data)
 
 module.exports =
   subscriptions: null
@@ -44,7 +44,7 @@ module.exports =
     @subscriptions.add atom.commands.add 'atom-workspace', 'foldingtext:open-api-reference': ->
       require('shell').openExternal('http://www.foldingtext.com/foldingtext-for-atom/documentation/api-reference/')
 
-    @subscriptions.add foldingTextService.observeOutlineEditors =>
+    @subscriptions.add foldingTextService.observeEditors =>
       unless @workspaceDisplayedEditor
         require './extensions/ui/popovers'
         #require './extensions/edit-link-popover'
@@ -57,18 +57,18 @@ module.exports =
     @subscriptions.add atom.workspace.addOpener (uri, options) ->
       if uri is 'outline-editor://new-outline'
         Outline ?= require('./core/outline')
-        OutlineEditor ?= require('./editor/outline-editor')
+        Editor ?= require('./editor/outline-editor')
         Outline.getOutlineForPath(null, true).then (outline) ->
-          new OutlineEditor(outline)
+          new Editor(outline)
 
     @subscriptions.add atom.workspace.addOpener (uri, options) ->
       ItemSerializer ?= require('./core/item-serializer')
       if ItemSerializer.getMimeTypeForURI(uri)
         Outline ?= require('./core/outline')
-        OutlineEditor ?= require('./editor/outline-editor')
+        Editor ?= require('./editor/outline-editor')
         Outline.getOutlineForPath(uri).then (outline) ->
           if outline
-            new OutlineEditor(outline, options)
+            new Editor(outline, options)
 
     @subscriptions.add atom.packages.onDidActivatePackage (pack) ->
       if pack.name is 'foldingtext-for-atom'

@@ -2,7 +2,7 @@
 
 {File, Emitter, Disposable, CompositeDisposable} = require 'atom'
 ItemSerializer = require './item-serializer'
-TextStorage = require './text-storage'
+AttributedString = require './attributed-string'
 UndoManager = require './undo-manager'
 Constants = require './constants'
 ItemPath = require './item-path'
@@ -87,7 +87,7 @@ class Outline
   constructor: (options) ->
     @id = shortid()
     @idsToItems = new Map()
-    @textStorage = new TextStorage
+    @attributedString = new AttributedString
     @root = @createItem '', Constants.RootID
     @root.isInOutline = true
     @undoManager = undoManager = new UndoManager
@@ -401,7 +401,7 @@ class Outline
     assert.ok(not item.isRoot, 'Can not clone root')
     assert.ok(item.outline is @, 'Item must be owned by this outline')
 
-    clonedItem = @createItem(item.textStorage)
+    clonedItem = @createItem(item.attributedString)
 
     if item.attributes
       clonedItem.attributes = _.clone(item.attributes)
@@ -415,7 +415,7 @@ class Outline
         eachChild = eachChild.nextSibling
       clonedItem.appendChildren(children)
 
-    remapIDCallback?(item.id, clonedItem.id)
+    remapIDCallback?(item.id, clonedItem.id, clonedItem)
     clonedItem
 
   # Public: Creates a copy of an {Item} from an external outline that can be
@@ -428,7 +428,7 @@ class Outline
     assert.ok(not item.isRoot, 'Can not import root item')
     assert.ok(item.outline isnt @, 'Item must not be owned by this outline')
 
-    importedItem = @createItem(item.textStorage, item.id, remapIDCallback)
+    importedItem = @createItem(item.attributedString, item.id, remapIDCallback)
 
     if item.attributes
       importedItem.attributes = _.clone(item.attributes)

@@ -1,61 +1,57 @@
-TaskPaperSyncRules = require '../../sync-rules/taskpaper-sync-rules'
-ItemSerializer = require '../../core/item-serializer'
-OutlineTextStorage = require './outline-text-storage'
-Mutation = require '../../core/mutation'
+TaskPaperSyncRules = require '../sync-rules/taskpaper-sync-rules'
+ItemSerializer = require './item-serializer'
 {CompositeDisposable} = require 'atom'
-Outline = require '../../core/outline'
-shortid = require '../../core/shortid'
-Item = require '../../core/item'
+ItemIndex = require './item-index'
+Mutation = require './mutation'
+Outline = require './outline'
+shortid = require './shortid'
 _ = require 'underscore-plus'
-Range = require '../range'
 assert = require 'assert'
+Item = require './item'
 
-class OutlineEditor
+class Editor
 
   constructor: (outline, @nativeEditor) ->
     @id = shortid()
     @isUpdatingNativeBuffer = 0
-    @isUpdatingOutlineBuffer = 0
+    @isUpdatingItemIndex = 0
     @subscriptions = new CompositeDisposable
-    @outlineTextStorage = new OutlineTextStorage(outline, this)
+    @itemIndex = new ItemIndex(null, this)
     @nativeEditor ?= new NativeEditor
-
-    @outlineTextStorage.outline.registerAttributeBodyTextSyncRule(TaskPaperSyncRules)
-
-    @subscriptions.add @outlineTextStorage.onWillProcessOutlineMutation (mutation) =>
-      targetItem = mutation.target
-      if @searchQuery
-        if mutation.type is Mutation.CHILDREN_CHANGED and (targetItem is @getHoistedItem() or @getHoistedItem().contains(targetItem))
-          for eachItem in mutation.addedItems
-            @_addSearchResult eachItem
-
-      if mutation.type is Mutation.CHILDREN_CHANGED
-        if not targetItem.hasChildren
-          @setCollapsed targetItem
-
-    @subscriptions.add @outlineTextStorage.onDidChange (e) =>
-      if not @isUpdatingOutlineBuffer
-        range = e.oldCharacterRange
-        nsrange = location: range.start, length: range.end - range.start
-        @isUpdatingNativeBuffer++
-        @nativeEditor.nativeTextBufferReplaceCharactersInRangeWithString(nsrange, e.newText)
-        @isUpdatingNativeBuffer--
-      assert(@nativeEditor.nativeTextContent is @outlineTextStorage.getText(), 'Text Buffers are Equal')
-
     @searchQuery = ''
     @expandedBySearch = null
-    @setHoistedItem(@outlineTextStorage.outline.root)
+
+    outline.registerAttributeBodyTextSyncRule(TaskPaperSyncRules)
+
+    @subscriptions.add @itemIndex.onWillProcessOutlineMutation (mutation) =>
+      target = mutation.target
+      if @searchQuery
+        if mutation.type is Mutation.CHILDREN_CHANGED and (target is @getHoistedItem() or @getHoistedItem().contains(target))
+          for eachItem in mutation.addedItems
+            @_addSearchResult(eachItem)
+      if mutation.type is Mutation.CHILDREN_CHANGED
+        if not target.hasChildren
+          @setCollapsed(target)
+
+    @subscriptions.add @itemIndex.onDidChange (e) =>
+      if not @isUpdatingItemIndex
+        @isUpdatingNativeBuffer++
+        nsrange = location: e.location, length: e.replacedLength
+        @nativeEditor.nativeTextBufferReplaceCharactersInRangeWithString(nsrange, e.insertedString)
+        @isUpdatingNativeBuffer--
+      assert(@nativeEditor.nativeTextContent is @itemIndex.getString(), 'Text Buffers are Equal')
+
+    @setHoistedItem(outline.root)
 
   nativeTextBufferDidReplaceCharactersInRangeWithString: (nsrange, string) ->
     if not @isUpdatingNativeBuffer
-      range = @outlineTextStorage.getRangeFromCharacterRange(nsrange.location, nsrange.location + nsrange.length)
-      @isUpdatingOutlineBuffer++
-      @outlineTextStorage.setTextInRange(string, range)
-      @isUpdatingOutlineBuffer--
+      @isUpdatingItemIndex++
+      @itemIndex.replaceRange(nsrange.location, nsrange.length, string)
+      @isUpdatingItemIndex--
 
   nativeTextBufferDrawingStateForRange: (nsrange) ->
-    range = @outlineTextStorage.getRangeFromCharacterRange(nsrange.location, nsrange.location + nsrange.length)
-    linesInRange = @outlineTextStorage.getLinesInRange(range)
+    range = @itemIndex.getRangeFromCharacterRange(nsrange.location, nsrange.location + nsrange.length)
+    linesInRange = @itemIndex.getLinesInRange(range)
     visitedAncestors = new Set(@getHoistedItem())
     visibleItemAncestorRanges = []
     visibleItemStates = []
@@ -69,9 +65,9 @@ class OutlineEditor
 
       ancestor = eachItem.parent
       while not visitedAncestors.has(ancestor)
-        ancestorLine = @outlineTextStorage.getLineForItem(ancestor)
-        firstChildLine = @outlineTextStorage.getLineForItem(@getFirstVisibleChild(ancestor))
-        lastVisibleDescendantLine = @outlineTextStorage.getLineForItem(@getLastVisibleDescendantOrSelf(ancestor))
+        ancestorLine = @itemIndex.getLineForItem(ancestor)
+        firstChildLine = @itemIndex.getLineForItem(@getFirstVisibleChild(ancestor))
+        lastVisibleDescendantLine = @itemIndex.getLineForItem(@getLastVisibleDescendantOrSelf(ancestor))
         visibleItemAncestorRanges.push
           ancestorStart: ancestorLine.getCharacterOffset() + ancestorLine.getTabCount()
           firstChildStart: firstChildLine.getCharacterOffset()
@@ -90,7 +86,7 @@ class OutlineEditor
 
   destroy: ->
     unless @destroyed
-      @outlineTextStorage.destroy()
+      @itemIndex.destroy()
       @subscriptions.dispose()
       @destroyed = true
 
@@ -103,30 +99,13 @@ class OutlineEditor
       @setHoistedItem(item)
 
   unhoist: ->
-    @setHoistedItem(@outlineTextStorage.outline.root)
+    @setHoistedItem(@itemIndex.outline.root)
 
   getHoistedItem: ->
-    @hoistedItem or @outline.root
+    @itemIndex.getHoistedItem()
 
   setHoistedItem: (item) ->
-    @hoistedItem = item
-
-    @outlineTextStorage.isUpdatingBuffer++
-    @outlineTextStorage.removeLines(0, @outlineTextStorage.getLineCount())
-    @outlineTextStorage.isUpdatingBuffer--
-
-    newLines = []
-    @_gatherLinesForVisibleDescendents(@getHoistedItem(), newLines)
-    @outlineTextStorage.isUpdatingBuffer++
-    @outlineTextStorage.insertLines(0, newLines)
-    @outlineTextStorage.isUpdatingBuffer--
-
-  _gatherLinesForVisibleDescendents: (item, lines) ->
-    each = @getFirstVisibleChild(item)
-    while each
-      lines.push(new OutlineLine(@outlineTextStorage, each))
-      @_gatherLinesForVisibleDescendents(each, lines)
-      each = @getNextVisibleSibling(each)
+    @itemIndex.setHoistedItem(item)
 
   ###
   Section: Matched Items
@@ -145,17 +124,17 @@ class OutlineEditor
     @searchQuery = query
 
     # Remove old search state from the entire tree
-    for each in @outlineTextStorage.outline.root.descendants
+    for each in @itemIndex.outline.root.descendants
       itemState = @getItemEditorState(each)
       itemState.matched = false
       itemState.matchedAncestor = false
       if @expandedBySearch?.has(each)
         itemState.expanded = false
 
-    # Clear the text display buffer
-    @outlineTextStorage.isUpdatingBuffer++
-    @outlineTextStorage.removeLines(0, @outlineTextStorage.getLineCount())
-    @outlineTextStorage.isUpdatingBuffer--
+    # Clear the display text storage
+    @itemIndex.isUpdatingIndex++
+    @itemIndex.removeLines(0, @itemIndex.getLineCount())
+    @itemIndex.isUpdatingIndex--
     @expandedBySearch = null
 
     # Update search state
@@ -204,7 +183,7 @@ class OutlineEditor
     else
       parent = items[0].parent
       if @isVisible(parent)
-        @setSelectedItemRange(parent, @getHoistedItem().depth - parent.depth)
+        @setSelectedItemRange(parent)
         @fold(undefined, completely)
         return
 
@@ -221,7 +200,7 @@ class OutlineEditor
     minFoldedDepth = Number.MAX_VALUE
     maxItemDepth = 0
 
-    @outlineTextStorage.iterateLines 0, @outlineTextStorage.getLineCount(), (line) =>
+    @itemIndex.iterateLines 0, @itemIndex.getLineCount(), (line) =>
       item = line.item
       depth = item.depth
       if depth > maxItemDepth
@@ -288,7 +267,7 @@ class OutlineEditor
 
     selectedItemRange = @getSelectedItemRange()
 
-    @outlineTextStorage.isUpdatingBuffer++
+    @itemIndex.isUpdatingIndex++
     if expanded
       # for better animations
       for each in items
@@ -307,27 +286,27 @@ class OutlineEditor
           @_removeDescendantLines(each)
       for each in items
         @getItemEditorState(each).expanded = expanded
-    @outlineTextStorage.isUpdatingBuffer--
+    @itemIndex.isUpdatingIndex--
 
     @setSelectedItemRange(selectedItemRange)
 
   _insertVisibleDescendantLines: (item) ->
-    if itemLine = @outlineTextStorage.getLineForItem(item)
+    if itemSpan = @itemIndex.getItemSpanForItem(item)
       if each = @getFirstVisibleChild(item)
         insertLines = []
         end = @getNextVisibleItem(@getLastVisibleDescendantOrSelf(item))
         while each isnt end
-          insertLines.push(new OutlineLine(@outlineTextStorage, each))
+          insertLines.push(@itemIndex.createSpanForItem(each))
           each = @getNextVisibleItem(each)
-        @outlineTextStorage.insertLines(itemLine.getRow() + 1, insertLines)
+        @itemIndex.insertLines(itemSpan.getSpanIndex() + 1, insertLines)
 
   _removeDescendantLines: (item) ->
-    if itemLine = @outlineTextStorage.getLineForItem(item)
-      start = itemLine.getRow() + 1
+    if itemSpan = @itemIndex.getItemSpanForItem(item)
+      start = itemSpan.getSpanIndex() + 1
       end = start
-      while item.contains(@outlineTextStorage.getLine(end)?.item)
+      while item.contains(@itemIndex.getLine(end)?.item)
         end++
-      @outlineTextStorage.removeLines(start, end - start)
+      @itemIndex.removeLines(start, end - start)
 
   ###
   Section: Item Visibility
@@ -484,17 +463,19 @@ class OutlineEditor
       @getNextVisibleBranch nextBranch, hoistedItem
 
   getVisibleBranchCharacterRange: (item, hoistedItem) ->
-    startLine = @outlineTextStorage.getLineForItem(item)
-    endLine = @outlineTextStorage.getLineForItem(@getLastVisibleDescendantOrSelf(item, hoistedItem))
+    startItemSpan = @itemIndex.getItemSpanForItem(item)
+    endItemSpan = @itemIndex.getItemSpanForItem(@getLastVisibleDescendantOrSelf(item, hoistedItem))
+    start = startItemSpan.getLocation()
+    end = endItemSpan.getLocation() + endItemSpan.getLength()
     {} =
-      start: startLine.getCharacterOffset()
-      end: endLine.getCharacterOffset() + endLine.getCharacterCount() - 1
+      location: start
+      length: end - start
 
   getVisibleBodyCharacterRange: (item) ->
-    line = @outlineTextStorage.getLineForItem(item)
+    itemSpan = @itemIndex.getItemSpanForItem(item)
     {} =
-      start: line.getTabCount()
-      end: line.getCharacterCount() - 1 - line.getTabCount()
+      location: itemSpan.getLocation()
+      length: itemSpan.getLength()
 
   ###
   Section: Selection
@@ -505,17 +486,12 @@ class OutlineEditor
     @getSelectedRanges()[0]
 
   getSelectedRanges: ->
-    ranges = []
-    #nsranges = @nativeTextBuffer.selectedRanges()
-    nsranges = [@nativeEditor.nativeSelectedRange]
-    for each in nsranges
-      ranges.push @outlineTextStorage.getRangeFromCharacterRange(each.location, each.location + each.length)
-    ranges
+    [@nativeEditor.nativeSelectedRange]
 
   getSelectedItems: ->
     selectedItems = []
     for each in @getSelectedRanges()
-      rangeItems = (each.item for each in @outlineTextStorage.getLinesInRange(each))
+      rangeItems = (each.item for each in @itemIndex.getSpansInRange(each.location, each.length, true))
       last = selectedItems[selectedItems.length - 1]
       while rangeItems.length > 0 and rangeItems[0] is last
         rangeItems.shift()
@@ -523,7 +499,8 @@ class OutlineEditor
     selectedItems
 
   getSelectedItemRange: ->
-    @outlineTextStorage.getItemRangeFromRange(@getSelectedRange())
+    range = @getSelectedRange()
+    @itemIndex.getItemRange(range.location, range.length)
 
   # Public: Sets the selection.
   #
@@ -532,60 +509,51 @@ class OutlineEditor
     @setSelectedRanges([range])
 
   setSelectedRanges: (ranges) ->
-    nsranges = []
-    ranges = (@outlineTextStorage.clipRange(each) for each in ranges)
-    for each in ranges
-      characterRange = @outlineTextStorage.getCharacterRangeFromRange(each)
-      nsranges.push
-        location: characterRange.start
-        length: characterRange.end - characterRange.start
-    #@nativeEditor.setSelectedRanges(nsranges)
-    @nativeEditor.nativeSelectedRange = nsranges[0]
+    @nativeEditor.nativeSelectedRange = ranges[0]
 
   setSelectedItemRange: (startItem, spanLocation, endItem, endOffset) ->
-    @setSelectedRange(@outlineTextStorage.getRangeFromItemRange(startItem, spanLocation, endItem, endOffset))
+    range = @itemIndex.getRangeFromItemRange(startItem, spanLocation, endItem, endOffset)
+    @setSelectedRange(range)
 
   ###
   Section: Insert
   ###
 
   insertNewline: ->
-    outline = @outlineTextStorage.outline
+    outline = @itemIndex.outline
     undoManager = outline.undoManager
     undoManager.beginUndoGrouping()
 
     selectedRange = @getSelectedRange()
     selectedItemRange = @getSelectedItemRange()
 
-    if not selectedRange.isEmpty()
-      @outlineTextStorage.setTextInRange('', selectedRange)
-      selectedRange.end = selectedRange.start
+    if selectedRange.length
+      @itemIndex.replaceRange(selectedRange.location, selectedRange.length, '')
+      selectedRange.length = 0
 
     startItem = selectedItemRange.startItem
-    startLine = @outlineTextStorage.getLineForItem(startItem)
-    spanLocation = selectedItemRange.spanLocation
+    startItemSpan = @itemIndex.getItemSpanForItem(startItem)
+    startOffset = selectedItemRange.startOffset
 
-    match = startItem.bodyText.match(/\t*(- )(.*)/)
+    match = startItem.bodyText.match(/(- )(.*)/)
     prefix = match?[1] ? ''
     content = match?[2] ? startItem.bodyText
-    lead = startLine.getTabCount() + prefix.length
+    lead = prefix.length
 
-    if spanLocation <= lead and (not prefix or content)
+    if startOffset <= lead and (not prefix or content)
       @insertItem('', true)
-      @setSelectedItemRange(startItem, spanLocation)
-    else if spanLocation is lead and (prefix and not content)
+      @setSelectedItemRange(startItem, startOffset)
+    else if startOffset is lead and (prefix and not content)
       startItem.bodyText = ''
     else
-      bodyTextOffset = spanLocation - startLine.getTabCount()
-      splitText = startItem.getAttributedBodyTextSubstring(bodyTextOffset, -1)
-      startItem.replaceBodyTextInRange('', bodyTextOffset, -1)
+      splitText = startItem.getAttributedBodyTextSubstring(startOffset, -1)
+      startItem.replaceBodyTextInRange('', startOffset, -1)
 
       if prefix
         splitText.insertStringAtLocation(prefix, 0)
         @insertItem(splitText)
         selectedRange = @getSelectedRange()
-        selectedRange.start.column += prefix.length
-        selectedRange.end.column += prefix.length
+        selectedRange.location += prefix.length
         @setSelectedRange(selectedRange)
       else
         @insertItem(splitText)
@@ -637,7 +605,7 @@ class OutlineEditor
     undoManager.beginUndoGrouping()
     parent.insertChildBefore(insertItem, insertBefore)
     undoManager.endUndoGrouping()
-    @setSelectedItemRange(insertItem, @outlineTextStorage.getLineForItem(insertItem).getTabCount())
+    @setSelectedItemRange(insertItem)
 
     undoManager.setActionName('Insert Item')
 
@@ -667,7 +635,7 @@ class OutlineEditor
     if items.length
       selectedItemRange = @getSelectedItemRange()
       minDepth = @getHoistedItem().depth + 1
-      outline = @outlineTextStorage.outline
+      outline = @itemIndex.outline
       firstItem = items[0]
       endItem = items[items.length - 1]
       referenceItem = null
@@ -768,16 +736,16 @@ class OutlineEditor
     items = Item.getCommonAncestors(items)
 
     if items.length > 0
-      outline = @outlineTextStorage.outline
+      outline = @itemIndex.outline
       first = items[0]
       group = outline.createItem ''
 
       undoManager = outline.undoManager
       undoManager.beginUndoGrouping()
 
-      first.parent.insertChildBefore group, first
-      @setSelectedItemRange group, group.depth - @getHoistedItem().depth
-      @moveBranches items, group
+      first.parent.insertChildBefore(group, first)
+      @setSelectedItemRange(group)
+      @moveBranches(items, group)
 
       undoManager.endUndoGrouping()
       undoManager.setActionName('Group Items')
@@ -790,7 +758,7 @@ class OutlineEditor
 
     if items.length > 0
       itemRange = @getSelectedItemRange()
-      outline = @outlineTextStorage.outline
+      outline = @itemIndex.outline
       expandedClones = []
       clonedItems = []
 
@@ -820,7 +788,7 @@ class OutlineEditor
     item ?= @getSelectedItems()[0]
     if item
       @moveBranches(item.children, item.parent, item.nextSibling)
-      @outlineTextStorage.outline.undoManager.setActionName('Promote Children')
+      @itemIndex.outline.undoManager.setActionName('Promote Children')
 
   demoteTrailingSiblingBranches: (item) ->
     item ?= @getSelectedItems()[0]
@@ -834,7 +802,7 @@ class OutlineEditor
 
       if trailingSiblings.length > 0
         @moveBranches(trailingSiblings, item, null)
-        @outlineTextStorage.outline.undoManager.setActionName('Demote Siblings')
+        @itemIndex.outline.undoManager.setActionName('Demote Siblings')
 
   moveBranches: (items, newParent, newNextSibling) ->
     items ?= @getSelectedItems()
@@ -842,7 +810,7 @@ class OutlineEditor
       items = [items]
     items = Item.getCommonAncestors(items)
 
-    outline = @outlineTextStorage.outline
+    outline = @itemIndex.outline
 
     undoManager = outline.undoManager
     undoManager.beginUndoGrouping()
@@ -870,10 +838,10 @@ class OutlineEditor
   ###
 
   serialize: (mimeType) ->
-    ItemSerializer.serializeItems(@outlineTextStorage.outline.root.children, self, 'text/plain')
+    ItemSerializer.serializeItems(@itemIndex.outline.root.children, self, 'text/plain')
 
   deserialize: (data, mimeType) ->
-    items = ItemSerializer.deserializeItems(data, @outlineTextStorage.outline, 'text/plain')
+    items = ItemSerializer.deserializeItems(data, @itemIndex.outline, 'text/plain')
 
   ###
   Section: Scripting
@@ -923,7 +891,6 @@ class NativeEditor
   Object.defineProperty @::, 'nativeQuery',
     get: ->
       @query
-
     set: (@query) ->
 
   Object.defineProperty @::, 'nativeSelectedRange',
@@ -931,7 +898,6 @@ class NativeEditor
       @selectedRange.location = Math.min(@selectedRange.location, @text.length)
       @selectedRange.length = Math.min(@selectedRange.length, @text.length - @selectedRange.location)
       @selectedRange
-
     set: (@selectedRange) ->
 
   Object.defineProperty @::, 'nativeTextContent',
@@ -940,4 +906,4 @@ class NativeEditor
   nativeTextBufferReplaceCharactersInRangeWithString: (range, text) ->
     @text = @text.substring(0, range.location) + text + @text.substring(range.location + range.length)
 
-module.exports = OutlineEditor
+module.exports = Editor

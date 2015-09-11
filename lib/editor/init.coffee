@@ -1,28 +1,28 @@
-OutlineBuffer = require './outline/outline-buffer'
+OutlineAttributedString = require './outline-attributed-string'
 
 atom.workspace.observeTextEditors (textEditor) ->
   textBuffer = textEditor.getBuffer()
 
-  outlineBuffer = new OutlineBuffer()
-  outlineBuffer.outline.root.appendChild(outlineBuffer.outline.createItem(''))
-  outlineBuffer.setTextInRange(textBuffer.getText(), [[0, 0], [0, 0]])
+  outlineAttributedString = new OutlineBuffer()
+  outlineAttributedString.outline.root.appendChild(outlineAttributedString.outline.createItem(''))
+  outlineAttributedString.setTextInRange(textBuffer.getText(), [[0, 0], [0, 0]])
 
-  ignoreOutlineBufferChanges = 0
+  ignoreOutlineAttributedStringChanges = 0
   ignoreTextBufferChanges = 0
 
-  outlineBuffer.onDidChange (e) ->
-    if not ignoreOutlineBufferChanges
+  outlineAttributedString.onDidChange (e) ->
+    if not ignoreOutlineAttributedStringChanges
       ignoreTextBufferChanges++
       textBuffer.setTextInRange(e.oldRange, e.newText)
       ignoreTextBufferChanges--
 
   textBuffer.onDidChange (e) ->
     if not ignoreTextBufferChanges
-      ignoreOutlineBufferChanges++
-      outlineBuffer.setTextInRange(e.newText, e.oldRange)
-      ignoreOutlineBufferChanges--
+      ignoreOutlineAttributedStringChanges++
+      outlineAttributedString.setTextInRange(e.newText, e.oldRange)
+      ignoreOutlineAttributedStringChanges--
 
-  outline = outlineBuffer.outline
+  outline = outlineAttributedString.outline
   outline.root.firstChild.bodyText = 'hello'
   outline.root.firstChild.appendChild outline.createItem('Moose')
   outline.root.firstChild.appendChild outline.createItem('Mouse')
@@ -32,8 +32,8 @@ atom.workspace.observeTextEditors (textEditor) ->
 
   atom.commands.add 'atom-workspace', 'birch:hoist', ->
     row = textEditor.getSelectedBufferRange().start.row
-    item = outlineBuffer.getLine(row).item
-    outlineBuffer.setHoistedItem(item)
+    item = outlineAttributedString.getLine(row).item
+    outlineAttributedString.setItem(item)
 
   atom.commands.add 'atom-workspace', 'birch:un-hoist', ->
-    outlineBuffer.setHoistedItem(null)
+    outlineAttributedString.setItem(null)

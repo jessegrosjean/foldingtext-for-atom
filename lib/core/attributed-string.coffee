@@ -2,24 +2,23 @@ LineIndex = require './line-index'
 RunIndex = require './run-index'
 _ = require 'underscore-plus'
 {Emitter} = require 'atom'
-Rope = require './rope'
 
-class TextStorage
+class AttributedString
 
-  rope: null
+  string: null
   runIndex: null
   lineIndex: null
   emitter: null
 
   constructor: (text='') ->
-    if text instanceof TextStorage
-      @rope = text.getString()
+    if text instanceof AttributedString
+      @string = text.getString()
       @runIndex = text.runIndex?.clone()
     else
-      @rope = text
+      @string = text
 
   clone: ->
-    clone = new TextStorage(@string)
+    clone = new AttributedString(@string)
     clone.runIndex = @runIndex?.clone()
     clone.lineIndex = @lineIndex?.clone()
     clone
@@ -60,30 +59,26 @@ class TextStorage
   ###
 
   getString: ->
-    @rope.toString()
+    @string.toString()
 
   getLength: ->
-    @rope.length
-
-  string: null
-  Object.defineProperty @::, 'string',
-    get: -> @rope.toString()
+    @string.length
 
   length: null
   Object.defineProperty @::, 'length',
-    get: -> @rope.length
+    get: -> @string.length
 
   substring: (start, end) ->
-    @rope.substring(start, end)
+    @string.substring(start, end)
 
   substr: (start, length) ->
-    @rope.substr(start, length)
+    @string.substr(start, length)
 
   charAt: (position) ->
-    @rope.charAt(position)
+    @string.charAt(position)
 
   charCodeAt: (position) ->
-    @rope.charCodeAt(position)
+    @string.charCodeAt(position)
 
   deleteRange: (location, length) ->
     unless length
@@ -96,26 +91,24 @@ class TextStorage
     @replaceRangeWithText(location, 0, text)
 
   appendText: (text) ->
-    @insertText(@rope.length, text)
+    @insertText(@string.length, text)
 
   replaceRangeWithText: (location, length, text) ->
-    if text instanceof TextStorage
+    if length is -1
+      length = @getLength() - location
+
+    if text instanceof AttributedString
       insertString = text.string
-      textRunIndex = text._getRunIndex()
+      if @runIndex
+        textRunIndex = text._getRunIndex()
+      else
+        textRunIndex = text.runIndex
     else
       insertString = text
 
     insertString = insertString.split(/\u000d(?:\u000a)?|\u000a|\u2029|\u000c|\u0085/).join('\n')
 
-    if @rope instanceof Rope
-      @rope.replace(location, length, insertString)
-    else
-      if @length + length > Rope.SPLIT_LENGTH
-        @rope = new Rope(@rope)
-        @rope.replace(location, length, insertString)
-      else
-        @rope = @rope.substr(0, location) + insertString + @rope.substr(location + length)
-
+    @string = @string.substr(0, location) + insertString + @string.substr(location + length)
     @runIndex?.replaceRange(location, length, insertString)
     @lineIndex?.replaceRange(location, length, insertString)
 
@@ -133,7 +126,7 @@ class TextStorage
   _getRunIndex: ->
     unless runIndex = @runIndex
       @runIndex = runIndex = new RunIndex
-      @runIndex.insertString(0, @rope.toString())
+      @runIndex.insertString(0, @string.toString())
     runIndex
 
   getRuns: ->
@@ -171,8 +164,7 @@ class TextStorage
       undefined
 
   setAttributesInRange: (attributes, index, length) ->
-    if @runIndex and not _.isEmpty(attributes)
-      @runIndex.setAttributesInRange(attributes, index, length)
+    @_getRunIndex().setAttributesInRange(attributes, index, length)
 
   addAttributeInRange: (attribute, value, index, length) ->
     @_getRunIndex().addAttributeInRange(attribute, value, index, length)
@@ -188,17 +180,21 @@ class TextStorage
   String and attributes
   ###
 
-  subtextStorage: (location, length) ->
+  subattributedString: (location, length) ->
     unless length
-      return new TextStorage('')
-    subtextStorage = new TextStorage(@rope.substr(location, length))
+      return new AttributedString('')
+
+    if length is -1
+      length = @getLength() - location
+
+    subattributedString = new AttributedString(@string.substr(location, length))
     if @runIndex
       slice = @runIndex.sliceSpansToRange(location, length)
       insertRuns = []
       @runIndex.iterateRuns slice.spanIndex, slice.count, (run) ->
         insertRuns.push(run.clone())
-      subtextStorage._getRunIndex().replaceSpansFromLocation(0, insertRuns)
-    subtextStorage
+      subattributedString._getRunIndex().replaceSpansFromLocation(0, insertRuns)
+    subattributedString
 
   ###
   Lines
@@ -207,7 +203,7 @@ class TextStorage
   _getLineIndex: ->
     unless lineIndex = @lineIndex
       @lineIndex = lineIndex = new LineIndex
-      @lineIndex.insertString(0, @rope.toString())
+      @lineIndex.insertString(0, @string.toString())
     lineIndex
 
   getLineCount: ->
@@ -232,4 +228,4 @@ class TextStorage
   toString: ->
     "lines: #{@_getLineIndex().toString()} runs: #{@_getRunIndex().toString()}"
 
-module.exports = TextStorage
+module.exports = AttributedString

@@ -39,7 +39,7 @@ describe 'ItemIndex', ->
       itemIndex.toString().should.equal('(one\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     it 'can change the item that is mapped', ->
-      itemIndex.setItem(two)
+      itemIndex.setHoistedItem(two)
       itemIndex.toString().should.equal('(three\n/3)(four/4)')
 
     it 'updates index span when item text changes', ->
