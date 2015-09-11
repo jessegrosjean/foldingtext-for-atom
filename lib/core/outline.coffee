@@ -7,7 +7,7 @@ UndoManager = require './undo-manager'
 Constants = require './constants'
 ItemPath = require './item-path'
 Mutation = require './mutation'
-UrlUtil = require './url-util'
+urls = require './util/urls'
 shortid = require './shortid'
 _ = require 'underscore-plus'
 assert = require 'assert'
@@ -805,12 +805,12 @@ class Outline
       urlOptions.selection = "#{focusItem?.id},#{focusOffset},#{anchorItem?.id},#{anchorOffset}"
 
     if @getPath()
-      UrlUtil.getFileURLFromPathnameAndOptions(@getPath(), urlOptions)
+      urls.getFileURLFromPathnameAndOptions(@getPath(), urlOptions)
     else
       # Hack... in case where outline has no path can't return file:// url
       # since they require and absolute path. So instead just return the
       # encoded options.
-      UrlUtil.getHREFFromFileURLs('file:///', 'file:///', urlOptions)
+      urls.getHREFFromFileURLs('file:///', 'file:///', urlOptions)
 
   getBaseName: ->
     @file?.getBaseName() or 'Untitled'

@@ -43,10 +43,10 @@ class Editor
 
     @setHoistedItem(@itemBuffer.outline.root)
 
-  nativeTextBufferDidReplaceCharactersInRangeWithString: (nsrange, string) ->
+  nativeTextBufferDidReplaceCharactersInRangeWithString: (location, length, string) ->
     if not @isUpdatingNativeBuffer
       @isUpdatingItemBuffer++
-      @itemBuffer.replaceRange(nsrange.location, nsrange.length, string)
+      @itemBuffer.replaceRange(location, length, string)
       @isUpdatingItemBuffer--
 
   nativeTextBufferDrawingStateForRange: (nsrange) ->

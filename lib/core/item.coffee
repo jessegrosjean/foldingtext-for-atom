@@ -50,12 +50,10 @@ assert = require 'assert'
 module.exports =
 class Item
 
-  outline: null
-  inOutline: false
-
   constructor: (outline, text, id, remappedIDCallback) ->
-    @outline = outline
     @id = outline.nextOutlineUniqueItemID(id)
+    @outline = outline
+    @inOutline = false
     @attributedString = new AttributedString(text)
     if id isnt @id
       if remappedIDCallback and id
@@ -67,6 +65,12 @@ class Item
 
   # Public: Read-only unique and persistent {String} item ID.
   id: null
+
+  # Public: Read-only {Outline} this item belongs to.
+  outline: null
+
+  # Public: Read-only {Boolean} is this item contained by outline root.
+  inOutline: null
 
   # Public: Read-only attribute key/value object
   attributes: null

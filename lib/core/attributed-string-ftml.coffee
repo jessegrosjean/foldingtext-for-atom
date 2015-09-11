@@ -1,8 +1,8 @@
 AttributedString = require './attributed-string'
 Constants = require './constants'
 _ = require 'underscore-plus'
+dom = require './util/dom'
 assert = require 'assert'
-dom = require './dom'
 
 AttributedString.prototype.toInlineFTMLString = (ownerDocument=document) ->
   div = document.createElement 'div'

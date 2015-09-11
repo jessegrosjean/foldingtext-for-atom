@@ -5,11 +5,6 @@ _ = require 'underscore-plus'
 
 class AttributedString
 
-  string: null
-  runBuffer: null
-  lineBuffer: null
-  emitter: null
-
   constructor: (text='') ->
     if text instanceof AttributedString
       @string = text.getString()
@@ -22,37 +17,6 @@ class AttributedString
     clone.runBuffer = @runBuffer?.clone()
     clone.lineBuffer = @lineBuffer?.clone()
     clone
-
-  destroy: ->
-    unless @destroyed
-      @destroyed = true
-      @runBuffer?.destroy()
-      @lineBuffer?.destroy()
-      @emitter?.emit 'did-destroy'
-
-  ###
-  Section: Events
-  ###
-
-  _getEmitter: ->
-    unless emitter = @emitter
-      @emitter = emitter = new Emitter
-    emitter
-
-  onDidBeginChanges: (callback) ->
-    @_getEmitter().on 'did-begin-changes', callback
-
-  onWillChange: (callback) ->
-    @_getEmitter().on 'will-change', callback
-
-  onDidChange: (callback) ->
-    @_getEmitter().on 'did-change', callback
-
-  onDidEndChanges: (callback) ->
-    @_getEmitter().on 'did-end-changes', callback
-
-  onDidDestroy: (callback) ->
-    @_getEmitter().on 'did-destroy', callback
 
   ###
   String

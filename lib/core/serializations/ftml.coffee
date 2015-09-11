@@ -1,7 +1,7 @@
 AttributedString = require '../attributed-string'
 Constants = require '../constants'
+dom = require '../util/dom'
 assert = require 'assert'
-dom = require '../dom'
 
 serializeItems = (items, editor) ->
   htmlDocument = document.implementation.createHTMLDocument()

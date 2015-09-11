@@ -2,6 +2,7 @@
 LineBuffer = require '../line-buffer'
 ItemSpan = require './item-span'
 Mutation = require '../mutation'
+Outline = require '../outline'
 assert = require 'assert'
 Item = require '../item'
 
