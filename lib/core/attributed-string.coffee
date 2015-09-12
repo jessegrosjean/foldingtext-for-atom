@@ -1,4 +1,3 @@
-LineBuffer = require './line-buffer'
 RunBuffer = require './run-buffer'
 _ = require 'underscore-plus'
 {Emitter} = require 'atom'
@@ -15,7 +14,6 @@ class AttributedString
   clone: ->
     clone = new AttributedString(@string)
     clone.runBuffer = @runBuffer?.clone()
-    clone.lineBuffer = @lineBuffer?.clone()
     clone
 
   ###
@@ -74,7 +72,6 @@ class AttributedString
 
     @string = @string.substr(0, location) + insertString + @string.substr(location + length)
     @runBuffer?.replaceRange(location, length, insertString)
-    @lineBuffer?.replaceRange(location, length, insertString)
 
     if textRunBuffer and text.length
       @setAttributesInRange({}, location, text.length)
@@ -161,35 +158,15 @@ class AttributedString
     subattributedString
 
   ###
-  Lines
-  ###
-
-  _getLineBuffer: ->
-    unless lineBuffer = @lineBuffer
-      @lineBuffer = lineBuffer = new LineBuffer
-      @lineBuffer.insertString(0, @string.toString())
-    lineBuffer
-
-  getLineCount: ->
-    @_getLineBuffer().getLineCount()
-
-  getLine: (row) ->
-    @_getLineBuffer().getLine(row)
-
-  getRow: (line) ->
-    @_getLineBuffer().getLineBuffer(line)
-
-  getLines: (row, count) ->
-    @_getLineBuffer().getLines(row, count)
-
-  iterateLines: (row, count, operation) ->
-    @_getLineBuffer().iterateLines(row, count, operation)
-
-  ###
   Debug
   ###
 
   toString: ->
-    "lines: #{@_getLineBuffer().toString()} runs: #{@_getRunBuffer().toString()}"
+    if @runBuffer
+      @runBuffer.toString()
+    else if @string
+      "(#{@string})"
+    else
+      ''
 
 module.exports = AttributedString
