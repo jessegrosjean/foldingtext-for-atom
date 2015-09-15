@@ -59,10 +59,10 @@ class ItemBuffer extends LineBuffer
     @isUpdatingIndex++
     target = mutation.target
     switch mutation.type
-      when Mutation.BODT_TEXT_CHANGED
+      when Mutation.BODY_CHANGED
         if itemSpan = @getItemSpanForItem(target)
           localLocation = mutation.insertedTextLocation
-          insertedString = target.bodyText.substr(localLocation, mutation.insertedTextLength)
+          insertedString = target.bodyString.substr(localLocation, mutation.insertedTextLength)
           location = itemSpan.getLocation() + localLocation
           @replaceRange(location, mutation.replacedText.length, insertedString)
 
@@ -190,16 +190,16 @@ class ItemBuffer extends LineBuffer
 
   getAttributesAtIndex: (location, effectiveRange, longestEffectiveRange) ->
     start = @getSpanInfoAtLocation(location, true)
-    attributes = start.span.item.getBodyTextAttributesAtIndex(start.location, effectiveRange, longestEffectiveRange)
+    attributes = start.span.item.getBodyAttributesAtIndex(start.location, effectiveRange, longestEffectiveRange)
     if effectiveRange
       effectiveRange.location += start.spanLocation
     if longestEffectiveRange
       longestEffectiveRange.location += start.spanLocation
     attributes
 
-  getBodyTextAttributeAtIndex: (attribute, location, effectiveRange, longestEffectiveRange) ->
+  getBodyAttributeAtIndex: (attribute, location, effectiveRange, longestEffectiveRange) ->
     start = @getSpanInfoAtLocation(location, true)
-    attribute = start.span.item.getBodyTextAttributesAtIndex(attribute, start.location, effectiveRange, longestEffectiveRange)
+    attribute = start.span.item.getBodyAttributesAtIndex(attribute, start.location, effectiveRange, longestEffectiveRange)
     if effectiveRange
       effectiveRange.location += start.spanLocation
     if longestEffectiveRange

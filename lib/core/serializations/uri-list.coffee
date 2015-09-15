@@ -1,28 +1,28 @@
 assert = require 'assert'
 
-serializeItems = (items, editor) ->
+serializeItems = (items, editor, options) ->
   lines = []
   for each in items
-    lines.push "# #{each.bodyHTML}"
+    lines.push "# #{each.bodyHTMLString}"
     lines.push each.outline.getFileURL
       selection:
         focusItem: each
   lines.join('\n')
 
-deserializeItems = (uriList, outline) ->
+deserializeItems = (uriList, outline, options) ->
   uris = uriList.split('\n')
-  bodyHTML = null
+  bodyHTMLString = null
   items = []
 
   for each in uris
     if each[0] is '#'
-      bodyHTML = each.substring(1).trim()
+      bodyHTMLString = each.substring(1).trim()
     else
-      bodyHTML ?= each
+      bodyHTMLString ?= each
       item = outline.createItem()
-      item.bodyHTML = bodyHTML
-      item.addBodyTextAttributeInRange 'A', { href: each }, 0, item.bodyText.length
-      bodyHTML = null
+      item.bodyHTMLString = bodyHTMLString
+      item.addBodyAttributeInRange 'A', { href: each }, 0, item.bodyString.length
+      bodyHTMLString = null
       items.push item
 
   items

@@ -19,7 +19,7 @@ describe 'FoldingText', ->
       expect(workspaceElement.querySelector('ft-outline-editor')).toExist()
       outlineEditor = atom.workspace.getActivePaneItem()
       outlineEditor.getPath().should.equal(outlinePath)
-      outlineEditor.outline.root.firstChild.bodyText.should.equal('one')
+      outlineEditor.outline.root.firstChild.bodyString.should.equal('one')
 
   describe 'Path Query Parameters', ->
     it 'should apply search to editor based on query parameter', ->
@@ -44,7 +44,7 @@ describe 'FoldingText', ->
         outline = outlineEditor.outline
         waitsForPromise ->
           atom.workspace.open(outline.getFileURL(hoistedItem: outline.getItemForID('2'))).then ->
-            outlineEditor.getHoistedItem().bodyText.should.equal('two')
+            outlineEditor.getHoistedItem().bodyString.should.equal('two')
 
     it 'should expand item based on query parameter', ->
       waitsForPromise ->

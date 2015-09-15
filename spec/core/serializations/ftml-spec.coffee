@@ -51,8 +51,8 @@ describe 'FTML Serialization', ->
   describe 'Deserialization', ->
     it 'should load items from FTML string', ->
       one = ItemSerializer.deserializeItems(fixtureAsFTMLString, outline)[0]
-      one.bodyText.should.equal('one')
-      one.lastChild.bodyText.should.equal('five')
+      one.bodyString.should.equal('one')
+      one.lastChild.bodyString.should.equal('five')
       one.lastChild.lastChild.getAttribute('data-t').should.equal('23')
       one.descendants.length.should.equal(5)
 

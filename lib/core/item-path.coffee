@@ -302,7 +302,7 @@ class ItemPath
     attributeName = @options.attributeShortcuts?[attributeName] or attributeName
     switch attributeName
       when 'text'
-        item.bodyText
+        item.bodyString
       else
         item.getAttribute 'data-' + attributeName
 

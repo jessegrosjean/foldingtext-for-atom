@@ -3,7 +3,7 @@ Constants = require '../constants'
 dom = require '../util/dom'
 assert = require 'assert'
 
-serializeItems = (items, editor) ->
+serializeItems = (items, editor, options) ->
   htmlDocument = document.implementation.createHTMLDocument()
   loadedFTMLHead = items[0].outline.loadOptions?.loadedFTMLHead
   rootUL = htmlDocument.createElement('ul')
@@ -47,7 +47,7 @@ serializeItems = (items, editor) ->
       liElement.setAttribute eachName, item.getAttribute(eachName)
 
     pElement = htmlDocument.createElement('p')
-    pElement.innerHTML = item.bodyHTML
+    pElement.innerHTML = item.bodyHTMLString
     liElement.appendChild(pElement)
 
     if current = item.firstChild
@@ -120,7 +120,7 @@ createItem = (outline, liOrRootUL, remapIDCallback) ->
     item.appendChildren(children)
   item
 
-deserializeItems = (ftmlString, outline) ->
+deserializeItems = (ftmlString, outline, options) ->
   parser = new DOMParser()
   htmlDocument = parser.parseFromString(ftmlString, 'text/html')
   rootUL = htmlDocument.getElementById(Constants.RootID)

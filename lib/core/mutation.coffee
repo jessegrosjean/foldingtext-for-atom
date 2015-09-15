@@ -17,8 +17,8 @@ class Mutation
   # Public: ATTRIBUTE_CHANGED Mutation type constant.
   @ATTRIBUTE_CHANGED: 'attribute'
 
-  # Public: BODT_TEXT_CHANGED Mutation type constant.
-  @BODT_TEXT_CHANGED: 'bodyText'
+  # Public: BODY_CHANGED Mutation type constant.
+  @BODY_CHANGED: 'body'
 
   # Public: CHILDREN_CHANGED Mutation type constant.
   @CHILDREN_CHANGED: 'children'
@@ -31,7 +31,7 @@ class Mutation
   target: null
 
   # Public: Read-only type of change. {Mutation.ATTRIBUTE_CHANGED},
-  # {Mutation.BODT_TEXT_CHANGED}, or {Mutation.CHILDREN_CHANGED}.
+  # {Mutation.BODY_CHANGED}, or {Mutation.CHILDREN_CHANGED}.
   type: null
 
   # Public: Read-only name of changed attribute in the target {Item}, or null.
@@ -74,10 +74,10 @@ class Mutation
     mutation.attributeOldValue = attributeOldValue
     mutation
 
-  @createBodyTextMutation: (target, insertedTextLocation, insertedTextLength, replacedText) ->
+  @createBodyMutation: (target, insertedTextLocation, insertedTextLength, replacedText) ->
     assert.ok(insertedTextLocation?, 'Expect valid insertedTextLocation')
     assert.ok(insertedTextLength?, 'Expect valid insertedTextLength')
-    mutation = new Mutation target, Mutation.BODT_TEXT_CHANGED
+    mutation = new Mutation target, Mutation.BODY_CHANGED
     mutation.insertedTextLocation = insertedTextLocation
     mutation.insertedTextLength = insertedTextLength
     mutation.replacedText = replacedText
@@ -133,8 +133,8 @@ class Mutation
       when Mutation.ATTRIBUTE_CHANGED
         @target.setAttribute @attributeName, @attributeOldValue
 
-      when Mutation.BODT_TEXT_CHANGED
-        @target.replaceBodyTextInRange @replacedText, @insertedTextLocation, @insertedTextLength
+      when Mutation.BODY_CHANGED
+        @target.replaceBodyRange(@insertedTextLocation, @insertedTextLength, @replacedText)
 
       when Mutation.CHILDREN_CHANGED
         if @addedItems.length
@@ -147,7 +147,7 @@ class Mutation
     return false unless operation instanceof Mutation
     return false unless @target is operation.target
     return false unless @type is operation.type
-    return false unless @type is Mutation.BODT_TEXT_CHANGED
+    return false unless @type is Mutation.BODY_CHANGED
 
     thisInsertedTextLocation = @insertedTextLocation
     thisInsertLength = @insertedTextLength

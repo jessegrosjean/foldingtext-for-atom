@@ -21,7 +21,10 @@ class Editor
     @searchQuery = ''
     @expandedBySearch = null
 
-    @itemBuffer.outline.registerAttributeBodyTextSyncRule(TaskPaperSyncRules)
+    @itemBuffer.outline.registerAttributeBodySyncRule(TaskPaperSyncRules)
+
+    @subscriptions.add @itemBuffer.outline.onDidBeginChanges =>
+      @nativeEditor.nativeTextBufferBeginEditing()
 
     @subscriptions.add @itemBuffer.onWillProcessOutlineMutation (mutation) =>
       target = mutation.target
@@ -41,7 +44,12 @@ class Editor
         @isUpdatingNativeBuffer--
       assert(@nativeEditor.nativeTextContent is @itemBuffer.getString(), 'Text Buffers are Equal')
 
+    @subscriptions.add @itemBuffer.outline.onDidEndChanges =>
+      @nativeEditor.nativeTextBufferEndEditing()
+
     @setHoistedItem(@itemBuffer.outline.root)
+
+    window.jib = @itemBuffer
 
   nativeTextBufferDidReplaceCharactersInRangeWithString: (location, length, string) ->
     if not @isUpdatingNativeBuffer
@@ -49,36 +57,39 @@ class Editor
       @itemBuffer.replaceRange(location, length, string)
       @isUpdatingItemBuffer--
 
-  nativeTextBufferDrawingStateForRange: (nsrange) ->
-    range = @itemBuffer.getRangeFromCharacterRange(nsrange.location, nsrange.location + nsrange.length)
-    linesInRange = @itemBuffer.getLinesInRange(range)
-    visitedAncestors = new Set(@getHoistedItem())
-    visibleItemAncestorRanges = []
-    visibleItemStates = []
+  nativeTextBufferDrawingStateForRange: (location, length) ->
+    try
+      itemSpansInRange = @itemBuffer.getSpansInRange(location, length, true)
+      visitedAncestors = new Set(@getHoistedItem())
+      visibleItemAncestorRanges = []
+      visibleItemStates = []
+      hoistedDepth = @getHoistedItem().depth
 
-    for eachLine in linesInRange
-      eachItem = eachLine.item
-      visibleItemStates.push
-        gapBefore: eachItem.previousSibling and not @isVisible(eachItem.previousSibling)
-        hasChildren: eachItem.hasChildren
-        collapsed: @isCollapsed(eachItem)
+      for eachItemSpan in itemSpansInRange
+        eachItem = eachItemSpan.item
+        visibleItemStates.push
+          depth: eachItem.depth - hoistedDepth
+          gapBefore: not not (eachItem.previousSibling and not @isVisible(eachItem.previousSibling))
+          hasChildren: eachItem.hasChildren
+          collapsed: @isCollapsed(eachItem)
 
-      ancestor = eachItem.parent
-      while not visitedAncestors.has(ancestor)
-        ancestorLine = @itemBuffer.getLineForItem(ancestor)
-        firstChildLine = @itemBuffer.getLineForItem(@getFirstVisibleChild(ancestor))
-        lastVisibleDescendantLine = @itemBuffer.getLineForItem(@getLastVisibleDescendantOrSelf(ancestor))
-        visibleItemAncestorRanges.push
-          ancestorStart: ancestorLine.getCharacterOffset() + ancestorLine.getTabCount()
-          firstChildStart: firstChildLine.getCharacterOffset()
-          lastVisibleDescendantEnd: lastVisibleDescendantLine.getCharacterOffset() + lastVisibleDescendantLine.getCharacterCount() - 1
-        visitedAncestors.add(ancestor)
-        ancestor = ancestor.parent
+        ancestor = eachItem.parent
+        while not visitedAncestors.has(ancestor)
+          ancestorLine = @itemBuffer.getLineForItem(ancestor)
+          firstChildLine = @itemBuffer.getLineForItem(@getFirstVisibleChild(ancestor))
+          lastVisibleDescendantLine = @itemBuffer.getLineForItem(@getLastVisibleDescendantOrSelf(ancestor))
+          visibleItemAncestorRanges.push
+            ancestorStart: ancestorLine.getCharacterOffset() + ancestorLine.getTabCount()
+            firstChildStart: firstChildLine.getCharacterOffset()
+            lastVisibleDescendantEnd: lastVisibleDescendantLine.getCharacterOffset() + lastVisibleDescendantLine.getCharacterCount() - 1
+          visitedAncestors.add(ancestor)
+          ancestor = ancestor.parent
 
-    if lastLine = linesInRange[linesInRange.length - 1]
-      lastItem = lastLine.item
-      if lastItem.nextSibling and not @isVisible(lastItem.nextSibling)
-        visibleItemStates[visibleItemStates.length - 1].gapAfter = true
+      if lastItemSpan = itemSpansInRange[itemSpansInRange.length - 1]
+        lastItem = lastItemSpan.item
+        if lastItem.nextSibling and not @isVisible(lastItem.nextSibling)
+          visibleItemStates[visibleItemStates.length - 1].gapAfter = true
+    catch e
 
     {} =
       visibleItemAncestorRanges: visibleItemAncestorRanges
@@ -132,6 +143,7 @@ class Editor
         itemState.expanded = false
 
     # Clear the display text storage
+    @nativeEditor.nativeTextBufferBeginEditing()
     @itemBuffer.isUpdatingIndex++
     @itemBuffer.removeLines(0, @itemBuffer.getLineCount())
     @itemBuffer.isUpdatingIndex--
@@ -145,6 +157,7 @@ class Editor
 
     @nativeEditor.nativeQuery = query
     @setHoistedItem(@getHoistedItem())
+    @nativeEditor.nativeTextBufferEndEditing()
 
   _addSearchResult: (item) ->
     @getItemEditorState(item).matched = true
@@ -185,7 +198,6 @@ class Editor
       if @isVisible(parent)
         @setSelectedItemRange(parent)
         @fold(undefined, completely)
-        return
 
   foldCompletely: (items) ->
     @fold(items, true)
@@ -216,8 +228,10 @@ class Editor
 
   setFoldingLevel: (level) ->
     items = @getHoistedItem().descendants
+    @nativeEditor.nativeTextBufferBeginEditing()
     @setCollapsed((item for item in items when item.depth >= level))
     @setExpanded((item for item in items when item.depth < level))
+    @nativeEditor.nativeTextBufferEndEditing()
 
   isExpanded: (item) ->
     return item and item.hasChildren and @getItemEditorState(item).expanded
@@ -265,8 +279,9 @@ class Editor
         Array.prototype.push.apply(newItems, each.descendants)
       items = newItems
 
-    selectedItemRange = @getSelectedItemRange()
+    #selectedItemRange = @getSelectedItemRange()
 
+    @nativeEditor.nativeTextBufferBeginEditing()
     @itemBuffer.isUpdatingIndex++
     if expanded
       # for better animations
@@ -287,8 +302,9 @@ class Editor
       for each in items
         @getItemEditorState(each).expanded = expanded
     @itemBuffer.isUpdatingIndex--
+    @nativeEditor.nativeTextBufferEndEditing()
 
-    @setSelectedItemRange(selectedItemRange)
+    #@setSelectedItemRange(selectedItemRange)
 
   _insertVisibleDescendantLines: (item) ->
     if itemSpan = @itemBuffer.getItemSpanForItem(item)
@@ -499,8 +515,11 @@ class Editor
     selectedItems
 
   getSelectedItemRange: ->
-    range = @getSelectedRange()
-    @itemBuffer.getItemRange(range.location, range.length)
+    if @cachedItemRange
+      @cachedItemRange
+    else
+      range = @getSelectedRange()
+      @itemBuffer.getItemRange(range.location, range.length)
 
   # Public: Sets the selection.
   #
@@ -509,6 +528,7 @@ class Editor
     @setSelectedRanges([range])
 
   setSelectedRanges: (ranges) ->
+    @cachedItemRange = null
     @nativeEditor.nativeSelectedRange = ranges[0]
 
   setSelectedItemRange: (startItem, spanLocation, endItem, endOffset) ->
@@ -535,22 +555,22 @@ class Editor
     startItemSpan = @itemBuffer.getItemSpanForItem(startItem)
     startOffset = selectedItemRange.startOffset
 
-    match = startItem.bodyText.match(/(- )(.*)/)
+    match = startItem.bodyString.match(/(- )(.*)/)
     prefix = match?[1] ? ''
-    content = match?[2] ? startItem.bodyText
+    content = match?[2] ? startItem.bodyString
     lead = prefix.length
 
     if startOffset <= lead and (not prefix or content)
       @insertItem('', true)
       @setSelectedItemRange(startItem, startOffset)
     else if startOffset is lead and (prefix and not content)
-      startItem.bodyText = ''
+      startItem.bodyString = ''
     else
-      splitText = startItem.getAttributedBodyTextSubstring(startOffset, -1)
-      startItem.replaceBodyTextInRange('', startOffset, -1)
+      splitText = startItem.bodyAttributedString.subattributedString(startOffset, -1)
+      startItem.replaceBodyRange(startOffset, -1, '')
 
-      if prefix
-        splitText.insertStringAtLocation(prefix, 0)
+      if prefix and splitText.string.indexOf(prefix) isnt 0
+        splitText.insertText(0, prefix)
         @insertItem(splitText)
         selectedRange = @getSelectedRange()
         selectedRange.location += prefix.length
@@ -649,7 +669,7 @@ class Editor
         when 'down'
           unless nextVisibleItem = @getNextVisibleItem(endItem)
             return
-          referenceItem = nextVisibleItem.nextItem
+          referenceItem = @getNextVisibleItem(nextVisibleItem)
         when 'left'
           depthDelta = -1
           referenceItem = endItem.nextItem
@@ -822,7 +842,7 @@ class Editor
       @isVisible(newParent)
 
     outline.beginChanges()
-    outline.removeItemsFromParents items
+    Item.removeItemsFromParents(items)
     newParent.insertChildrenBefore items, newNextSibling
     outline.endChanges()
 
@@ -841,7 +861,14 @@ class Editor
     ItemSerializer.serializeItems(@itemBuffer.outline.root.children, self, 'text/plain')
 
   deserialize: (data, mimeType) ->
-    items = ItemSerializer.deserializeItems(data, @itemBuffer.outline, 'text/plain')
+    ItemSerializer.deserializeItems(data, @itemBuffer.outline, 'text/plain')
+
+  loadItems: (items) ->
+    outline = @itemBuffer.outline
+    outline.beginChanges()
+    outline.root.removeChildren(outline.root.children)
+    outline.root.appendChildren(items)
+    outline.endChanges()
 
   ###
   Section: Scripting
@@ -903,7 +930,11 @@ class NativeEditor
   Object.defineProperty @::, 'nativeTextContent',
     get: -> @text
 
+  nativeTextBufferBeginEditing: ->
+
   nativeTextBufferReplaceCharactersInRangeWithString: (range, text) ->
     @text = @text.substring(0, range.location) + text + @text.substring(range.location + range.length)
+
+  nativeTextBufferEndEditing: ->
 
 module.exports = Editor

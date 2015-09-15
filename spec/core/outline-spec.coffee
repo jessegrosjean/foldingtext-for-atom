@@ -23,12 +23,12 @@ describe 'Outline', ->
     oneCopy = outline.cloneItem(one)
     oneCopy.isInOutline.should.be.false
     oneCopy.id.should.not.equal(one.id)
-    oneCopy.bodyText.should.equal('one')
-    oneCopy.firstChild.bodyText.should.equal('two')
-    oneCopy.firstChild.firstChild.bodyText.should.equal('three')
-    oneCopy.firstChild.lastChild.bodyText.should.equal('four')
-    oneCopy.lastChild.bodyText.should.equal('five')
-    oneCopy.lastChild.firstChild.bodyText.should.equal('six')
+    oneCopy.bodyString.should.equal('one')
+    oneCopy.firstChild.bodyString.should.equal('two')
+    oneCopy.firstChild.firstChild.bodyString.should.equal('three')
+    oneCopy.firstChild.lastChild.bodyString.should.equal('four')
+    oneCopy.lastChild.bodyString.should.equal('five')
+    oneCopy.lastChild.firstChild.bodyString.should.equal('six')
 
   it 'should import item', ->
     outline2 = new Outline()
@@ -36,15 +36,15 @@ describe 'Outline', ->
     oneImport.outline.should.equal(outline2)
     oneImport.isInOutline.should.be.false
     oneImport.id.should.equal(one.id)
-    oneImport.bodyText.should.equal('one')
-    oneImport.firstChild.bodyText.should.equal('two')
-    oneImport.firstChild.firstChild.bodyText.should.equal('three')
-    oneImport.firstChild.lastChild.bodyText.should.equal('four')
-    oneImport.lastChild.bodyText.should.equal('five')
-    oneImport.lastChild.firstChild.bodyText.should.equal('six')
+    oneImport.bodyString.should.equal('one')
+    oneImport.firstChild.bodyString.should.equal('two')
+    oneImport.firstChild.firstChild.bodyString.should.equal('three')
+    oneImport.firstChild.lastChild.bodyString.should.equal('four')
+    oneImport.lastChild.bodyString.should.equal('five')
+    oneImport.lastChild.firstChild.bodyString.should.equal('six')
 
   describe 'Insert & Remove Items', ->
-    it 'insert items at indent level 1 by default', ->
+    it 'inserts items at indent level 1 by default', ->
       newItem = outline.createItem('new')
       outline.insertItemBefore(newItem, two)
       newItem.depth.should.equal(1)
@@ -52,7 +52,7 @@ describe 'Outline', ->
       newItem.firstChild.should.equal(two)
       newItem.lastChild.should.equal(five)
 
-    it 'insert items at specified indent level', ->
+    it 'inserts items at specified indent level', ->
       three.indent = 3
       four.indent = 2
       newItem = outline.createItem('new')
@@ -65,7 +65,7 @@ describe 'Outline', ->
       newItem.firstChild.should.equal(three)
       newItem.lastChild.should.equal(four)
 
-    it 'insert items with children', ->
+    it 'inserts items with children', ->
       three.indent = 4
       four.indent = 3
       newItem = outline.createItem('new')
@@ -98,6 +98,20 @@ describe 'Outline', ->
       two.lastChild.should.equal(four)
       outline.undoManager.redo()
 
+    it 'should special case remove items', ->
+      each.removeFromParent() for each in outline.root.descendants
+      one.indent = 1
+      two.indent = 3
+      three.indent = 2
+      four.indent = 1
+      outline.insertItemsBefore([one, two, three, four])
+      outline.removeItems([one, two])
+      root.firstChild.should.equal(three)
+
+    it 'add items in batch in single event', ->
+
+    it 'remove items in batch in single event', ->
+
   describe 'Undo', ->
     it 'should undo append child', ->
       child = outline.createItem('hello')
@@ -127,35 +141,35 @@ describe 'Outline', ->
 
     describe 'Body Text', ->
       it 'should undo set body text', ->
-        one.bodyText = 'hello word'
+        one.bodyString = 'hello word'
         outline.undoManager.undo()
-        one.bodyText.should.equal('one')
+        one.bodyString.should.equal('one')
 
       it 'should undo replace body text', ->
-        one.replaceBodyTextInRange('hello', 1, 1)
-        one.bodyText.should.equal('ohelloe')
+        one.replaceBodyRange(1, 1, 'hello')
+        one.bodyString.should.equal('ohelloe')
         outline.undoManager.undo()
-        one.bodyText.should.equal('one')
+        one.bodyString.should.equal('one')
 
       it 'should coalesce consecutive body text inserts', ->
-        one.replaceBodyTextInRange('a', 1, 0)
-        one.replaceBodyTextInRange('b', 2, 0)
-        one.replaceBodyTextInRange('c', 3, 0)
-        one.bodyText.should.equal('oabcne')
+        one.replaceBodyRange(1, 0, 'a')
+        one.replaceBodyRange(2, 0, 'b')
+        one.replaceBodyRange(3, 0, 'c')
+        one.bodyString.should.equal('oabcne')
         outline.undoManager.undo()
-        one.bodyText.should.equal('one')
+        one.bodyString.should.equal('one')
         outline.undoManager.redo()
-        one.bodyText.should.equal('oabcne')
+        one.bodyString.should.equal('oabcne')
 
       it 'should coalesce consecutive body text deletes', ->
-        one.replaceBodyTextInRange('', 2, 1)
-        one.replaceBodyTextInRange('', 1, 1)
-        one.replaceBodyTextInRange('', 0, 1)
-        one.bodyText.should.equal('')
+        one.replaceBodyRange(2, 1, '')
+        one.replaceBodyRange(1, 1, '')
+        one.replaceBodyRange(0, 1, '')
+        one.bodyString.should.equal('')
         outline.undoManager.undo()
-        one.bodyText.should.equal('one')
+        one.bodyString.should.equal('one')
         outline.undoManager.redo()
-        one.bodyText.should.equal('')
+        one.bodyString.should.equal('')
 
   describe 'Performance', ->
     it 'should create/copy/remove 10,000 items', ->
@@ -165,21 +179,22 @@ describe 'Outline', ->
       # solution for that part of the code.
       branch = outline.createItem('branch')
 
+      itemCount = 10000
       console.time('Create Objects')
       items = []
-      for i in [0..10000]
+      for i in [0..itemCount]
         items.push(name: shortid())
       console.timeEnd('Create Objects')
 
       console.profile('Create Items')
       console.time('Create Items')
       items = []
-      for i in [0..10000]
+      for i in [0..itemCount]
         items.push(outline.createItem('hello'))
       branch.appendChildren(items)
       outline.root.appendChild(branch)
       console.timeEnd('Create Items')
-      outline.root.descendants.length.should.equal(10008)
+      outline.root.descendants.length.should.equal(itemCount + 8)
       console.profileEnd()
 
       console.time('Copy Items')
@@ -189,6 +204,19 @@ describe 'Outline', ->
       console.time('Remove Items')
       branch.removeChildren(items)
       console.timeEnd('Remove Items')
+
+      randoms = []
+      for each, i in items
+        each.indent = Math.floor(Math.random() * 10)
+        #each.indent = randoms[i]
+        #randoms.push(each.indent)
+      #console.log(randoms.join(', '))
+
+      console.profile('Insert Items')
+      console.time('Insert Items')
+      outline.insertItemsBefore(items, null)
+      console.timeEnd('Insert Items')
+      console.profileEnd()
 
     it 'should load 100,000 items', ->
       console.profile('Load Items')

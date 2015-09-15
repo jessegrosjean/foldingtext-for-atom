@@ -37,6 +37,18 @@ describe 'Item', ->
       six,
     ]).should.eql([three, five])
 
+  it 'should build item hiearchy', ->
+    a = outline.createItem('a')
+    a.indent = 1
+    b = outline.createItem('b')
+    b.indent = 2
+
+    stack = [a]
+    Item.buildItemHiearchy([b], stack)
+    b.parent.should.equal(a)
+    a.depth.should.equal(1)
+    b.depth.should.equal(2)
+
   describe 'Attributes', ->
     it 'should set/get attribute', ->
       expect(five.getAttribute('test') is undefined).toBe(true)
@@ -61,110 +73,110 @@ describe 'Item', ->
 
   describe 'Body', ->
     it 'should get', ->
-      one.bodyText.should.equal('one')
-      one.bodyHTML.should.equal('one')
-      one.bodyText.length.should.equal(3)
+      one.bodyString.should.equal('one')
+      one.bodyHTMLString.should.equal('one')
+      one.bodyString.length.should.equal(3)
 
     it 'should get empy', ->
       item = outline.createItem('')
-      item.bodyText.should.equal('')
-      item.bodyHTML.should.equal('')
-      item.bodyText.length.should.equal(0)
+      item.bodyString.should.equal('')
+      item.bodyHTMLString.should.equal('')
+      item.bodyString.length.should.equal(0)
 
     it 'should get/set by Text', ->
-      one.bodyText = 'one <b>two</b> three'
-      one.bodyText.should.equal('one <b>two</b> three')
-      one.bodyHTML.should.equal('one &lt;b&gt;two&lt;/b&gt; three')
-      one.bodyText.length.should.equal(20)
+      one.bodyString = 'one <b>two</b> three'
+      one.bodyString.should.equal('one <b>two</b> three')
+      one.bodyHTMLString.should.equal('one &lt;b&gt;two&lt;/b&gt; three')
+      one.bodyString.length.should.equal(20)
 
     it 'should get/set by HTML', ->
-      one.bodyHTML = 'one <b>two</b> three'
-      one.bodyText.should.equal('one two three')
-      one.bodyHTML.should.equal('one <b>two</b> three')
-      one.bodyText.length.should.equal(13)
+      one.bodyHTMLString = 'one <b>two</b> three'
+      one.bodyString.should.equal('one two three')
+      one.bodyHTMLString.should.equal('one <b>two</b> three')
+      one.bodyString.length.should.equal(13)
 
     describe 'Inline Elements', ->
       it 'should get elements', ->
-        one.bodyHTML = '<b>one</b> <img src="boo.png">two three'
-        one.getBodyTextAttributesAtIndex(0).should.eql({ B: null })
-        one.getBodyTextAttributesAtIndex(3).should.eql({})
-        one.getBodyTextAttributesAtIndex(4).should.eql({ IMG: { src: 'boo.png' } })
+        one.bodyHTMLString = '<b>one</b> <img src="boo.png">two three'
+        one.getBodyAttributesAtIndex(0).should.eql({ B: null })
+        one.getBodyAttributesAtIndex(3).should.eql({})
+        one.getBodyAttributesAtIndex(4).should.eql({ IMG: { src: 'boo.png' } })
 
       it 'should get empty elements', ->
-        one.bodyText = 'one two three'
-        one.getBodyTextAttributesAtIndex(0).should.eql({})
+        one.bodyString = 'one two three'
+        one.getBodyAttributesAtIndex(0).should.eql({})
 
       it 'should add elements', ->
-        one.bodyText = 'one two three'
-        one.addBodyTextAttributeInRange('B', null, 4, 3)
-        one.bodyHTML.should.equal('one <b>two</b> three')
+        one.bodyString = 'one two three'
+        one.addBodyAttributeInRange('B', null, 4, 3)
+        one.bodyHTMLString.should.equal('one <b>two</b> three')
 
       it 'should add overlapping back element', ->
-        one.bodyText = 'one two three'
-        one.addBodyTextAttributeInRange('B', null, 0, 7)
-        one.addBodyTextAttributeInRange('I', null, 4, 9)
-        one.bodyHTML.should.equal('<b>one <i>two</i></b><i> three</i>')
+        one.bodyString = 'one two three'
+        one.addBodyAttributeInRange('B', null, 0, 7)
+        one.addBodyAttributeInRange('I', null, 4, 9)
+        one.bodyHTMLString.should.equal('<b>one <i>two</i></b><i> three</i>')
 
       it 'should add overlapping front and back element', ->
-        one.bodyText = 'three'
-        one.addBodyTextAttributeInRange('B', null, 0, 2)
-        one.addBodyTextAttributeInRange('U', null, 1, 3)
-        one.addBodyTextAttributeInRange('I', null, 3, 2)
-        one.bodyHTML.should.equal('<b>t<u>h</u></b><u>r<i>e</i></u><i>e</i>')
+        one.bodyString = 'three'
+        one.addBodyAttributeInRange('B', null, 0, 2)
+        one.addBodyAttributeInRange('U', null, 1, 3)
+        one.addBodyAttributeInRange('I', null, 3, 2)
+        one.bodyHTMLString.should.equal('<b>t<u>h</u></b><u>r<i>e</i></u><i>e</i>')
 
       it 'should add append text with elements', ->
-        one.bodyText = ''
-        one.appendBodyText('o', {'I': {}})
-        one.appendBodyText('ne', {'I': {}, 'B': {}})
-        one.bodyHTML.should.equal('<i>o<b>ne</b></i>')
+        one.bodyString = ''
+        one.appendBody('o', {'I': {}})
+        one.appendBody('ne', {'I': {}, 'B': {}})
+        one.bodyHTMLString.should.equal('<i>o<b>ne</b></i>')
 
       it 'should add consecutive attribute with different values', ->
-        one.addBodyTextAttributeInRange('SPAN', 'data-a': 'a', 0, 1)
-        one.addBodyTextAttributeInRange('SPAN', 'data-b': 'b', 1, 2)
-        one.bodyHTML.should.equal('<span data-a="a">o</span><span data-b="b">ne</span>')
+        one.addBodyAttributeInRange('SPAN', 'data-a': 'a', 0, 1)
+        one.addBodyAttributeInRange('SPAN', 'data-b': 'b', 1, 2)
+        one.bodyHTMLString.should.equal('<span data-a="a">o</span><span data-b="b">ne</span>')
 
       it 'should add consecutive attribute with same values', ->
-        one.addBodyTextAttributeInRange('SPAN', 'data-a': 'a', 0, 1)
-        one.addBodyTextAttributeInRange('SPAN', 'data-a': 'a', 1, 2)
-        one.bodyHTML.should.equal('<span data-a="a">one</span>')
+        one.addBodyAttributeInRange('SPAN', 'data-a': 'a', 0, 1)
+        one.addBodyAttributeInRange('SPAN', 'data-a': 'a', 1, 2)
+        one.bodyHTMLString.should.equal('<span data-a="a">one</span>')
 
       it 'should remove element', ->
-        one.bodyHTML = '<b>one</b>'
-        one.removeBodyTextAttributeInRange('B', 0, 3)
-        one.bodyHTML.should.equal('one')
+        one.bodyHTMLString = '<b>one</b>'
+        one.removeBodyAttributeInRange('B', 0, 3)
+        one.bodyHTMLString.should.equal('one')
 
       it 'should remove middle of element span', ->
-        one.bodyHTML = '<b>one</b>'
-        one.removeBodyTextAttributeInRange('B', 1, 1)
-        one.bodyHTML.should.equal('<b>o</b>n<b>e</b>')
+        one.bodyHTMLString = '<b>one</b>'
+        one.removeBodyAttributeInRange('B', 1, 1)
+        one.bodyHTMLString.should.equal('<b>o</b>n<b>e</b>')
 
       describe 'Void Elements', ->
         it 'should remove tags when they become empty if they are not void tags', ->
-          one.bodyHTML = 'one <b>two</b> three'
-          one.replaceBodyTextInRange('', 4, 3)
-          one.bodyText.should.equal('one  three')
-          one.bodyHTML.should.equal('one  three')
+          one.bodyHTMLString = 'one <b>two</b> three'
+          one.replaceBodyRange(4, 3, '')
+          one.bodyString.should.equal('one  three')
+          one.bodyHTMLString.should.equal('one  three')
 
         it 'should not remove void tags that are empty', ->
-          one.bodyHTML = 'one <br><img> three'
-          one.bodyText.length.should.equal(12)
-          one.bodyHTML.should.equal('one <br><img> three')
+          one.bodyHTMLString = 'one <br><img> three'
+          one.bodyString.length.should.equal(12)
+          one.bodyHTMLString.should.equal('one <br><img> three')
 
         it 'void tags should count as length 1 in outline range', ->
-          one.bodyHTML = 'one <br><img> three'
-          one.replaceBodyTextInRange('', 7, 3)
-          one.bodyHTML.should.equal('one <br><img> ee')
+          one.bodyHTMLString = 'one <br><img> three'
+          one.replaceBodyRange(7, 3, '')
+          one.bodyHTMLString.should.equal('one <br><img> ee')
 
         it 'void tags should be replaceable', ->
-          one.bodyHTML = 'one <br><img> three'
-          one.replaceBodyTextInRange('', 4, 1)
-          one.bodyHTML.should.equal('one <img> three')
-          one.bodyText.length.should.equal(11)
+          one.bodyHTMLString = 'one <br><img> three'
+          one.replaceBodyRange(4, 1, '')
+          one.bodyHTMLString.should.equal('one <img> three')
+          one.bodyString.length.should.equal(11)
 
         it 'text content enocde <br> using "New Line Character"', ->
-          one.bodyHTML = 'one <br> three'
-          one.bodyText.should.equal("one #{Constants.LineSeparatorCharacter} three")
+          one.bodyHTMLString = 'one <br> three'
+          one.bodyString.should.equal("one #{Constants.LineSeparatorCharacter} three")
 
         it 'text content encode <img> and other void tags using "Object Replacement Character"', ->
-          one.bodyHTML = 'one <img> three'
-          one.bodyText.should.equal("one #{Constants.ObjectReplacementCharacter} three")
+          one.bodyHTMLString = 'one <img> three'
+          one.bodyString.should.equal("one #{Constants.ObjectReplacementCharacter} three")

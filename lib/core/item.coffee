@@ -35,17 +35,17 @@ assert = require 'assert'
 #
 # ```coffeescript
 # item = outline.createItem('Hello World!')
-# item.addBodyTextAttributeInRange('B', {}, 6, 5)
-# item.addBodyTextAttributeInRange('I', {}, 0, 11)
+# item.addBodyAttributeInRange('B', {}, 6, 5)
+# item.addBodyAttributeInRange('I', {}, 0, 11)
 # ```
 #
 # Read body text formatting:
 #
 # ```coffeescript
 # effectiveRange = end: 0
-# textLength = item.bodyText.length
+# textLength = item.bodyString.length
 # while effectiveRange.end < textLength
-#   console.log item.getElementsAtBodyTextIndex effectiveRange.end, effectiveRange
+#   console.log item.getElementsAtBodyIndex effectiveRange.end, effectiveRange
 #```
 module.exports =
 class Item
@@ -54,7 +54,15 @@ class Item
     @id = outline.nextOutlineUniqueItemID(id)
     @outline = outline
     @inOutline = false
-    @attributedString = new AttributedString(text)
+    @bodyHighlighted = null
+
+    if text instanceof AttributedString
+      @body = text
+    else
+      @body = new AttributedString(text)
+
+    outline.syncBodyToAttributes(this, '')
+
     if id isnt @id
       if remappedIDCallback and id
         remappedIDCallback(id, @id, this)
@@ -80,7 +88,7 @@ class Item
   Object.defineProperty @::, 'attributeNames',
     get: ->
       if @attributes
-        Object.keys(@attributes)
+        Object.keys(@attributes).sort()
       else
         []
 
@@ -142,7 +150,7 @@ class Item
       if @attributes
         delete @attributes[name]
 
-    outline.syncAttributeToBodyText(this, name, value, oldValue)
+    outline.syncAttributeToBody(this, name, value, oldValue)
 
     if isInOutline
       outline.emitter.emit 'did-change', mutation
@@ -201,47 +209,38 @@ class Item
   Section: Body Text
   ###
 
-  attributedString: null
-
   # Public: Body text as plain text {String}.
-  bodyText: null
-  Object.defineProperty @::, 'bodyText',
+  bodyString: null
+  Object.defineProperty @::, 'bodyString',
     get: ->
-      @attributedString.string.toString()
+      @body.string.toString()
     set: (text='') ->
-      @replaceBodyTextInRange text, 0, @bodyTextLength
+      @replaceBodyRange(0, @body.string.length, text)
 
-  # Public: Body text length.
-  bodyTextLength: null
-  Object.defineProperty @::, 'bodyTextLength',
-    get: ->
-      @attributedString.string.length
-
-  # Public: Body as HTML {String}.
-  bodyHTML: null
-  Object.defineProperty @::, 'bodyHTML',
-    get: -> @attributedBodyText.toInlineFTMLString()
-    set: (html) ->
-      p = document.createElement 'P'
-      p.innerHTML = html
-      @attributedBodyText = AttributedString.fromInlineFTML(p)
-
-  # Public: Body text as read-only {AttributedString}.
-  attributedBodyText: null
-  Object.defineProperty @::, 'attributedBodyText',
+  # Public: Body text as immutable {AttributedString}.
+  bodyAttributedString: null
+  Object.defineProperty @::, 'bodyAttributedString',
     get: ->
       if @isRoot
         return new AttributedString
-      @attributedString
+      @body
     set: (attributedText) ->
-      @replaceBodyTextInRange attributedText, 0, @bodyTextLength
+      @replaceBodyRange(0, @body.string.length, attributedText)
 
-  # Public: Returns an {AttributedString} substring of this item's body text.
-  #
-  # - `index` Substring's strart index.
-  # - `length` Length of substring to extract.
-  getAttributedBodyTextSubstring: (index, length) ->
-    @attributedBodyText.subattributedString(index, length)
+  # Public: Body text (with syntax highlighting) as read-only {AttributedString}.
+  bodyHighlightedAttributedString: null
+  Object.defineProperty @::, 'bodyHighlightedAttributedString',
+    get: ->
+      @bodyHighlighted ? @body
+
+  # Public: Body as HTML {String}.
+  bodyHTMLString: null
+  Object.defineProperty @::, 'bodyHTMLString',
+    get: -> @bodyAttributedString.toInlineFTMLString()
+    set: (html) ->
+      p = document.createElement 'P'
+      p.innerHTML = html
+      @bodyAttributedString = AttributedString.fromInlineFTML(p)
 
   # Public: Returns an {Object} with keys for each attribute at the given
   # character characterIndex, and by reference the range over which the
@@ -252,8 +251,8 @@ class Item
   #    properties will be set to effective range of element.
   # - `longestEffectiveRange` (optional) {Object} whose `index` and `length`
   #    properties will be set to longest effective range of element.
-  getBodyTextAttributesAtIndex: (characterIndex, effectiveRange, longestEffectiveRange) ->
-    @attributedBodyText.getAttributesAtIndex(characterIndex, effectiveRange, longestEffectiveRange)
+  getBodyAttributesAtIndex: (characterIndex, effectiveRange, longestEffectiveRange) ->
+    @bodyAttributedString.getAttributesAtIndex(characterIndex, effectiveRange, longestEffectiveRange)
 
   # Public: Returns the value for an attribute with a given name of the
   # character at a given characterIndex, and by reference the range over which
@@ -265,8 +264,8 @@ class Item
   #    properties will be set to effective range of element.
   # - `longestEffectiveRange` (optional) {Object} whose `index` and `length`
   #    properties will be set to longest effective range of element.
-  getBodyTextAttributeAtIndex: (attribute, characterIndex, effectiveRange, longestEffectiveRange) ->
-    @attributedBodyText.getAttributeAtIndex(attribute, characterIndex, effectiveRange, longestEffectiveRange)
+  getBodyAttributeAtIndex: (attribute, characterIndex, effectiveRange, longestEffectiveRange) ->
+    @bodyAttributedString.getAttributeAtIndex(attribute, characterIndex, effectiveRange, longestEffectiveRange)
 
   # Sets the attributes for the characters in the specified range to the
   # specified attributes.
@@ -274,8 +273,9 @@ class Item
   # - `attributes` {Object} with keys and values for each attribute
   # - `index` Start index character index.
   # - `length` Range length.
-  setBodyTextAttributesInRange: (attributes, index, length) ->
-    @attributedBodyText.setAttributesInRange(attributes, index, length)
+  setBodyAttributesInRange: (attributes, index, length) ->
+    @bodyAttributedString.setAttributesInRange(attributes, index, length)
+    @bodyHighlighted?.setAttributesInRange(attributes, index, length) # not right since it overrides highlights
     # Needs mutation event!
 
   # Public: Adds an element with the given tagName and attributes to the
@@ -286,8 +286,9 @@ class Item
   #    doesn't need attributes.
   # - `index` Start index character index.
   # - `length` Range length.
-  addBodyTextAttributeInRange: (attribute, value, index, length) ->
-    @attributedBodyText.addAttributeInRange(attribute, value, index, length)
+  addBodyAttributeInRange: (attribute, value, index, length) ->
+    @bodyAttributedString.addAttributeInRange(attribute, value, index, length)
+    @bodyHighlighted?.addAttributeInRange(attribute, value, index, length)
     # Needs mutation event!
 
   # Public: Adds an element with the given tagName and attributes to the
@@ -298,8 +299,9 @@ class Item
   #    doesn't need attributes.
   # - `index` Start index.
   # - `length` Range length.
-  addBodyTextAttributesInRange: (attributes, index, length) ->
-    @attributedBodyText.addAttributesInRange(attributes, index, length)
+  addBodyAttributesInRange: (attributes, index, length) ->
+    @bodyAttributedString.addAttributesInRange(attributes, index, length)
+    @bodyHighlighted?.addAttributesInRange(attributes, index, length)
     # Needs mutation event!
 
   # Public: Removes the element with the tagName from the characters in the
@@ -308,25 +310,26 @@ class Item
   # - `tagName` Tag name of the element.
   # - `index` Start index.
   # - `length` Range length.
-  removeBodyTextAttributeInRange: (attribute, index, length) ->
-    @attributedBodyText.removeAttributeInRange(attribute, index, length)
+  removeBodyAttributeInRange: (attribute, index, length) ->
+    @bodyAttributedString.removeAttributeInRange(attribute, index, length)
+    @bodyHighlighted?.removeBodyAttributeInRange(attribute, index, length)
     # Needs mutation event!
 
-  insertLineBreakInBodyText: (index) ->
+  insertLineBreakInBody: (index) ->
 
-  insertImageInBodyText: (index, image) ->
+  insertImageInBody: (index, image) ->
 
   # Public: Replace body text in the given range.
   #
-  # - `insertedText` {String} or {AttributedString}
   # - `index` Start index.
   # - `length` Range length.
-  replaceBodyTextInRange: (insertedText, index, length) ->
+  # - `insertedText` {String} or {AttributedString}
+  replaceBodyRange: (index, length, insertedText) ->
     if @isRoot
       return
 
-    attributedBodyText = @attributedBodyText
-    oldBodyText = attributedBodyText.getString()
+    bodyAttributedString = @bodyAttributedString
+    oldBody = bodyAttributedString.getString()
     isInOutline = @isInOutline
     outline = @outline
     insertedString
@@ -339,16 +342,17 @@ class Item
     assert.ok(insertedString.indexOf('\n') is -1, 'Item body text cannot contain newlines')
 
     if isInOutline
-      replacedText = attributedBodyText.subattributedString(index, length)
+      replacedText = bodyAttributedString.subattributedString(index, length)
       if replacedText.length is 0 and insertedText.length is 0
         return
-      mutation = Mutation.createBodyTextMutation this, index, insertedString.length, replacedText
+      mutation = Mutation.createBodyMutation this, index, insertedString.length, replacedText
       outline.emitter.emit 'will-change', mutation
       outline.beginChanges()
       outline.recordChange mutation
 
-    attributedBodyText.replaceRangeWithText(index, length, insertedText)
-    outline.syncBodyTextToAttributes(this, oldBodyText)
+    bodyAttributedString.replaceRangeWithText(index, length, insertedText)
+    @bodyHighlighted = null
+    outline.syncBodyToAttributes(this, oldBody)
 
     if isInOutline
       outline.emitter.emit 'did-change', mutation
@@ -360,12 +364,17 @@ class Item
   # - `elements` (optional) {Object} whose keys are formatting element
   #   tagNames and values are attributes for those elements. If specified the
   #   appended text will include these elements.
-  appendBodyText: (text, elements) ->
+  appendBody: (text, elements) ->
     if elements
       unless text instanceof AttributedString
         text = new AttributedString text
-      text.addAttributesInRange elements, 0, text.length
-    @replaceBodyTextInRange text, @bodyText.length, 0
+      text.addAttributesInRange(elements, 0, text.length)
+    @replaceBodyRange(@bodyString.length, 0, text)
+
+  addBodyHighlightInRange: (attribute, value, index, length) ->
+    unless @bodyHighlighted
+      @bodyHighlighted = @bodyAttributedString.clone()
+    @bodyHighlighted.addAttributeInRange(attribute, value, index, length)
 
   ###
   Section: Outline Structure
@@ -399,7 +408,7 @@ class Item
   isEmpty: null
   Object.defineProperty @::, 'isEmpty',
     get: ->
-      not @hasBodyText and
+      not @hasBody and
       not @firstChild and
       @attributeNames.length is 0
 
@@ -436,7 +445,7 @@ class Item
   Object.defineProperty @::, 'indent',
     get: ->
       if indent = @getAttribute('indent')
-        parseInt(indent) or 1
+        indent
       else if @parent
         1
       else
@@ -623,6 +632,60 @@ class Item
 
     commonAncestors
 
+  @_insertGroup: (group, groupDepth, stack, roots) ->
+    top = stack[stack.length - 1]
+    while top and top.depth > groupDepth
+      top = stack.pop()
+
+    if top and top.depth is groupDepth
+      parent = top.parent
+    else
+      stack.push(top)
+      parent = top
+
+    if parent
+      for each in group
+        each.indent = groupDepth - parent.depth
+      parent.insertChildrenBefore(group, null, true)
+    else
+      Array.prototype.push.apply(roots, group)
+
+    stack.push(group[group.length - 1])
+
+  @buildItemHiearchy: (items, stack=[]) ->
+    Item.removeItemsFromParents(items)
+
+    roots = []
+
+    for each in items
+      if groupDepth is each.depth
+        group.push(each)
+      else
+        if group
+          @_insertGroup(group, groupDepth, stack, roots)
+        groupDepth = each.depth
+        group = [each]
+
+    if group
+      @_insertGroup(group, groupDepth, stack, roots)
+
+    roots
+
+  # Removes items efficiently in minimal number of mutations. Assumes that
+  # items are in continiguous outline order.
+  @removeItemsFromParents: (items) ->
+    siblings = []
+    prev = null
+    for each in items
+      if not prev or prev.nextSibling is each
+        siblings.push(each)
+      else
+        siblings[0].parent?.removeChildren(siblings)
+        siblings = [each]
+      prev = each
+    if siblings.length
+      siblings[0].parent?.removeChildren(siblings)
+
   @itemsWithAncestors: (items) ->
     ancestorsAndItems = []
     addedIDs = {}
@@ -660,11 +723,11 @@ class Item
   #
   # - `children` {Array} of {Item}s to insert.
   # - `nextSibling` (optional) The next sibling {Item} to insert before.
-  insertChildrenBefore: (children, nextSibling) ->
+  insertChildrenBefore: (children, nextSibling, maintainIndentHack=false) ->
     isInOutline = @isInOutline
     outline = @outline
 
-    outline.removeItemsFromParents(children)
+    Item.removeItemsFromParents(children)
 
     if nextSibling
       previousSibling = nextSibling.previousSibling
@@ -697,12 +760,14 @@ class Item
     if not lastChild.nextSibling
       @lastChild = lastChild
 
-    childIndent = previousSibling?.indent ? nextSibling?.indent ? 1
-    for each in children by -1
-      each.isInOutline = isInOutline
-      each.indent = childIndent
+    unless maintainIndentHack
+      childIndent = previousSibling?.indent ? nextSibling?.indent ? 1
+      for each in children by -1
+        each.indent = childIndent
 
     if isInOutline
+      for each in children
+        each.isInOutline = true
       outline.emitter.emit 'did-change', mutation
       outline.undoManager.endUndoGrouping()
       outline.endChanges()
@@ -749,11 +814,14 @@ class Item
     if lastChild is @lastChild
       @lastChild = previousSibling
 
+    depth = @depth
     for each in children
+      eachIndent = each.indent
       each.isInOutline = false
       each.nextSibling = null
       each.previousSibling = null
       each.parent = null
+      each.indent = eachIndent + depth
 
     if isInOutline
       outline.emitter.emit 'did-change', mutation
@@ -797,4 +865,4 @@ class Item
 
   # Extended: Returns debug string for this item.
   toString: (depthString) ->
-    (depthString or '') + '(' + @id + ') ' + @attributedString.toString()
+    (depthString or '') + '(' + @id + ') ' + @body.toString()

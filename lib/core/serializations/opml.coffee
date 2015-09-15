@@ -1,6 +1,6 @@
 assert = require 'assert'
 
-serializeItems = (items, editor) ->
+serializeItems = (items, editor, options) ->
   opmlDocumentument = document.implementation.createDocument(null, 'opml', null)
   loadedOPMLHead = items[0].outline.loadOptions?.loadedOPMLHead
   headElement = opmlDocumentument.createElement('head')
@@ -39,7 +39,7 @@ serializeItems = (items, editor) ->
   itemToOPML = (item) ->
     outlineElement = opmlDocumentument.createElementNS(null, 'outline')
     outlineElement.setAttribute 'id', item.id
-    outlineElement.setAttribute 'text', item.bodyHTML
+    outlineElement.setAttribute 'text', item.bodyHTMLString
     for eachName in item.attributeNames
       unless eachName is 'id' or eachName is 'text'
         opmlName = eachName
@@ -65,7 +65,7 @@ serializeItems = (items, editor) ->
   require('./tidy-dom')(opmlDocumentument.documentElement, '\n')
   new XMLSerializer().serializeToString documentElement
 
-deserializeItems = (opml, outline) ->
+deserializeItems = (opml, outline, options) ->
   opmlDocument = (new DOMParser()).parseFromString(opml, 'text/xml')
   documentElement = opmlDocument.documentElement
   headElement = documentElement.getElementsByTagName('head')[0]
@@ -101,7 +101,7 @@ deserializeItems = (opml, outline) ->
   outlineElementToItem = (outlineElement, outline) ->
     assert.ok(outlineElement.tagName.toUpperCase() is 'OUTLINE', "Expected OUTLINE element but got #{outlineElement.tagName}")
     item = outline.createItem '', outlineElement.getAttribute('id')
-    item.bodyHTML = outlineElement.getAttribute('text') or ''
+    item.bodyHTMLString = outlineElement.getAttribute('text') or ''
 
     if outlineElement.hasAttributes()
       attributes = outlineElement.attributes

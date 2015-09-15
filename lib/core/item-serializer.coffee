@@ -24,28 +24,28 @@ getMimeTypeForURI = (uri) ->
 Section: Items
 ###
 
-serializeItems = (items, editor, mimeType) ->
+serializeItems = (items, editor, mimeType, options) ->
   mimeType ?= Constants.FTMLMimeType
-  getSerializationsForMimeType(mimeType)[0].serializeItems(items, editor)
+  getSerializationsForMimeType(mimeType)[0].serializeItems(items, editor, options)
 
-deserializeItems = (itemsData, outline, mimeType) ->
+deserializeItems = (itemsData, outline, mimeType, options) ->
   mimeType ?= Constants.FTMLMimeType
-  getSerializationsForMimeType(mimeType)[0].deserializeItems(itemsData, outline)
+  getSerializationsForMimeType(mimeType)[0].deserializeItems(itemsData, outline, options)
 
-writeItemsToDataTransfer = (items, editor, dataTransfer, mimeType) ->
+writeItemsToDataTransfer = (items, editor, dataTransfer, mimeType, options) ->
   if mimeType
-    dataTransfer.setData mimeType, serializeItems(items, editor, mimeType)
+    dataTransfer.setData mimeType, serializeItems(items, editor, mimeType, options)
   else
     for each in serializations
       dataTransfer.setData each.mimeTypes[0], serializeItems(items, editor, each.mimeTypes[0])
 
-readItemsFromDataTransfer = (editor, dataTransfer, mimeType) ->
+readItemsFromDataTransfer = (editor, dataTransfer, mimeType, options) ->
   for each in serializations
     if (mimeType in each.mimeTypes) or not mimeType
       itemsData = dataTransfer.getData each.mimeTypes[0]
       if itemsData
         try
-          if items = deserializeItems(itemsData, editor.outline, each.mimeTypes[0])
+          if items = deserializeItems(itemsData, editor.outline, each.mimeTypes[0], options)
             return items if items.length
         catch error
           console.log "#{each} failed reading mimeType #{mimeType}. Now trying with other serializations."
@@ -58,7 +58,7 @@ readItemsFromDataTransfer = (editor, dataTransfer, mimeType) ->
       item = editor.outline.createItem file.name
       fileURL = urls.getFileURLFromPathnameAndOptions(file.path)
       fileHREF = urls.getHREFFromFileurls(editor.outline.getFileURL(), fileURL)
-      item.addBodyTextAttributeInRange 'A', href: fileHREF, 0, file.name.length
+      item.addBodyAttributeInRange 'A', href: fileHREF, 0, file.name.length
       items.push item
   items
 

@@ -1,5 +1,6 @@
 loadOutlineFixture = require '../load-outline-fixture'
 ItemBuffer = require '../../lib/core/item-buffer'
+Mutation = require '../../lib/core/mutation'
 
 describe 'ItemBuffer', ->
   [itemBuffer, bufferSubscription, itemBufferDidChangeExpects, outline, outlineSubscription, outlineDidChangeExpects, root, one, two, three, four, five, six] = []
@@ -44,9 +45,9 @@ describe 'ItemBuffer', ->
       itemBuffer.toString().should.equal('(three\n/3)(four/4)')
 
     it 'updates index span when item text changes', ->
-      one.bodyText = 'moose'
-      one.replaceBodyTextInRange('s', 5, 0)
-      one.appendBodyText('!')
+      one.bodyString = 'moose'
+      one.replaceBodyRange(5, 0, 's')
+      one.appendBody('!')
       itemBuffer.toString().should.equal('(mooses!\n/1)(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
     it 'adds index spans when item is added to outline', ->
@@ -126,45 +127,45 @@ describe 'ItemBuffer', ->
             e.replacedLength.should.equal(4)
             e.insertedString.should.equal('moose')
         ]
-        one.bodyText = 'hello'
-        five.bodyText = 'moose'
+        one.bodyString = 'hello'
+        five.bodyString = 'moose'
 
     describe 'Generate Outline Mutations', ->
 
       it 'should generate mutation for simple text insert', ->
         outlineDidChangeExpects = [
           (mutation) ->
-            expect(mutation.type).toBe('bodyText')
+            expect(mutation.type).toBe(Mutation.BODY_CHANGED)
             expect(mutation.replacedText.getString()).toBe('')
             expect(mutation.insertedTextLocation).toBe(0)
             expect(mutation.insertedTextLength).toBe(5)
         ]
         itemBuffer.insertString(0, 'hello')
-        one.bodyText.should.equal('helloone')
+        one.bodyString.should.equal('helloone')
         one.depth.should.equal(1)
 
       it 'should generate mutation for simple text delete', ->
         outlineDidChangeExpects = [
           (mutation) ->
-            expect(mutation.type).toBe('bodyText')
+            expect(mutation.type).toBe(Mutation.BODY_CHANGED)
             expect(mutation.replacedText.getString()).toBe('o')
             expect(mutation.insertedTextLocation).toBe(0)
             expect(mutation.insertedTextLength).toBe(0)
         ]
         itemBuffer.deleteRange(0, 1)
-        one.bodyText.should.equal('ne')
+        one.bodyString.should.equal('ne')
         one.depth.should.equal(1)
 
       it 'should generate mutation for simple text replace', ->
         outlineDidChangeExpects = [
           (mutation) ->
-            expect(mutation.type).toBe('bodyText')
+            expect(mutation.type).toBe(Mutation.BODY_CHANGED)
             expect(mutation.replacedText.getString()).toBe('o')
             expect(mutation.insertedTextLocation).toBe(0)
             expect(mutation.insertedTextLength).toBe(1)
         ]
         itemBuffer.replaceRange(0, 1, 'b')
-        one.bodyText.should.equal('bne')
+        one.bodyString.should.equal('bne')
         one.depth.should.equal(1)
 
 ###
@@ -187,7 +188,7 @@ describe 'OutlineBuffer', ->
             expect(e.newText).toEqual('hello')
             expect(e.newCharacterRange).toEqual(start: 0, end: 5)
         ]
-        one.bodyText = 'hello'
+        one.bodyString = 'hello'
 
       it 'should generate mutation for item insert', ->
         bufferDidChangeExpects = [
@@ -221,18 +222,18 @@ describe 'OutlineBuffer', ->
       it 'should generate mutation for simple text replace', ->
         outlineDidChangeExpects = [
           (mutation) ->
-            expect(mutation.type).toBe('bodyText')
+            expect(mutation.type).toBe(Mutation.BODY_CHANGED)
             expect(mutation.replacedText.getString()).toBe('o')
             expect(mutation.insertedTextLocation).toBe(0)
             expect(mutation.insertedTextLength).toBe(0)
           (mutation) ->
-            expect(mutation.type).toBe('bodyText')
+            expect(mutation.type).toBe(Mutation.BODY_CHANGED)
             expect(mutation.replacedText.getString()).toBe('')
             expect(mutation.insertedTextLocation).toBe(0)
             expect(mutation.insertedTextLength).toBe(1)
         ]
         buffer.setTextInRange('b', [[0, 0], [0, 1]])
-        expect(item.bodyText).toBe('bne')
+        expect(item.bodyString).toBe('bne')
         expect(item.depth).toBe(1)
 
       it 'should generate mutation for insert tab in front', ->
@@ -253,14 +254,14 @@ describe 'OutlineBuffer', ->
             expect(mutation.target.getAttribute(mutation.attributeName)).toBe('2')
         ]
         buffer.setTextInRange('\t', [[0, 0], [0, 0]])
-        expect(item.bodyText).toBe('one')
+        expect(item.bodyString).toBe('one')
         expect(item.depth).toBe(2)
 
       it 'should generate mutation for delete tab from front', ->
         buffer.setTextInRange('\t', [[0, 0], [0, 0]])
 
         buffer.setTextInRange('', [[0, 0], [0, 1]])
-        expect(item.bodyText).toBe('one')
+        expect(item.bodyString).toBe('one')
         expect(item.depth).toBe(1)
 
   describe 'Performance', ->

@@ -1,101 +1,119 @@
+{ repeat } = require '../util'
+Item = require '../Item'
+
 tagStartChars = '[A-Z_a-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD]'
 tagWordChars =  '[\\-.0-9\\u00B7\\u0300-\\u036F\\u203F-\\u2040]'
-tagWordRegexString = tagStartChars + '(?:' + tagStartChars + '|' + tagWordChars + ')*'
-tagRegexTemplate = '(^|\\s+)@(TAGNAME)(?:\\(([^\\)]*)\\))?(?=\\s|$)'
-tagRegex = new RegExp(tagRegexTemplate.replace('TAGNAME', tagWordRegexString), 'g')
+tagWordRegexString = "#{tagStartChars}(?:#{tagStartChars}|#{tagWordChars})*"
+tagRegexString = "(^|\\s+)@(#{tagWordRegexString})(?:\\(([^\\)]*)\\))?(?=\\s|$)"
+tagRegex = new RegExp(tagRegexString, 'g')
 
-serializeItemAttributes = (item) ->
-  excludedAttributes =
-    'data-type': true
+reservedTags =
+  id: true
+  line: true
+  indent: true
 
-  attributes = []
-  for name in item.attributeNames
-    if (name.indexOf('data-') is 0) and not excludedAttributes[name]
-      attribute = '@' + name.substring(5)
-      value = item.getAttribute(name)
-      if value
-        attribute = "#{attribute}(#{value})"
-      attributes.push attribute
-  if attributes.length
-    attributesString = attributes.join(' ')
-    if item.bodyText.length
-      attributesString = ' ' + attributesString
-    attributesString
+regexForTag = (tag) ->
+  new RegExp("(^|\\s)@(#{tag})(\\([^\\)]*\\))?")
+
+tagRange = (text, tag) ->
+  if match = text.match(regexForTag(tag))
+    return {} =
+      location: match.index
+      length: match[0].length
+
+encodeTag = (tag, value) ->
+  if value
+    "@#{tag}(#{value})"
   else
-    ''
+    "@#{tag}"
 
-serializeItems = (items, editor, serializeItemText) ->
-  serializeItemText ?= (item) -> item.bodyText
-  text = []
-  itemToTXT = (item, indent) ->
-    child = item.firstChild
-    text.push(indent + serializeItemText(item) + serializeItemAttributes(item))
-    indent += '\t'
-    while child
-      itemToTXT(child, indent)
-      child = child.nextSibling
+parseTags = (text, callback) ->
+  tags = {}
+  if text.indexOf('@') isnt -1
+    while match = tagRegex.exec(text)
+      leadingSpace = match[1]
+      tag = 'data-' + match[2]
+      value = match[3] ? ''
+      if not tags[tag]? and not reservedTags[tag]
+        tags[tag] = value
+        if callback
+          callback(tag, value, match)
+  tags
+
+# Serialize
+
+serializeItem = (item, includeAttributes) ->
+  text = item.bodyString
+  if includeAttributes
+    encodedAttributes = []
+    for name in item.attributeNames
+      if (name.indexOf('data-') is 0)
+        encodedAttributes.push(encodeTag(name.substr(5), item.getAttribute(name)))
+    if encodedAttributes.length
+      encodedAttributes = encodedAttributes.join(' ')
+      if text.length
+        encodedAttributes = ' ' + encodedAttributes
+      text += encodedAttributes
+  repeat('\t', item.depth - 1) + text
+
+serializeItemBranch = (item, includeAttributes, results) ->
+  results.push(serializeItem(item, includeAttributes))
+  each = item.firstChild
+  while each
+    serializeItemBranch(each, includeAttributes, results)
+    each = each.nextSibling
+  results
+
+serializeItems = (items, editor, options={}) ->
+  includeAttributes = options.includeAttributes ? true
+  lines = []
   for each in items
-    itemToTXT each, ''
-  text.join '\n'
+    serializeItemBranch(each, includeAttributes, lines)
+  lines.join('\n')
 
-calculateAndExtractAttributes = (text) ->
-  attributes = {}
-  reservedTags = {}
-  newText = text
-  removedLength = 0
-  tags = []
+# Deserialize
 
-  while match = tagRegex.exec(text)
-    leadingSpace = match[1]
-    tag = match[2]
-    value = match[3] or ''
+deserializeItemBody = (item) ->
 
-    if tags[tag] is undefined and reservedTags[tag] is undefined
+deserializeItem = (text, outline, extractAttributes) ->
+  item = outline.createItem()
+  indent = text.match(/^(\t)*/)[0].length + 1
+  body = text.substring(indent - 1)
+  item.indent = indent
+
+  if extractAttributes
+    removedLength = 0
+    parseTags body, (tag, value, match) ->
+      item.setAttribute(tag, value)
       index = match.index - removedLength
-      newText = newText.substring(0, index) + newText.substring(index + match[0].length)
+      body = body.substring(0, index) + body.substring(index + match[0].length)
       removedLength += match[0].length
-      attributes['data-' + tag] = value
 
-  {} =
-    text: newText
-    attributes: attributes
+  item.bodyString = body
+  item
 
-deserializeItems = (text, outline) ->
+deserializeItems = (text, outline, options={}) ->
+  extractAttributes = options.extractAttributes ? true
+
   text = text.replace(/(\r\n|\n|\r)/gm,'\n')
   text = text.replace('    ','\t')
   text = text.replace('  ','\t')
-
-  root = outline.createItem()
-  root._indentLevel = -1
   lines = text.split '\n'
-  stack = [root]
 
-  calculateIndentLevel = (line) ->
-    line.match(/^(\t)*/)[0].length
+  flatItems = []
+  for each in lines
+    flatItems.push(deserializeItem(each, outline, extractAttributes))
 
-  for line in lines
-    {attributes, text} = calculateAndExtractAttributes(line.trim())
-    item = outline.createItem(text)
-
-    for name, value of attributes
-      item.setAttribute(name, value)
-
-    item._indentLevel = calculateIndentLevel(line)
-
-    parent = stack.pop()
-    while parent._indentLevel >= item._indentLevel
-      parent = stack.pop()
-
-    parent.appendChild item
-    stack.push(parent)
-    stack.push(item)
-
-  items = root.children
-  for each in items
-    each.removeFromParent()
-  items.loadOptions = {}
-  items
+  roots = Item.buildItemHiearchy(flatItems)
+  roots.loadOptions = {}
+  roots
 
 module.exports =
+  tagRegex: tagRegex
+  reservedTags: reservedTags
+  regexForTag: regexForTag
+  tagRange: tagRange
+  encodeTag: encodeTag
+  parseTags: parseTags
   serializeItems: serializeItems
   deserializeItems: deserializeItems

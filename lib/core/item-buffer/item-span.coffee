@@ -3,7 +3,7 @@ LineSpan = require '../line-buffer/line-span'
 class ItemSpan extends LineSpan
 
   constructor: (@item) ->
-    super(@item.bodyText)
+    super(@item.bodyString)
 
   clone: ->
     new @constructor(@item.cloneItem(false))
@@ -18,10 +18,10 @@ class ItemSpan extends LineSpan
     if root = @getRoot()
       unless root.isUpdatingIndex
         root.isUpdatingItems++
-        @item.replaceBodyTextInRange(string, location, length)
+        @item.replaceBodyRange(location, length, string)
         root.isUpdatingItems--
     else
-      @item.replaceBodyTextInRange(string, location, length)
+      @item.replaceBodyRange(location, length, string)
 
   ###
   Section: Debug

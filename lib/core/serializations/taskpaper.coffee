@@ -1,9 +1,9 @@
 ## Move this to separate package
 require './text'
 
-serializeItems = (items, editor) ->
+serializeItems = (items, editor, options) ->
   require('./text').serializeItems items, editor, (item) ->
-    text = item.bodyText
+    text = item.bodyString
     switch item.getAttribute('data-type')
       when 'project'
         text += ':'
@@ -12,7 +12,7 @@ serializeItems = (items, editor) ->
     text
 
 extractType = (item) ->
-  text = item.bodyText
+  text = item.bodyString
   newText = text.trim()
   if newText.indexOf('- ') is 0
     item.setAttribute('data-type', 'task')
@@ -22,9 +22,9 @@ extractType = (item) ->
     newText = newText.substr(0, newText.length - 1)
 
   if text isnt newText
-    item.bodyText = newText
+    item.bodyString = newText
 
-deserializeItems = (text, outline) ->
+deserializeItems = (text, outline, options) ->
   items = require('./text').deserializeItems(text, outline)
   for each in items
     while each
@@ -82,7 +82,7 @@ describe 'TASKPAPER Serialization', ->
 
   it 'should deserialize items from TASKPAPER string', ->
     one = ItemSerializer.deserializeItems(fixtureAsTaskPaperString, outline, Constants.TASKPAPERMimeType)[0]
-    one.bodyText.should.equal('one')
-    one.lastChild.bodyText.should.equal('five')
+    one.bodyString.should.equal('one')
+    one.lastChild.bodyString.should.equal('five')
     one.lastChild.lastChild.getAttribute('data-t').should.equal('23')
     one.descendants.length.should.equal(5)

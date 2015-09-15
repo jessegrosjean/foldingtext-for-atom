@@ -158,7 +158,7 @@ describe 'Editor', ->
         expect(itemBuffer.getString()).toEqual('one\ntwo\nthree\nfive\nfour\nsix')
 
       it 'should move lines down', ->
-        editor.setCollapsed([two, five])
+        editor.setCollapsed([two])
         editor.setSelectedItemRange(two)
         editor.moveLinesDown()
         expect(six.parent).toEqual(two)
@@ -166,6 +166,16 @@ describe 'Editor', ->
         expect(two.previousSibling).toEqual(five)
         editor.getSelectedRange().should.eql(location: 20, length: 0)
         expect(itemBuffer.getString()).toEqual('one\nthree\nfour\nfive\ntwo\nsix')
+
+      it 'should move lines down past hidden items', ->
+        editor.setCollapsed([two, five])
+        editor.setSelectedItemRange(two)
+        editor.moveLinesDown()
+        expect(six.parent).toEqual(five)
+        expect(five.parent).toEqual(one)
+        expect(two.previousSibling).toEqual(five)
+        editor.getSelectedRange().should.eql(location: 20, length: 0)
+        expect(itemBuffer.getString()).toEqual('one\nthree\nfour\nfive\ntwo')
 
       it 'should move lines down and expand if capture children', ->
         three.removeFromParent()
@@ -200,6 +210,17 @@ describe 'Editor', ->
         five.nextSibling.should.equal(six)
         editor.getSelectedRange().should.eql(location: 20, length: 0)
         expect(itemBuffer.getString()).toEqual('one\ntwo\nthree\nfour\nfive\nsix')
+
+      it 'should move lines right special case', ->
+        each.removeFromParent() for each in outline.root.descendants
+        one.indent = 1
+        two.indent = 3
+        three.indent = 2
+        four.indent = 1
+        outline.insertItemsBefore([one, two, three, four])
+        editor.setSelectedItemRange(one, 1, two, 1)
+        editor.moveLinesRight()
+        root.firstChild.should.equal(one)
 
       it 'should move lines left', ->
         editor.setCollapsed(five)
@@ -283,14 +304,14 @@ describe 'Editor', ->
         editor.duplicateItems()
         editor.selection.focusItem.should.equal(two.nextSibling)
         editor.isExpanded(two.nextSibling).should.be.ok()
-        two.nextSibling.bodyText.should.equal('two')
-        two.nextSibling.firstChild.bodyText.should.equal('three')
+        two.nextSibling.bodyString.should.equal('two')
+        two.nextSibling.firstChild.bodyString.should.equal('three')
 
       it 'should join items', ->
         editor.setExpanded(one)
         editor.moveSelectionRange(one)
         editor.joinItems()
-        one.bodyText.should.equal('one two')
+        one.bodyString.should.equal('one two')
         editor.selection.focusItem.should.equal(one)
         editor.selection.focusOffset.should.equal(3)
         one.firstChild.should.equal(three)

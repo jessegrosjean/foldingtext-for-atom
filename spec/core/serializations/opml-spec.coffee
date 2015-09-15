@@ -32,7 +32,7 @@ describe 'OPML Serialization', ->
 
   it 'should deserialize items from OPML string', ->
     one = ItemSerializer.deserializeItems(fixtureAsOPMLString, outline, Constants.OPMLMimeType)[0]
-    one.bodyText.should.equal('one')
-    one.lastChild.bodyText.should.equal('five')
+    one.bodyString.should.equal('one')
+    one.lastChild.bodyString.should.equal('five')
     one.lastChild.lastChild.getAttribute('data-t').should.equal('23')
     one.descendants.length.should.equal(5)

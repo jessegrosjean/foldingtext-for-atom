@@ -19,6 +19,6 @@ describe 'uri-list Serialization', ->
 
   it 'should deserialize items from uri-list string', ->
     one = ItemSerializer.deserializeItems(fixtureAsURIListString, outline, Constants.URIListMimeType)[0]
-    one.bodyText.should.equal('one')
-    one.bodyHTML.should.equal('<a href="?selection=1%2Cundefined%2C1%2Cundefined">one</a>')
+    one.bodyString.should.equal('one')
+    one.bodyHTMLString.should.equal('<a href="?selection=1%2Cundefined%2C1%2Cundefined">one</a>')
     one.descendants.length.should.equal(0)

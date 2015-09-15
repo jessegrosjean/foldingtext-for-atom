@@ -1,6 +1,6 @@
 AttributedString = require '../../lib/core/attributed-string-ftml'
 
-fdescribe 'AttributedString', ->
+describe 'AttributedString', ->
   [attributedString] = []
 
   beforeEach ->

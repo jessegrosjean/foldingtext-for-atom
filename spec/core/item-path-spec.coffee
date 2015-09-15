@@ -214,37 +214,37 @@ describe 'ItemPath', ->
     describe 'Optional Options', ->
 
       it 'should support options (AROV) formatted queries', ->
-        one.bodyText = 'Being all INSENSITIVE'
+        one.bodyString = 'Being all INSENSITIVE'
         outline.evaluateItemPath('@text contains insensitive').should.eql [one]
         outline.evaluateItemPath('@text contains [s] insensitive').should.eql []
         outline.evaluateItemPath('@text contains [s] INSENSITIVE').should.eql [one]
 
       it 'should support AOV formatted queries', ->
-        one.bodyText = 'INSENSITIVE'
+        one.bodyString = 'INSENSITIVE'
         outline.evaluateItemPath('@text insensitive').should.eql([one])
         outline.evaluateItemPath('@text [s] insensitive').should.eql([])
         outline.evaluateItemPath('@text [s] INSENSITIVE').should.eql([one])
 
       it 'should support OV formatted queries', ->
-        one.bodyText = 'INSENSITIVE'
+        one.bodyString = 'INSENSITIVE'
         outline.evaluateItemPath('insensitive').should.eql([one])
         outline.evaluateItemPath('[s] insensitive').should.eql([])
         outline.evaluateItemPath('[s] INSENSITIVE').should.eql([one])
 
       it 'should support ROV formatted queries', ->
-        one.bodyText = 'INSENSITIVE'
+        one.bodyString = 'INSENSITIVE'
         outline.evaluateItemPath('= insensitive').should.eql([one])
         outline.evaluateItemPath('= [s] insensitive').should.eql([])
         outline.evaluateItemPath('= [s] INSENSITIVE').should.eql([one])
 
       it 'should support convert to number before compare option', ->
-        one.bodyText = '1.0'
+        one.bodyString = '1.0'
         outline.evaluateItemPath('@text = 1.0').should.eql([one])
         outline.evaluateItemPath('@text = 1').should.eql([])
         outline.evaluateItemPath('@text = [n] 1').should.eql([one])
 
       it 'should support convert to date before compare option', ->
-        one.bodyText = 'November 1, 2012'
+        one.bodyString = 'November 1, 2012'
         outline.evaluateItemPath('@text = November 1, 2012').should.eql([one])
         outline.evaluateItemPath('@text = November 01, 2012').should.eql([])
         outline.evaluateItemPath('@text = [d] November 01, 2012').should.eql([one])
@@ -252,29 +252,29 @@ describe 'ItemPath', ->
     describe 'Values', ->
 
       it 'should accept unquoted values', ->
-        one.bodyText = 'find this string'
+        one.bodyString = 'find this string'
         outline.evaluateItemPath('find this string').should.eql([one])
 
       it 'should ignore reserved words in unquoted values unless followed by whitespace', ->
-        one.bodyText = 'notandor'
+        one.bodyString = 'notandor'
         outline.evaluateItemPath('notandor').should.eql([one])
 
       it 'should accept ored unquoted strings', ->
-        one.bodyText = 'one is here'
-        two.bodyText = 'two is here'
+        one.bodyString = 'one is here'
+        two.bodyString = 'two is here'
         outline.evaluateItemPath('//one is here or two is here').should.eql([one, two])
 
       it 'should identify double quoted strings', ->
         outline.evaluateItemPath('"one"').should.eql([one])
 
       it 'should not find operator inside quoted string', ->
-        one.bodyText = 'one is here'
-        two.bodyText = 'two is here'
-        three.bodyText = 'one is here or two is here'
+        one.bodyString = 'one is here'
+        two.bodyString = 'two is here'
+        three.bodyString = 'one is here or two is here'
         outline.evaluateItemPath('//"one is here or two is here"').should.eql([three])
 
       it 'should allow attribute value to start with zero', ->
-        one.bodyText = '0one'
+        one.bodyString = '0one'
         outline.evaluateItemPath('0').should.eql([one])
         outline.evaluateItemPath('0one').should.eql([one])
 

@@ -36,8 +36,8 @@ Q = require 'q'
 # root = outline.root
 # root.appendChild outline.createItem()
 # root.appendChild outline.createItem()
-# root.firstChild.bodyText = 'first'
-# root.lastChild.bodyText = 'last'
+# root.firstChild.bodyString = 'first'
+# root.lastChild.bodyString = 'last'
 # outline.endChanges()
 # ```
 #
@@ -48,8 +48,8 @@ Q = require 'q'
 #   switch mutation.type
 #     when Mutation.ATTRIBUTE_CHANGED
 #       console.log mutation.attributeName
-#     when Mutation.BODT_TEXT_CHANGED
-#       console.log mutation.target.bodyText
+#     when Mutation.BODY_CHANGED
+#       console.log mutation.target.bodyString
 #     when Mutation.CHILDREN_CHANGED
 #       console.log mutation.addedItems
 #       console.log mutation.removedItems
@@ -94,7 +94,7 @@ class Outline
     @emitter = new Emitter
 
     @syncingToAttributes = 0
-    @syncingToBodyText = 0
+    @syncingToBody = 0
     @syncRules = null
 
     @loaded = false
@@ -360,7 +360,7 @@ class Outline
     firstChild = @root.firstChild
     not firstChild or
         (not firstChild.nextItem and
-        firstChild.bodyText.length is 0)
+        firstChild.bodyString.length is 0)
 
   # Public: Returns an {Array} of all {Item}s in the outline (except the
   # root) in outline order.
@@ -401,7 +401,7 @@ class Outline
     assert.ok(not item.isRoot, 'Can not clone root')
     assert.ok(item.outline is @, 'Item must be owned by this outline')
 
-    clonedItem = @createItem(item.attributedString)
+    clonedItem = @createItem(item.bodyAttributedString.clone())
 
     if item.attributes
       clonedItem.attributes = _.clone(item.attributes)
@@ -428,7 +428,7 @@ class Outline
     assert.ok(not item.isRoot, 'Can not import root item')
     assert.ok(item.outline isnt @, 'Item must not be owned by this outline')
 
-    importedItem = @createItem(item.attributedString, item.id, remapIDCallback)
+    importedItem = @createItem(item.bodyAttributedString.clone(), item.id, remapIDCallback)
 
     if item.attributes
       importedItem.attributes = _.clone(item.attributes)
@@ -459,59 +459,7 @@ class Outline
   # - `item` {Item} to insert.
   # - `referenceItem` Reference {Item} to insert before.
   insertItemBefore: (item, referenceItem) ->
-    depth = item.indent
-    depth = 1 if depth < 1
-
-    @beginChanges()
-    @undoManager.beginUndoGrouping()
-
-    item.removeFromParent()
-
-    while lastChild = item.lastChild
-      lastChild.removeFromParent()
-      lastChild.indent = depth + 1
-      @insertItemBefore(lastChild, referenceItem)
-      referenceItem = lastChild
-
-    # 1. Start values
-    itemParent = referenceItem?.previousItemOrRoot or @root.lastDescendantOrSelf
-    itemNextSibling = itemParent.firstChild
-    itemParentDepth = itemParent.depth
-    nextBranch = referenceItem
-
-    # 2. Find parent for inserted item
-    while itemParentDepth >= depth
-      itemNextSibling = itemParent.nextSibling
-      itemParent = itemParent.parent
-      itemParentDepth = itemParent.depth
-
-    # 3. Record and remove trailing sub-branches.
-    reparentChildren = []
-    reparentChildrenIndents = []
-    if nextBranch
-      while nextBranch and (nextBranch.depth > depth)
-        if nextBranch is itemNextSibling
-          itemNextSibling = nextBranch.nextSibling;
-
-        nextNextBranch = nextBranch.nextBranch
-        nextBranchOriginalDepth = nextBranch.depth
-        nextBranch.removeFromParent()
-        reparentChildren.push(nextBranch)
-        reparentChildrenIndents.push(nextBranchOriginalDepth - depth)
-        nextBranch = nextNextBranch
-
-    # 4. Insert the item and update indent
-    itemParent.insertChildBefore(item, itemNextSibling)
-    item.indent += depth - item.depth
-
-    # 5. Re-insert any trailing sub-branches
-    if reparentChildren.length
-      item.appendChildren(reparentChildren)
-      for each, i in reparentChildren
-        each.indent = reparentChildrenIndents[i]
-
-    @undoManager.endUndoGrouping()
-    @endChanges()
+    @insertItemsBefore([item], referenceItem)
 
   # Public: Insert the items before the given `referenceItem`. See
   # {Outline::insertItemBefore} for more implementation details. This method
@@ -520,10 +468,65 @@ class Outline
   # - `items` {Array} of {Item}s to insert.
   # - `referenceItem` Reference {Item} to insert before.
   insertItemsBefore: (items, referenceItem) ->
+    unless items.length
+      return
+
     @beginChanges()
     @undoManager.beginUndoGrouping()
-    for each in items
-      @insertItemBefore(each, referenceItem)
+
+    # 1. Group items into hiearhcies while saving roots.
+    roots = Item.buildItemHiearchy(items)
+
+    # 2. Make sure each root has indent of at least 1 so that they will always
+    # insert as children of outline.root.
+    for each in roots
+      if each.indent < 1
+        each.indent = 1
+
+    # 3. Group roots by indentation level so they can all be inseted in a
+    # single mutation instent of one by one.
+    rootGroups = []
+    currentDepth = undefined
+    for each in roots
+      if each.depth is currentDepth
+        current.push(each)
+      else
+        current = [each]
+        rootGroups.push(current)
+        currentDepth = each.depth
+
+    # 4. Insert root groups where appropriate in the outline.
+    for eachGroup in rootGroups
+      eachGroupDepth = eachGroup[0].depth
+      # find insert point
+      parent = referenceItem?.previousItemOrRoot or @root.lastDescendantOrSelf
+      nextSibling = parent.firstChild
+      parentDepth = parent.depth
+      nextBranch = referenceItem
+      while parentDepth >= eachGroupDepth
+        nextSibling = parent.nextSibling
+        parent = parent.parent
+        parentDepth = parent.depth
+      # restore indents and insert
+      for each in eachGroup
+        each.indent = eachGroupDepth - parent.depth
+      parent.insertChildrenBefore(eachGroup, nextSibling, true)
+
+    # 5. Reparent covered trailing branches to last inserted root.
+    lastRoot = roots[roots.length - 1]
+    ancestorStack = []
+    each = lastRoot
+    while each
+      ancestorStack.push(each)
+      each = each.lastChild
+
+    trailingBranches = []
+    while referenceItem and (referenceItem.depth > lastRoot.depth)
+      trailingBranches.push(referenceItem)
+      referenceItem = referenceItem.nextBranch
+
+    Item.buildItemHiearchy(trailingBranches, ancestorStack)
+
     @undoManager.endUndoGrouping()
     @endChanges()
 
@@ -531,80 +534,66 @@ class Outline
   #
   # - `item` {Item} to remove.
   removeItem: (item) ->
-    @beginChanges()
-    @undoManager.beginUndoGrouping()
-    depth = item.depth
-    previousItem = item.previousItem
-    nextBranch = item.nextBranch
-    children = item.children
-    for each in children
-      eachDepth = each.depth
-      each.removeFromParent()
-      each.indent = eachDepth
-    item.removeFromParent()
-    item.indent = depth
-    @insertItemsBefore(children, nextBranch)
-    @undoManager.endUndoGrouping()
-    @endChanges()
+    @removeItems([item])
 
   # Public: Remove the items but leave there child items in the outline.
   #
   # - `items` {Item}s to remove.
   removeItems: (items) ->
+    # Group items into contiguous ranges so they are easier to reason about
+    # when grouping the removes for efficiency.
+    contiguousItemRanges = []
+    previousItem = undefined
+    for each in items
+      if previousItem and previousItem is each.previousItem
+        currentRange.push(each)
+      else
+        currentRange = [each]
+        contiguousItemRanges.push(currentRange)
+      previousItem = each
+
     @beginChanges()
     @undoManager.beginUndoGrouping()
-    for each in items
-      @removeItem(each)
+    for each in contiguousItemRanges
+      @_removeContiguousItems(each)
     @undoManager.endUndoGrouping()
     @endChanges()
 
-  # Not sure about this method... I think they are being used to handle moving
-  # items from one outline to another... is that needed? TODO
-  removeItemsFromParents: (items) ->
-    siblings = []
-    prev = null
-
+  _removeContiguousItems: (items) ->
+    # 1. Collect all items to remove together with their children. Only
+    # some of these items are to be removed, the others will be reinserted.
+    coveredItems = []
+    coveredItemsSet = new Set()
     for each in items
-      if not prev or prev.nextSibling is each
-        siblings.push(each)
-      else
-        @removeSiblingsFromParent(siblings)
-        siblings = [each]
-      prev = each
+      unless coveredItemsSet.has(eachChild)
+        coveredItems.push(each)
+        coveredItemsSet.add(each)
+      for eachChild in each.children
+        unless coveredItemsSet.has(eachChild)
+          coveredItems.push(eachChild)
+          coveredItemsSet.add(eachChild)
 
-    if siblings.length
-      @removeSiblingsFromParent(siblings);
+    # 2. Save item that reinserted items should be reinserted before.
+    insertBefore = coveredItems[coveredItems.length - 1].nextBranch
 
-  removeSiblingsFromParent: (siblings) ->
-    return unless siblings.length
+    # 3. Figure out which items should be reinserted and save there depths.
+    removeItemsSet = new Set()
+    for each in items
+      removeItemsSet.add(each)
+    reinsertChildren = []
+    for each, i in coveredItems
+      unless removeItemsSet.has(each)
+        reinsertChildren.push(each)
 
-    firstSibling = siblings[0]
-    outline = firstSibling.outline
-    parent = firstSibling.parent
+    # 4. Remove items to reinsert before removing items. This way undo will
+    # work. since the parents are still in the tree.
+    Item.removeItemsFromParents(reinsertChildren)
 
-    return unless parent
+    # 5. Remove the items that are actually meant to be removed.
+    Item.removeItemsFromParents(items)
 
-    nextSibling = siblings[siblings.length - 1].nextSibling
-    isInOutline = firstSibling.isInOutline
-    undoManager = outline.undoManager
-
-    if isInOutline
-      if undoManager.isUndoRegistrationEnabled()
-        undoManager.registerUndoOperation ->
-          # This seems especially wrong? should now only have mutations on the
-          # undo stack... I guess reason must be because mutations don't fire
-          # for items that are not inOutline... but this still doesn't seem right FIXME
-          parent.insertChildrenBefore(siblings, nextSibling)
-
-      undoManager.disableUndoRegistration()
-      outline.beginChanges()
-
-    for each in siblings
-      parent.removeChild each
-
-    if isInOutline
-      undoManager.enableUndoRegistration()
-      outline.endChanges()
+    # 6. Reinsert!
+    @insertItemsBefore(reinsertChildren, insertBefore)
 
   ###
   Section: Querying Items
@@ -634,30 +623,31 @@ class Outline
   # Public: Begin grouping changes. Must later call {::endChanges} to balance
   # this call.
   beginChanges: ->
-    if ++@changingCount is 1
+    @changingCount++
+    if @changingCount is 1
       @changesCallbacks = []
       @emitter.emit('did-begin-changes')
 
   breakUndoCoalescing: ->
     @coalescingMutation = null
 
-  syncAttributeToBodyText: (item, name, value, oldValue) ->
+  syncAttributeToBody: (item, name, value, oldValue) ->
     return unless @syncRules
     unless @syncingToAttributes
-      @syncingToBodyText++
+      @syncingToBody++
       for each in @syncRules
-        each.syncAttributeToBodyText(item, name, value, oldValue)
-      @syncingToBodyText--
+        each.syncAttributeToBody(item, name, value, oldValue)
+      @syncingToBody--
 
-  syncBodyTextToAttributes: (item, oldBodyText) ->
+  syncBodyToAttributes: (item, oldBody) ->
     return unless @syncRules
-    unless @syncingToBodyText
+    unless @syncingToBody
       @syncingToAttributes++
       for each in @syncRules
-        each.syncBodyTextToAttributes(item, oldBodyText)
+        each.syncBodyToAttributes(item, oldBody)
       @syncingToAttributes--
 
-  registerAttributeBodyTextSyncRule: (syncRule) ->
+  registerAttributeBodySyncRule: (syncRule) ->
     unless @syncRules
       @syncRules = []
     @syncRules.push(syncRule)
@@ -673,7 +663,7 @@ class Outline
     if @coalescingMutation and @coalescingMutation.coalesce(mutation)
       metadata = @undoManager.getUndoGroupMetadata()
       undoSelection = metadata.undoSelection
-      if undoSelection and @coalescingMutation.type is Mutation.BODT_TEXT_CHANGED
+      if undoSelection and @coalescingMutation.type is Mutation.BODY_CHANGED
         # Update the undo selection to match coalescingMutation
         undoSelection.anchorOffset = @coalescingMutation.insertedTextLocation
         undoSelection.startOffset = @coalescingMutation.insertedTextLocation
@@ -689,7 +679,8 @@ class Outline
   # - `callback` (optional) Callback is called when outline finishes updating.
   endChanges: (callback) ->
     @changesCallbacks.push(callback) if callback
-    if --@changingCount is 0
+    @changingCount--
+    if @changingCount is 0
       @conflict = false if @conflict and not @isModified()
       @emitter.emit('did-end-changes')
       @scheduleModifiedEvents()

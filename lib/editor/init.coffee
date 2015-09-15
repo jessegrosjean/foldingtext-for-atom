@@ -23,11 +23,11 @@ atom.workspace.observeTextEditors (textEditor) ->
       ignoreOutlineAttributedStringChanges--
 
   outline = outlineAttributedString.outline
-  outline.root.firstChild.bodyText = 'hello'
+  outline.root.firstChild.bodyString = 'hello'
   outline.root.firstChild.appendChild outline.createItem('Moose')
   outline.root.firstChild.appendChild outline.createItem('Mouse')
   outline.root.firstChild.appendChild outline.createItem('Mice')
-  outline.root.firstChild.bodyText = 'hello'
+  outline.root.firstChild.bodyString = 'hello'
   outline.root.appendChild(outline.root.firstChild.cloneItem())
 
   atom.commands.add 'atom-workspace', 'birch:hoist', ->
