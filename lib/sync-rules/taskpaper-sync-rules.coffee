@@ -1,5 +1,5 @@
 { tagRegex, regexForTag, tagRange, encodeTag, reservedTags, parseTags } = require '../core/serializations/text'
-taskRegex = /([\-+*])\s/
+taskRegex = /^([\-+*])\s/
 projectRegex = /:$/
 
 removeTag = (item, tag) ->
