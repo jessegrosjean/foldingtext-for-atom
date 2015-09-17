@@ -689,7 +689,6 @@ class Item
   @itemsWithAncestors: (items) ->
     ancestorsAndItems = []
     addedIDs = {}
-
     for each in items
       index = ancestorsAndItems.length
       while each
@@ -699,7 +698,6 @@ class Item
           ancestorsAndItems.splice(index, 0, each)
           addedIDs[each.id] = true
         each = each.parent
-
     ancestorsAndItems
 
   ###
@@ -724,6 +722,9 @@ class Item
   # - `children` {Array} of {Item}s to insert.
   # - `nextSibling` (optional) The next sibling {Item} to insert before.
   insertChildrenBefore: (children, nextSibling, maintainIndentHack=false) ->
+    unless children.length
+      return
+
     isInOutline = @isInOutline
     outline = @outline
 

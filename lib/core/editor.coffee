@@ -36,13 +36,16 @@ class Editor
         if not target.hasChildren
           @setCollapsed(target)
 
+    @subscriptions.add @itemBuffer.onDidProcessOutlineMutation (mutation) =>
+      if mutation.type is Mutation.CHILDREN_CHANGED
+        @nativeEditor.nativeTextBufferInvalidateDisplay()
+
     @subscriptions.add @itemBuffer.onDidChange (e) =>
       if not @isUpdatingItemBuffer
         @isUpdatingNativeBuffer++
         nsrange = location: e.location, length: e.replacedLength
         @nativeEditor.nativeTextBufferReplaceCharactersInRangeWithString(nsrange, e.insertedString)
         @isUpdatingNativeBuffer--
-      assert(@nativeEditor.nativeTextContent is @itemBuffer.getString(), 'Text Buffers are Equal')
 
     @subscriptions.add @itemBuffer.outline.onDidEndChanges =>
       @nativeEditor.nativeTextBufferEndEditing()
@@ -58,38 +61,36 @@ class Editor
       @isUpdatingItemBuffer--
 
   nativeTextBufferDrawingStateForRange: (location, length) ->
-    try
-      itemSpansInRange = @itemBuffer.getSpansInRange(location, length, true)
-      visitedAncestors = new Set(@getHoistedItem())
-      visibleItemAncestorRanges = []
-      visibleItemStates = []
-      hoistedDepth = @getHoistedItem().depth
+    itemSpansInRange = @itemBuffer.getSpansInRange(location, length, true)
+    visitedAncestors = new Set(@getHoistedItem())
+    visibleItemAncestorRanges = []
+    visibleItemStates = []
+    hoistedDepth = @getHoistedItem().depth
 
-      for eachItemSpan in itemSpansInRange
-        eachItem = eachItemSpan.item
-        visibleItemStates.push
-          depth: eachItem.depth - hoistedDepth
-          gapBefore: not not (eachItem.previousSibling and not @isVisible(eachItem.previousSibling))
-          hasChildren: eachItem.hasChildren
-          collapsed: @isCollapsed(eachItem)
+    for eachItemSpan in itemSpansInRange
+      eachItem = eachItemSpan.item
+      visibleItemStates.push
+        depth: eachItem.depth - hoistedDepth
+        gapBefore: not not (eachItem.previousSibling and not @isVisible(eachItem.previousSibling))
+        hasChildren: eachItem.hasChildren
+        collapsed: @isCollapsed(eachItem)
 
-        ancestor = eachItem.parent
-        while not visitedAncestors.has(ancestor)
-          ancestorLine = @itemBuffer.getLineForItem(ancestor)
-          firstChildLine = @itemBuffer.getLineForItem(@getFirstVisibleChild(ancestor))
-          lastVisibleDescendantLine = @itemBuffer.getLineForItem(@getLastVisibleDescendantOrSelf(ancestor))
-          visibleItemAncestorRanges.push
-            ancestorStart: ancestorLine.getCharacterOffset() + ancestorLine.getTabCount()
-            firstChildStart: firstChildLine.getCharacterOffset()
-            lastVisibleDescendantEnd: lastVisibleDescendantLine.getCharacterOffset() + lastVisibleDescendantLine.getCharacterCount() - 1
-          visitedAncestors.add(ancestor)
-          ancestor = ancestor.parent
+      ancestor = eachItem.parent
+      while not visitedAncestors.has(ancestor)
+        ancestorLine = @itemBuffer.getLineForItem(ancestor)
+        firstChildLine = @itemBuffer.getLineForItem(@getFirstVisibleChild(ancestor))
+        lastVisibleDescendantLine = @itemBuffer.getLineForItem(@getLastVisibleDescendantOrSelf(ancestor))
+        visibleItemAncestorRanges.push
+          ancestorStart: ancestorLine.getCharacterOffset() + ancestorLine.getTabCount()
+          firstChildStart: firstChildLine.getCharacterOffset()
+          lastVisibleDescendantEnd: lastVisibleDescendantLine.getCharacterOffset() + lastVisibleDescendantLine.getCharacterCount() - 1
+        visitedAncestors.add(ancestor)
+        ancestor = ancestor.parent
 
-      if lastItemSpan = itemSpansInRange[itemSpansInRange.length - 1]
-        lastItem = lastItemSpan.item
-        if lastItem.nextSibling and not @isVisible(lastItem.nextSibling)
-          visibleItemStates[visibleItemStates.length - 1].gapAfter = true
-    catch e
+    if lastItemSpan = itemSpansInRange[itemSpansInRange.length - 1]
+      lastItem = lastItemSpan.item
+      if lastItem.nextSibling and not @isVisible(lastItem.nextSibling)
+        visibleItemStates[visibleItemStates.length - 1].gapAfter = true
 
     {} =
       visibleItemAncestorRanges: visibleItemAncestorRanges
@@ -282,6 +283,7 @@ class Editor
     #selectedItemRange = @getSelectedItemRange()
 
     @nativeEditor.nativeTextBufferBeginEditing()
+    @nativeEditor.nativeTextBufferInvalidateDisplay()
     @itemBuffer.isUpdatingIndex++
     if expanded
       # for better animations
@@ -451,6 +453,13 @@ class Editor
       @getLastVisibleDescendantOrSelf lastChild, hoistedItem
     else
       item
+
+  getLastVisibleDescendantLocation: (item, hoistedItem) ->
+    if last = @getLastVisibleDescendantOrSelf(item, hoistedItem)
+      unless last is item
+        if itemSpan = @itemBuffer.getItemSpanForItem(last)
+          return itemSpan.getLocation() + itemSpan.getLength()
+    0
 
   # Public: Returns previous visible branch {Item} relative to given item.
   #
@@ -931,6 +940,8 @@ class NativeEditor
     get: -> @text
 
   nativeTextBufferBeginEditing: ->
+
+  nativeTextBufferInvalidateDisplay: ->
 
   nativeTextBufferReplaceCharactersInRangeWithString: (range, text) ->
     @text = @text.substring(0, range.location) + text + @text.substring(range.location + range.length)
