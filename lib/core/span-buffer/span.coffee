@@ -30,6 +30,9 @@ class Span
   getLength: ->
     @string.length
 
+  getEnd: ->
+    @getLocation() + @getLength()
+
   getString: ->
     @string
 
