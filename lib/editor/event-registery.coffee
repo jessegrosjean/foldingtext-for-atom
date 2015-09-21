@@ -68,9 +68,9 @@ class EventRegistery
   onWillDispatch: (callback) ->
     @emitter.on 'will-dispatch', callback
 
-  handleEvent: (originalEvent) =>
-    eventType = originalEvent.type
-    eventPhase = originalEvent.eventPhase
+  handleEvent: (event) =>
+    eventType = event.type
+    eventPhase = event.eventPhase
     captureListeners = @sortedListenersForEventType eventType, true
     bubbleListeners = @sortedListenersForEventType eventType, false
     listeners = []
@@ -89,29 +89,56 @@ class EventRegistery
     matched = false
     propagationStopped = false
     immediatePropagationStopped = false
-    currentTarget = originalEvent.target
+    currentTarget = event.target
     rootElement = @rootElement
+    {preventDefault, stopPropagation, stopImmediatePropagation, abortKeyBinding} = event
 
-    syntheticEvent = Object.create originalEvent,
-      currentTarget: get: -> currentTarget
-      preventDefault: value: ->
-        originalEvent.preventDefault()
-      stopPropagation: value: ->
-        originalEvent.stopPropagation()
-        propagationStopped = true
-      stopImmediatePropagation: value: ->
-        originalEvent.stopImmediatePropagation()
-        propagationStopped = true
-        immediatePropagationStopped = true
+    Object.defineProperty event, 'preventDefault', value: ->
+      #event.preventDefault()
+      preventDefault.call(this)
+    Object.defineProperty event, 'stopPropagation', value: ->
+      #event.stopPropagation()
+      stopPropagation.call(this)
+      propagationStopped = true
+    Object.defineProperty event, 'stopImmediatePropagation', value: ->
+      #event.stopImmediatePropagation()
+      stopImmediatePropagation.call(this)
+      propagationStopped = true
+      immediatePropagationStopped = true
+    Object.defineProperty event, 'abortKeyBinding', value: ->
+      abortKeyBinding.call(this)
+      #event.abortKeyBinding?()
 
-    @emitter.emit 'will-dispatch', syntheticEvent
+    dispatchedEvent = event
+    ###
+    dispatchedEvent = new CustomEvent(event.type, {bubbles: true, detail: event.detail})
+    Object.defineProperty dispatchedEvent, 'eventPhase', value: Event.BUBBLING_PHASE
+    Object.defineProperty dispatchedEvent, 'currentTarget', get: -> currentTarget
+    Object.defineProperty dispatchedEvent, 'target', value: currentTarget
+    Object.defineProperty dispatchedEvent, 'preventDefault', value: ->
+      event.preventDefault()
+    Object.defineProperty dispatchedEvent, 'stopPropagation', value: ->
+      event.stopPropagation()
+      propagationStopped = true
+    Object.defineProperty dispatchedEvent, 'stopImmediatePropagation', value: ->
+      event.stopImmediatePropagation()
+      propagationStopped = true
+      immediatePropagationStopped = true
+    Object.defineProperty dispatchedEvent, 'abortKeyBinding', value: ->
+      event.abortKeyBinding?()
+
+    for key in Object.keys(event)
+      dispatchedEvent[key] = event[key]
+    ###
+
+    @emitter.emit 'will-dispatch', dispatchedEvent
 
     while currentTarget and currentTarget.webkitMatchesSelector # second condiation a hack.. otherwise error when currentTarget is window
       for eachListener in listeners
         if matchesSelector(currentTarget, eachListener.selector)
           matched = true
           break if immediatePropagationStopped
-          eachListener.callback.call(currentTarget, syntheticEvent)
+          eachListener.callback.call(currentTarget, dispatchedEvent)
 
       break if propagationStopped
       break if currentTarget is rootElement
