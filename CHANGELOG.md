@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.8.1
+
+- Fix #74 for compatibility with Atom 1.0.12 and later.
+
 ## 0.8.0
 
 - Tags are now more readable in dark themes.
