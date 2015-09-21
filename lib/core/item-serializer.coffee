@@ -4,6 +4,7 @@ urls = require './util/urls'
 path = require 'path'
 
 serializations = []
+
 registerSerialization = (serialization) ->
   serialization.priority ?= Number.Infinity
   serializations.push serialization
