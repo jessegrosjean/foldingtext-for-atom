@@ -94,42 +94,18 @@ class EventRegistery
     {preventDefault, stopPropagation, stopImmediatePropagation, abortKeyBinding} = event
 
     Object.defineProperty event, 'preventDefault', value: ->
-      #event.preventDefault()
       preventDefault.call(this)
     Object.defineProperty event, 'stopPropagation', value: ->
-      #event.stopPropagation()
       stopPropagation.call(this)
       propagationStopped = true
     Object.defineProperty event, 'stopImmediatePropagation', value: ->
-      #event.stopImmediatePropagation()
       stopImmediatePropagation.call(this)
       propagationStopped = true
       immediatePropagationStopped = true
     Object.defineProperty event, 'abortKeyBinding', value: ->
       abortKeyBinding.call(this)
-      #event.abortKeyBinding?()
 
     dispatchedEvent = event
-    ###
-    dispatchedEvent = new CustomEvent(event.type, {bubbles: true, detail: event.detail})
-    Object.defineProperty dispatchedEvent, 'eventPhase', value: Event.BUBBLING_PHASE
-    Object.defineProperty dispatchedEvent, 'currentTarget', get: -> currentTarget
-    Object.defineProperty dispatchedEvent, 'target', value: currentTarget
-    Object.defineProperty dispatchedEvent, 'preventDefault', value: ->
-      event.preventDefault()
-    Object.defineProperty dispatchedEvent, 'stopPropagation', value: ->
-      event.stopPropagation()
-      propagationStopped = true
-    Object.defineProperty dispatchedEvent, 'stopImmediatePropagation', value: ->
-      event.stopImmediatePropagation()
-      propagationStopped = true
-      immediatePropagationStopped = true
-    Object.defineProperty dispatchedEvent, 'abortKeyBinding', value: ->
-      event.abortKeyBinding?()
-
-    for key in Object.keys(event)
-      dispatchedEvent[key] = event[key]
-    ###
 
     @emitter.emit 'will-dispatch', dispatchedEvent
 
