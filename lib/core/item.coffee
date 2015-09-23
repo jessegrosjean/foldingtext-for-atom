@@ -371,10 +371,15 @@ class Item
       text.addAttributesInRange(elements, 0, text.length)
     @replaceBodyRange(@bodyString.length, 0, text)
 
-  addBodyHighlightInRange: (attribute, value, index, length) ->
+  addBodyHighlightAttributeInRange: (attribute, value, index, length) ->
     unless @bodyHighlighted
       @bodyHighlighted = @bodyAttributedString.clone()
     @bodyHighlighted.addAttributeInRange(attribute, value, index, length)
+
+  addBodyHighlightAttributesInRange: (attributes, index, length) ->
+    unless @bodyHighlighted
+      @bodyHighlighted = @bodyAttributedString.clone()
+    @bodyHighlighted.addAttributesInRange(attributes, index, length)
 
   ###
   Section: Outline Structure

@@ -60,6 +60,25 @@ class Editor
       @itemBuffer.replaceRange(location, length, string)
       @isUpdatingItemBuffer--
 
+  nativeTextBufferGuideRanges: (location, length) ->
+    itemSpansInRange = @itemBuffer.getSpansInRange(location, length, true)
+    ancestors = new Set(@getHoistedItem())
+    guideRanges = []
+    for eachSpan in itemSpansInRange
+      item = eachSpan.item
+      ancestor = item.parent
+      while not ancestors.has(ancestor)
+        ancestorSpan = @itemBuffer.getItemSpanForItem(ancestor)
+        lastVisibleSpan = @itemBuffer.getItemSpanForItem(@getLastVisibleDescendantOrSelf(ancestor))
+        if ancestorSpan isnt lastVisibleSpan
+          location = ancestorSpan.getLocation()
+          end = lastVisibleSpan.getEnd()
+          guideRanges.push
+            location: location
+            length: end - location
+        ancestor = ancestor.parent
+    guideRanges
+
   nativeTextBufferDrawingStateForRange: (location, length) ->
     itemSpansInRange = @itemBuffer.getSpansInRange(location, length, true)
     visitedAncestors = new Set(@getHoistedItem())
@@ -487,6 +506,12 @@ class Editor
     else
       @getNextVisibleBranch nextBranch, hoistedItem
 
+  getVisibleBodyCharacterRange: (item) ->
+    itemSpan = @itemBuffer.getItemSpanForItem(item)
+    {} =
+      location: itemSpan.getLocation()
+      length: itemSpan.getLength()
+
   getVisibleBranchCharacterRange: (item, hoistedItem) ->
     startItemSpan = @itemBuffer.getItemSpanForItem(item)
     endItemSpan = @itemBuffer.getItemSpanForItem(@getLastVisibleDescendantOrSelf(item, hoistedItem))
@@ -495,12 +520,6 @@ class Editor
     {} =
       location: start
       length: end - start
-
-  getVisibleBodyCharacterRange: (item) ->
-    itemSpan = @itemBuffer.getItemSpanForItem(item)
-    {} =
-      location: itemSpan.getLocation()
-      length: itemSpan.getLength()
 
   ###
   Section: Selection

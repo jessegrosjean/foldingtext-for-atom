@@ -49,17 +49,25 @@ syncAttributeToBody = (item, attribute, value, oldValue) ->
         removeTag(item, attribute.substr(5))
 
 syncBodyToAttributes = (item, oldBody) ->
-  item.setAttribute('data-type', parseType(item.bodyString, item))
+  type = parseType(item.bodyString, item)
+  item.setAttribute('data-type', type)
+
+  if type is 'task'
+    item.addBodyHighlightAttributeInRange('link', 'toggledone', 0, 1)
 
   oldTags = parseTags(oldBody)
   newTags = parseTags item.bodyString, (tag, value, match) ->
     leadingSpace = match[1]
     start = match.index + leadingSpace.length
     length = match[0].length - leadingSpace.length
-    item.addBodyHighlightInRange('tag', '', start, length)
-    item.addBodyHighlightInRange('tagname', '', start + 1, match[2].length)
+    item.addBodyHighlightAttributeInRange('tag', '', start, length)
+    localTagName = tag.substr(5)
+    attributes = tagname: tag, link: "@#{localTagName}"
+    item.addBodyHighlightAttributesInRange(attributes, start + 1, match[2].length)
+
     if value
-      item.addBodyHighlightInRange('tagvalue', '', start + 1 + match[2].length + 1, value.length)
+      attributes = tagvalue: value, link: "@#{localTagName} = #{value}"
+      item.addBodyHighlightAttributesInRange(attributes, start + 1 + match[2].length + 1, value.length)
 
   for tag of oldTags
     unless newTags[tag]?
