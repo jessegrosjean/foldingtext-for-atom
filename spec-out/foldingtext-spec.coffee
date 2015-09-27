@@ -1,12 +1,12 @@
 path = require 'path'
 outlinePath = path.join(__dirname, 'fixtures/outline [loo!]!@#$%^&()-+.ftml')
 
-describe 'FoldingText', ->
+describe 'Birch', ->
   [workspaceElement, activationPromise] = []
 
   beforeEach ->
     workspaceElement = atom.views.getView(atom.workspace)
-    activationPromise = atom.packages.activatePackage('foldingtext-for-atom')
+    activationPromise = atom.packages.activatePackage('birch-for-atom')
 
   it 'should open outline editor in workspace pane', ->
     expect(workspaceElement.querySelector('ft-outline-editor')).not.toExist()
@@ -76,23 +76,23 @@ describe 'FoldingText', ->
           atom.workspace.open(outline.getFileURL(selection: selection)).then ->
             outlineEditor.selection.toString().should.equal('anchor:4,1 focus:4,1')
 
-  describe 'FoldingText Service', ->
-    [foldingTextService] = []
+  describe 'Birch Service', ->
+    [birchService] = []
 
     beforeEach ->
       waitsForPromise ->
         activationPromise.then (pack) ->
-          foldingTextService = pack.mainModule.provideFoldingTextService()
+          birchService = pack.mainModule.provideBirchService()
           atom.workspace.open(outlinePath)
 
     it 'should provide service', ->
-      foldingTextService.should.be.ok
+      birchService.should.be.ok
 
     it 'should expose classes', ->
-      foldingTextService.Item.should.be.ok
-      foldingTextService.Outline.should.be.ok
-      foldingTextService.Mutation.should.be.ok
-      foldingTextService.OutlineEditor.should.be.ok
+      birchService.Item.should.be.ok
+      birchService.Outline.should.be.ok
+      birchService.Mutation.should.be.ok
+      birchService.OutlineEditor.should.be.ok
 
     it 'should get outline editors', ->
-      foldingTextService.getOutlineEditors().length.should.equal(1)
+      birchService.getOutlineEditors().length.should.equal(1)

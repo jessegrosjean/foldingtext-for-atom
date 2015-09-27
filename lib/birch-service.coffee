@@ -2,22 +2,22 @@
 
 {Disposable, CompositeDisposable} = require 'atom'
 
-# Public: This is the object vended by the `foldingtext-service` and the entry
-# point to FoldingText's API.
+# Public: This is the object vended by the `birch-service` and the entry
+# point to Birch's API.
 #
 # ## Example
 #
-# To get an instance of {FoldingTextService} you subscribe to FoldingText using
+# To get an instance of {BirchService} you subscribe to Birch using
 # Atom's [services
 # API](https://atom.io/docs/latest/creating-a-package#interacting-with-other-
-# packages-via-services). First subscibe to `foldingtext-service` in your
+# packages-via-services). First subscibe to `birch-service` in your
 # package's `package.json` and then consume the service in your main module.
 #
 # ```cson
 # "consumedServices": {
-#   "foldingtext-service": {
+#   "birch-service": {
 #     "versions": {
-#       "0": "consumeFoldingTextService"
+#       "0": "consumeBirchService"
 #     }
 #   }
 # },
@@ -26,12 +26,12 @@
 # ```coffeescript
 # {Disposable, CompositeDisposable} = require 'atom'
 #   ...
-#   consumeFoldingTextService: (foldingTextService) ->
-#     @foldingTextService = foldingTextService
+#   consumeBirchService: (birchService) ->
+#     @birchService = birchService
 #     new Disposable =>
-#       @foldingTextService = null
+#       @birchService = null
 # ```
-class FoldingTextService
+class BirchService
 
   ###
   Section: Classes
@@ -182,4 +182,4 @@ class FoldingTextService
     callback @getActiveEditor()?.selection or null
     @onDidChangeActiveEditorSelection callback
 
-module.exports = new FoldingTextService
+module.exports = new BirchService

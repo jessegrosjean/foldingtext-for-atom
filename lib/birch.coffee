@@ -1,7 +1,7 @@
 # Copyright (c) 2015 Jesse Grosjean. All rights reserved.
 
 {Disposable, CompositeDisposable} = require 'atom'
-foldingTextService = require './foldingtext-service'
+birchService = require './birch-service'
 ItemSerializer = null
 Outline = null
 Editor = null
@@ -29,22 +29,22 @@ module.exports =
       type: 'boolean'
       default: true
 
-  provideFoldingTextService: ->
-    foldingTextService
+  provideBirchService: ->
+    birchService
 
   activate: (state) ->
     @subscriptions = new CompositeDisposable
 
     @subscriptions.add atom.commands.add 'atom-workspace', 'outline-editor:new-outline': ->
       atom.workspace.open('outline-editor://new-outline')
-    @subscriptions.add atom.commands.add 'atom-workspace', 'foldingtext:open-users-guide': ->
-      require('shell').openExternal('http://jessegrosjean.gitbooks.io/foldingtext-for-atom-user-s-guide/content/')
-    @subscriptions.add atom.commands.add 'atom-workspace', 'foldingtext:open-support-forum': ->
-      require('shell').openExternal('http://support.foldingtext.com/c/foldingtext-for-atom')
-    @subscriptions.add atom.commands.add 'atom-workspace', 'foldingtext:open-api-reference': ->
-      require('shell').openExternal('http://www.foldingtext.com/foldingtext-for-atom/documentation/api-reference/')
+    @subscriptions.add atom.commands.add 'atom-workspace', 'birch:open-users-guide': ->
+      require('shell').openExternal('http://jessegrosjean.gitbooks.io/birch-for-atom-user-s-guide/content/')
+    @subscriptions.add atom.commands.add 'atom-workspace', 'birch:open-support-forum': ->
+      require('shell').openExternal('http://support.birch.com/c/birch-for-atom')
+    @subscriptions.add atom.commands.add 'atom-workspace', 'birch:open-api-reference': ->
+      require('shell').openExternal('http://www.birch.com/birch-for-atom/documentation/api-reference/')
 
-    @subscriptions.add foldingTextService.observeEditors =>
+    @subscriptions.add birchService.observeEditors =>
       unless @workspaceDisplayedEditor
         require './extensions/ui/popovers'
         #require './extensions/edit-link-popover'
@@ -71,14 +71,14 @@ module.exports =
             new Editor(outline, options)
 
     @subscriptions.add atom.packages.onDidActivatePackage (pack) ->
-      if pack.name is 'foldingtext-for-atom'
+      if pack.name is 'birch-for-atom'
         if process.platform is 'darwin'
           path ?= require('path')
           exec = require('child_process').exec
-          packagePath = atom.packages.getActivePackage('foldingtext-for-atom').path
-          FoldingTextHelperPath = path.join(packagePath, 'native', 'darwin', 'FoldingTextHelper.app')
+          packagePath = atom.packages.getActivePackage('birch-for-atom').path
+          BirchHelperPath = path.join(packagePath, 'native', 'darwin', 'BirchHelper.app')
           lsregister = '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
-          exec "#{lsregister} #{FoldingTextHelperPath}"
+          exec "#{lsregister} #{BirchHelperPath}"
 
     require './text/init'
 

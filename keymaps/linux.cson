@@ -50,7 +50,7 @@
   'ctrl-k ctrl-8': 'editor:fold-at-indent-level-8'
   'ctrl-k ctrl-9': 'editor:fold-at-indent-level-9'
 
-  # FoldingText
+  # Birch
   'ctrl-alt-g': 'outline-editor:group-items'
 
   'ctrl-.': 'outline-editor:toggle-fold-items'

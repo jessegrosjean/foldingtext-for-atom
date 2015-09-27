@@ -154,7 +154,7 @@ deserializeItems = (ftmlString, outline, options) ->
         items.push item
       eachLI = eachLI.nextElementSibling
   else
-    throw new Error('Could not find <ul id="FoldingText"> element.')
+    throw new Error('Could not find <ul id="Birch"> element.')
 
   loadOptions.expanded = Object.keys(expandedItemIDs)
 

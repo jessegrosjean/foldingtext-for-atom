@@ -6,7 +6,7 @@ var path = require("path");
 module.exports = {
   cache: true,
   entry: {
-    'foldingtext': "./lib-browser/foldingtext"
+    'birch': "./lib-browser/birch"
   },
   output: {
     filename: "[name].js",

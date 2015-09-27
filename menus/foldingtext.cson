@@ -17,7 +17,7 @@
   {
     label: 'Packages'
     submenu: [
-      label: 'FoldingText'
+      label: 'Birch'
       submenu: [
         { label: 'New Outline', command: 'outline-editor:new-outline' },
         { type: 'separator' },
@@ -28,9 +28,9 @@
         { label: 'Promote Child Items', command: 'outline-editor:promote-child-items' },
         { label: 'Demote Trailing Items', command: 'outline-editor:demote-trailing-sibling-items' },
         { type: 'separator' },
-        { label: 'User\'s Guide', command: 'foldingtext:open-users-guide' },
-        { label: 'Support Forum', command: 'foldingtext:open-support-forum' },
-        { label: 'API Reference', command: 'foldingtext:open-api-reference' }
+        { label: 'User\'s Guide', command: 'birch:open-users-guide' },
+        { label: 'Support Forum', command: 'birch:open-support-forum' },
+        { label: 'API Reference', command: 'birch:open-api-reference' }
       ]
     ]
   }

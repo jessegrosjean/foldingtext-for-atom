@@ -7,13 +7,13 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
-	<string>FoldingTextHelper</string>
+	<string>BirchHelper</string>
 	<key>CFBundleIdentifier</key>
-	<string>foldingtext.com.FoldingTextHelper</string>
+	<string>birch.com.BirchHelper</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>FoldingTextHelper</string>
+	<string>BirchHelper</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -41,7 +41,7 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>10.10</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2015 FoldingText. All rights reserved.</string>
+	<string>Copyright © 2015 Birch. All rights reserved.</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
@@ -50,11 +50,11 @@
 				<string>public.html</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>FoldingText Markup Language</string>
+			<string>Birch Markup Language</string>
 			<key>UTTypeIconFile</key>
-			<string>FoldingTextDocument</string>
+			<string>BirchDocument</string>
 			<key>UTTypeIdentifier</key>
-			<string>com.foldingtext.ftml</string>
+			<string>com.birch.ftml</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>

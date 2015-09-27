@@ -92,7 +92,7 @@ Because if we do grouping that at the point that we recive the item the fist tim
 
 ## 0.3.1
 
-- Fixed crash started in Atom 0.202.0 by temporarily disabling syntax highlighting of FoldingText's search field.
+- Fixed crash started in Atom 0.202.0 by temporarily disabling syntax highlighting of Birch's search field.
 
 ## 0.3.0
 
@@ -144,7 +144,7 @@ Because if we do grouping that at the point that we recive the item the fist tim
 ## 0.1.0
 
 - Faster loading and activation
-- Added menus at Packages > FoldingText
+- Added menus at Packages > Birch
 - Better error reporting when loading invalid .ftml files.
 - Make 'should' a dependency so specs run when installing from Atom.io
 - Fixed bug that could sometimes make `escape` jump to search field when in text mode.

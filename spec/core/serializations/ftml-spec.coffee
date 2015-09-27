@@ -8,7 +8,7 @@ fixtureAsFTMLString = '''
       <meta charset="UTF-8" />
     </head>
     <body>
-      <ul id="FoldingText">
+      <ul id="Birch">
         <li id="1">
           <p>one</p>
           <ul>
@@ -58,7 +58,7 @@ describe 'FTML Serialization', ->
 
     it 'should throw exception when loading invalid html outline UL child', ->
       ftmlString = '''
-        <ul id="FoldingText">
+        <ul id="Birch">
           <div>bad</div>
         </ul>
       '''
@@ -66,7 +66,7 @@ describe 'FTML Serialization', ->
 
     it 'should throw exception when loading invalid html outline LI child', ->
       ftmlString = '''
-        <ul id="FoldingText">
+        <ul id="Birch">
           <li>bad</li>
         </ul>
       '''
@@ -74,7 +74,7 @@ describe 'FTML Serialization', ->
 
     it 'should throw exception when loading invalid html outline P contents', ->
       ftmlString = '''
-        <ul id="FoldingText">
+        <ul id="Birch">
           <li><p>o<dog>n</dog>e</p></li>
         </ul>
       '''

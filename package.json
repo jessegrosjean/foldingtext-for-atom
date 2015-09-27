@@ -1,6 +1,6 @@
 {
-  "name": "foldingtext-for-atom",
-  "main": "./lib/foldingtext",
+  "name": "birch-for-atom",
+  "main": "./lib/birch",
   "version": "0.9.0",
   "description": "Outline editor with productivity features.",
   "keywords": [
@@ -10,7 +10,7 @@
     "todos",
     "GTD"
   ],
-  "repository": "https://github.com/FoldingText/foldingtext-for-atom",
+  "repository": "https://github.com/Birch/birch-for-atom",
   "license": "Commercial Shared Source",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
@@ -23,10 +23,10 @@
     }
   },
   "providedServices": {
-    "foldingtext-service": {
-      "description": "FoldingText Service",
+    "birch-service": {
+      "description": "Birch Service",
       "versions": {
-        "0.0.1": "provideFoldingTextService"
+        "0.0.1": "provideBirchService"
       }
     }
   },

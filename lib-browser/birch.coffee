@@ -1,4 +1,4 @@
-window.foldingtext = module.exports =
+window.birch = module.exports =
   Item: require '../lib/core/item'
   Editor: require '../lib/core/editor'
   Outline: require '../lib/core/outline'

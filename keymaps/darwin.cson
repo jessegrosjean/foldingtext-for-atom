@@ -70,7 +70,7 @@
   'cmd-k cmd-8': 'editor:fold-at-indent-level-8'
   'cmd-k cmd-9': 'editor:fold-at-indent-level-9'
 
-  # FoldingText
+  # Birch
   'alt-cmd-g': 'outline-editor:group-items'
   'cmd-.': 'outline-editor:toggle-fold-items'
   'cmd->': 'outline-editor:toggle-fully-fold-items'
