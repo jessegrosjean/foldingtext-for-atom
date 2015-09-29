@@ -27,6 +27,7 @@ parseType = (text, item) ->
 
 syncAttributeToBody = (item, attribute, value, oldValue) ->
   if not reservedTags[attribute]
+    startBodyString = item.bodyString
     if attribute is 'data-type'
       # Remove old value syntax
       switch oldValue
@@ -48,6 +49,9 @@ syncAttributeToBody = (item, attribute, value, oldValue) ->
       else
         removeTag(item, attribute.substr(5))
 
+    if startBodyString isnt item.bodyString
+      highlightItemBody(item)
+
 syncBodyToAttributes = (item, oldBody) ->
   type = parseType(item.bodyString, item)
   item.setAttribute('data-type', type)
@@ -56,7 +60,40 @@ syncBodyToAttributes = (item, oldBody) ->
     item.addBodyHighlightAttributeInRange('link', 'toggledone', 0, 1)
 
   oldTags = parseTags(oldBody)
+  newTagMatches = []
   newTags = parseTags item.bodyString, (tag, value, match) ->
+    newTagMatches.push
+      tag: tag
+      value: value
+      match: match
+
+  highlightItemBody(item, type, newTagMatches)
+
+  for tag of oldTags
+    unless newTags[tag]?
+      item.removeAttribute(tag)
+
+  for tag of newTags
+    if newTags[tag] isnt oldTags[tag]
+      item.setAttribute(tag, newTags[tag])
+
+highlightItemBody = (item, type, tagMatches) ->
+  type ?= parseType(item.bodyString, item)
+  if type is 'task'
+    item.addBodyHighlightAttributeInRange('link', 'toggledone', 0, 1)
+
+  unless tagMatches
+    tagMatches = []
+    parseTags item.bodyString, (tag, value, match) ->
+      tagMatches.push
+        tag: tag
+        value: value
+        match: match
+
+  for each in tagMatches
+    tag = each.tag
+    value = each.value
+    match = each.match
     leadingSpace = match[1]
     start = match.index + leadingSpace.length
     length = match[0].length - leadingSpace.length
@@ -68,14 +105,6 @@ syncBodyToAttributes = (item, oldBody) ->
     if value
       attributes = tagvalue: value, link: "@#{localTagName} = #{value}"
       item.addBodyHighlightAttributesInRange(attributes, start + 1 + match[2].length + 1, value.length)
-
-  for tag of oldTags
-    unless newTags[tag]?
-      item.removeAttribute(tag)
-
-  for tag of newTags
-    if newTags[tag] isnt oldTags[tag]
-      item.setAttribute(tag, newTags[tag])
 
 module.exports =
   syncAttributeToBody: syncAttributeToBody

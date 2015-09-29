@@ -1,4 +1,7 @@
 TaskPaperSyncRules = require '../sync-rules/taskpaper-sync-rules'
+require '../sync-rules/taskpaper-commands'
+
+OutlineEditorElement = require './outline-editor-element'
 ItemSerializer = require './item-serializer'
 {CompositeDisposable} = require 'atom'
 ItemBuffer = require './item-buffer'
@@ -9,7 +12,7 @@ _ = require 'underscore-plus'
 assert = require 'assert'
 Item = require './item'
 
-class Editor
+class OutlineEditor
 
   constructor: (outline, @nativeEditor) ->
     @id = shortid()
@@ -882,6 +885,33 @@ class Editor
     undoManager.setActionName('Move Items')
 
   ###
+  Section: Attributes
+  ###
+
+  setAttribute: (items, name, value) ->
+    items ?= @getSelectedItems()
+    selectedItemRange = @getSelectedItemRange()
+    outline = @itemBuffer.outline
+    undoManager = outline.undoManager
+
+    undoManager.beginUndoGrouping()
+    outline.beginChanges()
+    for each in items
+      each.setAttribute(name, value)
+    outline.endChanges()
+    undoManager.endUndoGrouping()
+    undoManager.setActionName('Set Attribute')
+
+    @setSelectedItemRange(selectedItemRange)
+
+  toggleAttribute: (name, value='', items=@getSelectedItems()) ->
+    if items
+      for each in items
+        if each.hasAttribute(name)
+          value = null
+    @setAttribute(items, name, value)
+
+  ###
   Section: Serialization
   ###
 
@@ -897,6 +927,27 @@ class Editor
     outline.root.removeChildren(outline.root.children)
     outline.root.appendChildren(items)
     outline.endChanges()
+
+  ###
+  Section: Commands
+  ###
+
+  performCommand: (commandName, detail) ->
+    atom.commands.dispatch(atom.views.getView(@), commandName, detail)
+
+  ###
+  Section: Delegate
+  ###
+
+  clickedOnLink: (item, link) ->
+    if link is 'toggledone'
+      if item.hasAttribute('data-done')
+        item.removeAttribute('data-done')
+      else
+        item.setAttribute('data-done', '')
+    else
+      @setQuery(link)
+    true
 
   ###
   Section: Scripting
@@ -967,4 +1018,7 @@ class NativeEditor
 
   nativeTextBufferEndEditing: ->
 
-module.exports = Editor
+atom.views.addViewProvider OutlineEditor, (editor) ->
+  new OutlineEditorElement().initialize(editor)
+
+module.exports = OutlineEditor

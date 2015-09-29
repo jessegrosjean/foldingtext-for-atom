@@ -78,6 +78,15 @@ childIndexOfNode = (node) ->
     index++
   index
 
+stopEventPropagation = (commandListeners) ->
+  newCommandListeners = {}
+  for commandName, commandListener of commandListeners
+    do (commandListener) ->
+      newCommandListeners[commandName] = (event) ->
+        event.stopPropagation()
+        commandListener.call(this, event)
+  newCommandListeners
+
 module.exports =
   parents: parents
   shortestPath: shortestPath
@@ -87,3 +96,4 @@ module.exports =
   nodeNextBranch: nodeNextBranch
   lastDescendantNodeOrSelf: lastDescendantNodeOrSelf
   childIndexOfNode: childIndexOfNode
+  stopEventPropagation: stopEventPropagation
