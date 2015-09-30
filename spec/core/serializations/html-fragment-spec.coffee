@@ -14,7 +14,6 @@ describe 'HTML Fragment Serialization', ->
     ItemSerializer.serializeItems([three], null, Constants.HTMLMimeType).should.equal('thr<b>ee</b>')
 
   it 'should throw if asked to serialize more then one item', ->
-    expect(-> ItemSerializer.serializeItems([one], null, Constants.HTMLMimeType)).toThrow(new Error('Inline-HTML serializer can only serialize a single item.'))
     expect(-> ItemSerializer.serializeItems([three, four], null, Constants.HTMLMimeType)).toThrow(new Error('Inline-HTML serializer can only serialize a single item.'))
 
   it 'should deserialize items from text/html fragment string', ->

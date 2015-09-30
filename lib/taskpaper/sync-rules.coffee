@@ -34,14 +34,14 @@ syncAttributeToBody = (item, attribute, value, oldValue) ->
         when 'project'
           item.replaceBodyRange(item.bodyString.length - 1, 1, '')
         when 'task'
-          item.replaceBodyRange(item.bodyString.match(/\s*/)[0].length, 2, '')
+          item.replaceBodyRange(0, 2, '')
 
       # Add new value syntax
       switch value
         when 'project'
           item.replaceBodyRange(item.bodyString.length, 0, ':')
         when 'task'
-          item.replaceBodyRange(item.bodyString.match(/\s*/)[0].length, 0, '- ')
+          item.replaceBodyRange(0, 0, '- ')
 
     else if attribute.indexOf('data-') is 0
       if value isnt null

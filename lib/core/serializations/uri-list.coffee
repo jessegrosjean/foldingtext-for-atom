@@ -1,13 +1,21 @@
 assert = require 'assert'
 
-serializeItems = (items, editor, options) ->
-  lines = []
-  for each in items
-    lines.push "# #{each.bodyHTMLString}"
-    lines.push each.outline.getFileURL
-      selection:
-        focusItem: each
-  lines.join('\n')
+beginSerialization = (items, editor, options, context) ->
+  context.lines = []
+
+beginSerializeItem = (item, options, context) ->
+
+serializeItemBody = (item, bodyAttributedString, options, context) ->
+  context.lines.push("# #{bodyAttributedString.toInlineFTMLString()}")
+  context.lines.join('\n')
+  context.lines.push item.outline.getFileURL
+    selection:
+      focusItem: item
+
+endSerializeItem = (item, options, context) ->
+
+endSerialization = (options, context) ->
+  context.lines.join('\n')
 
 deserializeItems = (uriList, outline, options) ->
   uris = uriList.split('\n')
@@ -28,5 +36,9 @@ deserializeItems = (uriList, outline, options) ->
   items
 
 module.exports =
-  serializeItems: serializeItems
+  beginSerialization: beginSerialization
+  beginSerializeItem: beginSerializeItem
+  serializeItemBody: serializeItemBody
+  endSerializeItem: endSerializeItem
+  endSerialization: endSerialization
   deserializeItems: deserializeItems

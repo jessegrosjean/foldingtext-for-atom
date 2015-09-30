@@ -1,5 +1,4 @@
-TaskPaperSyncRules = require '../sync-rules/taskpaper-sync-rules'
-require '../sync-rules/taskpaper-commands'
+TaskPaper = require '../taskpaper'
 
 OutlineEditorElement = require './outline-editor-element'
 ItemSerializer = require './item-serializer'
@@ -20,13 +19,14 @@ class OutlineEditor
     @isUpdatingItemBuffer = 0
     @subscriptions = new CompositeDisposable
     @itemBuffer = new ItemBuffer(outline, this)
+    outline = @itemBuffer.outline
     @nativeEditor ?= new NativeEditor
     @searchQuery = ''
     @expandedBySearch = null
 
-    @itemBuffer.outline.registerAttributeBodySyncRule(TaskPaperSyncRules)
+    TaskPaper.initOutline(outline)
 
-    @subscriptions.add @itemBuffer.outline.onDidBeginChanges =>
+    @subscriptions.add outline.onDidBeginChanges =>
       @nativeEditor.nativeTextBufferBeginEditing()
 
     @subscriptions.add @itemBuffer.onWillProcessOutlineMutation (mutation) =>
@@ -50,10 +50,10 @@ class OutlineEditor
         @nativeEditor.nativeTextBufferReplaceCharactersInRangeWithString(nsrange, e.insertedString)
         @isUpdatingNativeBuffer--
 
-    @subscriptions.add @itemBuffer.outline.onDidEndChanges =>
+    @subscriptions.add outline.onDidEndChanges =>
       @nativeEditor.nativeTextBufferEndEditing()
 
-    @setHoistedItem(@itemBuffer.outline.root)
+    @setHoistedItem(outline.root)
 
     window.jib = @itemBuffer
 
@@ -219,7 +219,7 @@ class OutlineEditor
     else
       parent = items[0].parent
       if @isVisible(parent)
-        @setSelectedItemRange(parent)
+        @setSelectedItemRange(parent, parent.bodyString.length)
         @fold(undefined, completely)
 
   foldCompletely: (items) ->
@@ -302,8 +302,7 @@ class OutlineEditor
         Array.prototype.push.apply(newItems, each.descendants)
       items = newItems
 
-    #selectedItemRange = @getSelectedItemRange()
-
+    selectedItemRange = @getSelectedItemRange()
     @nativeEditor.nativeTextBufferBeginEditing()
     @nativeEditor.nativeTextBufferInvalidateDisplay()
     @itemBuffer.isUpdatingIndex++
@@ -328,7 +327,7 @@ class OutlineEditor
     @itemBuffer.isUpdatingIndex--
     @nativeEditor.nativeTextBufferEndEditing()
 
-    #@setSelectedItemRange(selectedItemRange)
+    @setSelectedItemRange(selectedItemRange)
 
   _insertVisibleDescendantLines: (item) ->
     if itemSpan = @itemBuffer.getItemSpanForItem(item)
@@ -562,8 +561,8 @@ class OutlineEditor
     @cachedItemRange = null
     @nativeEditor.nativeSelectedRange = ranges[0]
 
-  setSelectedItemRange: (startItem, spanLocation, endItem, endOffset) ->
-    range = @itemBuffer.getRangeFromItemRange(startItem, spanLocation, endItem, endOffset)
+  setSelectedItemRange: (startItem, startOffset, endItem, endOffset) ->
+    range = @itemBuffer.getRangeFromItemRange(startItem, startOffset, endItem, endOffset)
     @setSelectedRange(range)
 
   ###
@@ -915,11 +914,30 @@ class OutlineEditor
   Section: Serialization
   ###
 
-  serialize: (mimeType) ->
-    ItemSerializer.serializeItems(@itemBuffer.outline.root.children, self, 'text/plain')
+  serializeItems: (items, mimeType) ->
+    items ?= @itemBuffer.outline.root.descendants
+    ItemSerializer.serializeItems(items, self, mimeType)
 
-  deserialize: (data, mimeType) ->
-    ItemSerializer.deserializeItems(data, @itemBuffer.outline, 'text/plain')
+  serializeRange: (location, length, mimeType) ->
+    { startItem, startOffset, endItem, endOffset } = @itemBuffer.getItemRange(location, length)
+    items = []
+
+    each = startItem
+    while each
+      items.push(each)
+      if each is endItem
+        each = null
+      else
+        each = @getNextVisibleItem(each)
+
+    ItemSerializer.serializeItems items, @, mimeType,
+      startOffset: startOffset
+      endOffset: endOffset
+
+  deserializeItems: (data, mimeType) ->
+    ItemSerializer.deserializeItems(data, @itemBuffer.outline, mimeType)
+
+  replaceRangeWithItems: (location, length, items) ->
 
   loadItems: (items) ->
     outline = @itemBuffer.outline

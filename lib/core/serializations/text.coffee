@@ -42,34 +42,29 @@ parseTags = (text, callback) ->
 
 # Serialize
 
-serializeItem = (item, includeAttributes) ->
-  text = item.bodyString
-  if includeAttributes
+beginSerialization = (items, editor, options, context) ->
+  context.lines = []
+
+beginSerializeItem = (item, options, context) ->
+
+serializeItemBody = (item, bodyAttributedString, options, context) ->
+  bodyString = bodyAttributedString.string
+  if options.includeAttributes
     encodedAttributes = []
     for name in item.attributeNames
       if (name.indexOf('data-') is 0)
         encodedAttributes.push(encodeTag(name.substr(5), item.getAttribute(name)))
     if encodedAttributes.length
       encodedAttributes = encodedAttributes.join(' ')
-      if text.length
+      if bodyString.length
         encodedAttributes = ' ' + encodedAttributes
-      text += encodedAttributes
-  repeat('\t', item.depth - 1) + text
+      bodyString += encodedAttributes
+  context.lines.push(repeat('\t', item.depth - 1) + bodyString)
 
-serializeItemBranch = (item, includeAttributes, results) ->
-  results.push(serializeItem(item, includeAttributes))
-  each = item.firstChild
-  while each
-    serializeItemBranch(each, includeAttributes, results)
-    each = each.nextSibling
-  results
+endSerializeItem = (item, options, context) ->
 
-serializeItems = (items, editor, options={}) ->
-  includeAttributes = options.includeAttributes ? true
-  lines = []
-  for each in items
-    serializeItemBranch(each, includeAttributes, lines)
-  lines.join('\n')
+endSerialization = (options, context) ->
+  context.lines.join('\n')
 
 # Deserialize
 
@@ -115,5 +110,9 @@ module.exports =
   tagRange: tagRange
   encodeTag: encodeTag
   parseTags: parseTags
-  serializeItems: serializeItems
+  beginSerialization: beginSerialization
+  beginSerializeItem: beginSerializeItem
+  serializeItemBody: serializeItemBody
+  endSerializeItem: endSerializeItem
+  endSerialization: endSerialization
   deserializeItems: deserializeItems

@@ -46,7 +46,7 @@ describe 'FTML Serialization', ->
 
   describe 'Serialization', ->
     it 'should serialize items to FTML string', ->
-      ItemSerializer.serializeItems(outline.root.children).should.equal(fixtureAsFTMLString)
+      ItemSerializer.serializeItems(outline.root.descendants).should.equal(fixtureAsFTMLString)
 
   describe 'Deserialization', ->
     it 'should load items from FTML string', ->

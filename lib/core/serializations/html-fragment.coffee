@@ -3,10 +3,18 @@ assert = require 'assert'
 # This only suports fragments of inline html on a single line. Otherwise it
 # throws so that the "text" serializer has a chance to process the outline.
 
-serializeItems = (items, editor, options) ->
+beginSerialization = (items, editor, options, context) ->
   assert.ok(items.length is 1, 'Inline-HTML serializer can only serialize a single item.')
-  assert.ok(not items[0].firstChild, 'Inline-HTML serializer can only serialize a single item.')
-  items[0].bodyHTMLString
+
+beginSerializeItem = (item, options, context) ->
+
+serializeItemBody = (item, bodyAttributedString, options, context) ->
+  context.result = bodyAttributedString.toInlineFTMLString()
+
+endSerializeItem = (item, options, context) ->
+
+endSerialization = (options, context) ->
+  context.result
 
 deserializeItems = (html, outline, options) ->
   html = html.replace(/(\r\n|\n|\r)/gm,'\n')
@@ -19,5 +27,9 @@ deserializeItems = (html, outline, options) ->
   [item]
 
 module.exports =
-  serializeItems: serializeItems
+  beginSerialization: beginSerialization
+  beginSerializeItem: beginSerializeItem
+  serializeItemBody: serializeItemBody
+  endSerializeItem: endSerializeItem
+  endSerialization: endSerialization
   deserializeItems: deserializeItems

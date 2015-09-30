@@ -4,15 +4,21 @@ urls = require './util/urls'
 path = require 'path'
 
 serializations = []
+defaultSerialization = null
 
-registerSerialization = (serialization) ->
+registerSerialization = (serialization, makeDefault) ->
+  if makeDefault
+    defaultSerialization = serialization
   serialization.priority ?= Number.Infinity
   serializations.push serialization
   serializations.sort (a, b) ->
     a.priority - b.priority
 
 getSerializationsForMimeType = (mimeType) ->
-  (each for each in serializations when mimeType in each.mimeTypes)
+  results = (each.serialization for each in serializations when mimeType in each.mimeTypes)
+  if results.length is 0 and defaultSerialization?
+    results.push(defaultSerialization.serialization)
+  results
 
 getMimeTypeForURI = (uri) ->
   uri ?= ''
@@ -25,9 +31,36 @@ getMimeTypeForURI = (uri) ->
 Section: Items
 ###
 
-serializeItems = (items, editor, mimeType, options) ->
+serializeItems = (items, editor, mimeType, options={}) ->
   mimeType ?= Constants.FTMLMimeType
-  getSerializationsForMimeType(mimeType)[0].serializeItems(items, editor, options)
+  serialization = getSerializationsForMimeType(mimeType)[0]
+
+  firstItem = items[0]
+  lastItem = items[items.length - 1]
+  startOffset = options.startOffset ? 0
+  endOffset = options.endOffset ? lastItem.bodyString.length
+  itemStack = []
+  context = {}
+
+  serialization.beginSerialization(items, editor, options, context)
+
+  for each in items
+    while itemStack[itemStack.length - 1]?.depth >= each.depth
+      serialization.endSerializeItem(itemStack.pop(), options, context)
+
+    itemStack.push(each)
+    serialization.beginSerializeItem(each, options, context)
+    itemBody = each.bodyAttributedString
+    if each is firstItem
+      itemBody = itemBody.subattributedString(startOffset, itemBody.length - startOffset)
+    else if each is lastItem
+      itemBody = itemBody.subattributedString(0, endOffset)
+    serialization.serializeItemBody(each, itemBody, options, context)
+
+  while itemStack.length
+    serialization.endSerializeItem(itemStack.pop(), options, context)
+
+  serialization.endSerialization(options, context)
 
 deserializeItems = (itemsData, outline, mimeType, options) ->
   mimeType ?= Constants.FTMLMimeType
@@ -67,46 +100,31 @@ registerSerialization
   priority: 0
   extensions: ['ftml']
   mimeTypes: [Constants.FTMLMimeType]
-  serializeItems: (items, editor) ->
-    require('./serializations/ftml').serializeItems(items, editor)
-  deserializeItems: (itemsData, outline) ->
-    require('./serializations/ftml').deserializeItems(itemsData, outline)
+  serialization: require('./serializations/ftml')
 
 registerSerialization
   priority: 1
   extensions: ['opml']
   mimeTypes: [Constants.OPMLMimeType]
-  serializeItems: (items, editor) ->
-    require('./serializations/opml').serializeItems(items, editor)
-  deserializeItems: (itemsData, outline) ->
-    require('./serializations/opml').deserializeItems(itemsData, outline)
+  serialization: require('./serializations/opml')
 
 registerSerialization
   priority: 2
   extensions: []
   mimeTypes: [Constants.HTMLMimeType]
-  serializeItems: (items, editor) ->
-    require('./serializations/html-fragment').serializeItems(items, editor)
-  deserializeItems: (itemsData, outline) ->
-    require('./serializations/html-fragment').deserializeItems(itemsData, outline)
+  serialization: require('./serializations/html-fragment')
 
 registerSerialization
   priority: 3
   extensions: []
   mimeTypes: [Constants.URIListMimeType]
-  serializeItems: (items, editor) ->
-    require('./serializations/uri-list').serializeItems(items, editor)
-  deserializeItems: (itemsData, outline) ->
-    require('./serializations/uri-list').deserializeItems(itemsData, outline)
+  serialization: require('./serializations/uri-list')
 
 registerSerialization
   priority: 4
   extensions: []
   mimeTypes: [Constants.TEXTMimeType]
-  serializeItems: (items, editor) ->
-    require('./serializations/text').serializeItems(items, editor)
-  deserializeItems: (itemsData, outline) ->
-    require('./serializations/text').deserializeItems(itemsData, outline)
+  serialization: require('./serializations/text')
 
 module.exports =
   registerSerialization: registerSerialization

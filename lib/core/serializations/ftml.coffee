@@ -3,12 +3,22 @@ Constants = require '../constants'
 dom = require '../util/dom'
 assert = require 'assert'
 
-serializeItems = (items, editor, options) ->
-  htmlDocument = document.implementation.createHTMLDocument()
-  loadedFTMLHead = items[0].outline.loadOptions?.loadedFTMLHead
-  rootUL = htmlDocument.createElement('ul')
-  style = document.createElement('style')
-  head = htmlDocument.head
+beginSerialization = (items, editor, options, context) ->
+  context.document = document.implementation.createHTMLDocument()
+  context.elementStack = []
+
+  context.topElement = ->
+    @elementStack[@elementStack.length - 1]
+  context.popElement = ->
+    @elementStack.pop()
+  context.pushElement = (element) ->
+    @elementStack.push(element)
+
+  rootUL = context.document.createElement('ul')
+  rootUL.id = Constants.RootID
+  context.document.documentElement.lastChild.appendChild(rootUL)
+  context.pushElement(rootUL)
+  head = context.document.head
   expandedIDs = []
 
   if editor
@@ -19,51 +29,54 @@ serializeItems = (items, editor, options) ->
           expandedIDs.push each.id
         each = each.nextItem
 
+  loadedFTMLHead = items[0].outline.loadOptions?.loadedFTMLHead
   if loadedFTMLHead
     for each in loadedFTMLHead.children
       if (each.tagName is 'META' and each.hasAttribute('charset')) or
          (each.tagName is 'META' and each.name is 'expandedItems')
         # Ignore, will write these values ourselves
       else
-        head.appendChild(htmlDocument.importNode(each, true))
+        head.appendChild(context.document.importNode(each, true))
 
   if expandedIDs.length
-    expandedMeta = htmlDocument.createElement 'meta'
+    expandedMeta = context.document.createElement 'meta'
     expandedMeta.name = 'expandedItems'
     expandedMeta.content = expandedIDs.join ' '
     head.appendChild expandedMeta
 
-  encodingMeta = htmlDocument.createElement 'meta'
+  encodingMeta = context.document.createElement 'meta'
   encodingMeta.setAttribute 'charset', 'UTF-8'
   head.appendChild encodingMeta
 
-  rootUL.id = Constants.RootID
-  htmlDocument.documentElement.lastChild.appendChild rootUL
+beginSerializeItem = (item, options, context) ->
+  parentElement = context.topElement()
+  if parentElement.tagName is 'LI'
+    context.popElement()
+    ulElement = context.document.createElement('ul')
+    parentElement.appendChild(ulElement)
+    parentElement = ulElement
+    context.pushElement(ulElement)
 
-  itemToFTML = (item) ->
-    liElement = htmlDocument.createElement('li')
-    liElement.setAttribute 'id', item.id
-    for eachName in item.attributeNames
-      liElement.setAttribute eachName, item.getAttribute(eachName)
+  liElement = context.document.createElement('li')
+  liElement.setAttribute 'id', item.id
+  for eachName in item.attributeNames
+    liElement.setAttribute eachName, item.getAttribute(eachName)
+  parentElement.appendChild(liElement)
 
-    pElement = htmlDocument.createElement('p')
-    pElement.innerHTML = item.bodyHTMLString
-    liElement.appendChild(pElement)
+  context.pushElement(liElement)
 
-    if current = item.firstChild
-      ulElement = htmlDocument.createElement('ul')
-      liElement.appendChild(ulElement)
-      while current
-        childLi = itemToFTML current
-        ulElement.appendChild childLi
-        current = current.nextSibling
-    liElement
+serializeItemBody = (item, bodyAttributedString, options, context) ->
+  liElement = context.topElement()
+  pElement = context.document.createElement('p')
+  pElement.innerHTML = bodyAttributedString.toInlineFTMLString()
+  liElement.appendChild(pElement)
 
-  for each in items
-    rootUL.appendChild itemToFTML(each)
+endSerializeItem = (item, options, context) ->
+  context.popElement()
 
-  require('./tidy-dom')(htmlDocument.documentElement, '\n')
-  new XMLSerializer().serializeToString(htmlDocument)
+endSerialization = (options, context) ->
+  require('./tidy-dom')(context.document.documentElement, '\n')
+  result = new XMLSerializer().serializeToString(context.document)
 
 cleanFTMLDOM = (element) ->
   each = element
@@ -161,5 +174,9 @@ deserializeItems = (ftmlString, outline, options) ->
   items
 
 module.exports =
-  serializeItems: serializeItems
+  beginSerialization: beginSerialization
+  beginSerializeItem: beginSerializeItem
+  serializeItemBody: serializeItemBody
+  endSerializeItem: endSerializeItem
+  endSerialization: endSerialization
   deserializeItems: deserializeItems

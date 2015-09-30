@@ -1,21 +1,32 @@
 assert = require 'assert'
 
-serializeItems = (items, editor, options) ->
-  opmlDocumentument = document.implementation.createDocument(null, 'opml', null)
-  loadedOPMLHead = items[0].outline.loadOptions?.loadedOPMLHead
-  headElement = opmlDocumentument.createElement('head')
-  bodyElement = opmlDocumentument.createElement('body')
-  documentElement = opmlDocumentument.documentElement
+beginSerialization = (items, editor, options, context) ->
+  context.document = document.implementation.createDocument(null, 'opml', null)
+  context.elementStack = []
+
+  context.topElement = ->
+    @elementStack[@elementStack.length - 1]
+  context.popElement = ->
+    @elementStack.pop()
+  context.pushElement = (element) ->
+    @elementStack.push(element)
+
+  headElement = context.document.createElement('head')
+  bodyElement = context.document.createElement('body')
+  documentElement = context.document.documentElement
 
   documentElement.setAttribute('version', '2.0')
   documentElement.appendChild(headElement)
+  documentElement.appendChild(bodyElement)
+  context.pushElement(bodyElement)
 
+  loadedOPMLHead = items[0].outline.loadOptions?.loadedOPMLHead
   if loadedOPMLHead
     for each in loadedOPMLHead.children
       if each.tagName.toLowerCase() is 'expansionstate'
         # Ignore, will write these values ourselves
       else
-        headElement.appendChild(opmlDocumentument.importNode(each, true))
+        headElement.appendChild(context.document.importNode(each, true))
 
   if editor
     lastVisibleLineNumber = 0
@@ -32,38 +43,36 @@ serializeItems = (items, editor, options) ->
 
     for each in items
       lastVisibleLineNumber = calculateExpandedLines(each, each.nextBranch)
-    expansionStateElement = opmlDocumentument.createElement('expansionState')
+    expansionStateElement = context.document.createElement('expansionState')
     expansionStateElement.textContent = expandedLines.join(',')
     headElement.appendChild(expansionStateElement)
 
-  itemToOPML = (item) ->
-    outlineElement = opmlDocumentument.createElementNS(null, 'outline')
-    outlineElement.setAttribute 'id', item.id
-    outlineElement.setAttribute 'text', item.bodyHTMLString
-    for eachName in item.attributeNames
-      unless eachName is 'id' or eachName is 'text'
-        opmlName = eachName
-        if opmlName.indexOf('data-') is 0
-          opmlName = opmlName.substr(5)
-          opmlValue = item.getAttribute(eachName)
-          if opmlName is 'created' or opmlName is 'modified'
-            opmlValue = item.getAttribute(eachName, false, Date).toGMTString()
+beginSerializeItem = (item, options, context) ->
+  parentElement = context.topElement()
+  outlineElement = context.document.createElementNS(null, 'outline')
+  outlineElement.setAttribute 'id', item.id
+  for eachName in item.attributeNames
+    unless eachName is 'id' or eachName is 'text'
+      opmlName = eachName
+      if opmlName.indexOf('data-') is 0
+        opmlName = opmlName.substr(5)
+        opmlValue = item.getAttribute(eachName)
+        if opmlName is 'created' or opmlName is 'modified'
+          opmlValue = item.getAttribute(eachName, false, Date).toGMTString()
+      outlineElement.setAttribute opmlName, opmlValue
+  parentElement.appendChild(outlineElement)
+  context.pushElement(outlineElement)
 
-        outlineElement.setAttribute opmlName, opmlValue
+serializeItemBody = (item, bodyAttributedString, options, context) ->
+  outlineElement = context.topElement()
+  outlineElement.setAttribute 'text', bodyAttributedString.toInlineFTMLString()
 
-    if current = item.firstChild
-      while current
-        childOutline = itemToOPML current
-        outlineElement.appendChild childOutline
-        current = current.nextSibling
-    outlineElement
+endSerializeItem = (item, options, context) ->
+  context.popElement()
 
-  for each in items
-    bodyElement.appendChild itemToOPML(each)
-  documentElement.appendChild bodyElement
-
-  require('./tidy-dom')(opmlDocumentument.documentElement, '\n')
-  new XMLSerializer().serializeToString documentElement
+endSerialization = (options, context) ->
+  require('./tidy-dom')(context.document.documentElement, '\n')
+  result = new XMLSerializer().serializeToString(context.document)
 
 deserializeItems = (opml, outline, options) ->
   opmlDocument = (new DOMParser()).parseFromString(opml, 'text/xml')
@@ -137,5 +146,9 @@ deserializeItems = (opml, outline, options) ->
   items
 
 module.exports =
-  serializeItems: serializeItems
+  beginSerialization: beginSerialization
+  beginSerializeItem: beginSerializeItem
+  serializeItemBody: serializeItemBody
+  endSerializeItem: endSerializeItem
+  endSerialization: endSerialization
   deserializeItems: deserializeItems

@@ -158,7 +158,7 @@ class ItemBuffer extends LineBuffer
       startItem = visibleStartItem
       unless startItem
         return location: 0, length: 0
-      startOffset = 0
+      startOffset = startItem.bodyString.length
 
     visibleEndItem = endItem
     while visibleEndItem and not @isVisible(visibleEndItem)
@@ -167,12 +167,17 @@ class ItemBuffer extends LineBuffer
       endItem = visibleEndItem
       unless endItem
         return location: 0, length: 0
-      endOffset = 0
+      endOffset = endItem.bodyString.length
 
     startOffset ?= 0
+    if startOffset > startItem.bodyString.length
+      startOffset = startItem.bodyString.length
+
     start = @getItemSpanForItem(startItem).getLocation() + startOffset
     if endItem
       endOffset ?= 0
+      if endOffset > endItem.bodyString.length
+        endOffset = endItem.bodyString.length
       end = @getItemSpanForItem(endItem).getLocation() + endOffset
     else
       end = start

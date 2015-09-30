@@ -1,5 +1,5 @@
-TaskPaperSyncRules = require '../../lib/sync-rules/taskpaper-sync-rules'
 loadOutlineFixture = require '../load-outline-fixture'
+TaskPaper = require '../../lib/taskpaper'
 Outline = require '../../lib/core/outline'
 
 describe 'TaskPaper Sync Rules', ->
@@ -7,7 +7,7 @@ describe 'TaskPaper Sync Rules', ->
 
   beforeEach ->
     {outline, root, one, two, three, four, five, six} = loadOutlineFixture()
-    outline.registerAttributeBodySyncRule(TaskPaperSyncRules)
+    TaskPaper.initOutline(outline)
 
   describe 'Body text to attributes', ->
 

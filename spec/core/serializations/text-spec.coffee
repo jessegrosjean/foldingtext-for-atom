@@ -19,7 +19,7 @@ describe 'TEXT Serialization', ->
     {outline, root, one, two, three, four, five, six} = loadOutlineFixture()
 
   it 'should serialize items to TEXT string', ->
-    ItemSerializer.serializeItems(outline.root.children, null, Constants.TEXTMimeType).should.equal(fixtureAsTextString)
+    ItemSerializer.serializeItems(outline.root.descendants, null, Constants.TEXTMimeType, includeAttributes: true).should.equal(fixtureAsTextString)
 
   it 'should deserialize items from TEXT string', ->
     one = ItemSerializer.deserializeItems(fixtureAsTextString, outline, Constants.TEXTMimeType)[0]
