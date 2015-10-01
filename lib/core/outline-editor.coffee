@@ -65,7 +65,8 @@ class OutlineEditor
 
   nativeTextBufferGuideRanges: (location, length) ->
     itemSpansInRange = @itemBuffer.getSpansInRange(location, length, true)
-    ancestors = new Set(@getHoistedItem())
+    ancestors = new Set()
+    ancestors.add(@getHoistedItem())
     guideRanges = []
     for eachSpan in itemSpansInRange
       item = eachSpan.item
