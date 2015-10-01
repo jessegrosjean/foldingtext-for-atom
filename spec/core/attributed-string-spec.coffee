@@ -220,7 +220,7 @@ describe 'AttributedString', ->
       attributedString.addAttributeInRange('age', '35', 3, 5)
 
       attributedString.getAttributesAtIndex(0, range).name.should.equal('jesse')
-      (attributedString.getAttributesAtIndex(0, range).age is undefined).should.be.true
+      (attributedString.getAttributesAtIndex(0, range).age is undefined).should.be.true()
       range.location.should.equal(0)
       range.length.should.equal(3)
 
@@ -229,7 +229,7 @@ describe 'AttributedString', ->
       range.location.should.equal(3)
       range.length.should.equal(2)
 
-      (attributedString.getAttributesAtIndex(6, range).name is undefined).should.be.true
+      (attributedString.getAttributesAtIndex(6, range).name is undefined).should.be.true()
       attributedString.getAttributesAtIndex(6, range).age.should.equal('35')
       range.location.should.equal(5)
       range.length.should.equal(3)

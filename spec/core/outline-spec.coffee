@@ -12,7 +12,7 @@ describe 'Outline', ->
 
   it 'should create item', ->
     item = outline.createItem('hello')
-    item.isInOutline.should.be.false
+    item.isInOutline.should.be.false()
 
   it 'should get item by id', ->
     item = outline.createItem('hello')
@@ -21,7 +21,7 @@ describe 'Outline', ->
 
   it 'should copy item', ->
     oneCopy = outline.cloneItem(one)
-    oneCopy.isInOutline.should.be.false
+    oneCopy.isInOutline.should.be.false()
     oneCopy.id.should.not.equal(one.id)
     oneCopy.bodyString.should.equal('one')
     oneCopy.firstChild.bodyString.should.equal('two')
@@ -34,7 +34,7 @@ describe 'Outline', ->
     outline2 = new Outline()
     oneImport = outline2.importItem(one)
     oneImport.outline.should.equal(outline2)
-    oneImport.isInOutline.should.be.false
+    oneImport.isInOutline.should.be.false()
     oneImport.id.should.equal(one.id)
     oneImport.bodyString.should.equal('one')
     oneImport.firstChild.bodyString.should.equal('two')

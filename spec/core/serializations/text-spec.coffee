@@ -25,7 +25,7 @@ describe 'TEXT Serialization', ->
     one = ItemSerializer.deserializeItems(fixtureAsTextString, outline, Constants.TEXTMimeType)[0]
     one.bodyString.should.equal('one')
     one.descendants.length.should.equal(5)
-    three.hasAttribute('data-t').should.be.true
-    four.hasAttribute('data-t').should.be.true
+    three.hasAttribute('data-t').should.be.true()
+    four.hasAttribute('data-t').should.be.true()
     five.bodyString.should.equal('five')
     six.getAttribute('data-t').should.equal('23')

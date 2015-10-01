@@ -18,7 +18,7 @@ describe 'Item', ->
     item = outline.createItem('hello')
     outline.root.appendChild(item)
     item.parent.should.equal(outline.root)
-    item.isInOutline.should.be.true
+    item.isInOutline.should.be.true()
 
   it 'should delete item', ->
     two.removeFromParent()
