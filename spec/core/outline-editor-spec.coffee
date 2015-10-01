@@ -141,6 +141,14 @@ describe 'OutlineEditor', ->
       editor.getSelectedRange().should.eql(location: 5, length: 0)
       expect(itemBuffer.getString()).toEqual('one\n\ntwo\nthree\nfour\nfive\nsix')
 
+  describe 'Serialize', ->
+
+    it 'should serialize range in single item', ->
+      editor.serializeRange(0, 1, 'text/plain').should.equal('o')
+
+    it 'should serialize range accross multiple items', ->
+      editor.serializeRange(2, 4, 'text/plain').should.equal('e\n\ttw')
+
   describe 'Organize', ->
 
     describe 'Move Lines', ->

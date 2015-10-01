@@ -39,26 +39,32 @@ serializeItems = (items, editor, mimeType, options={}) ->
   lastItem = items[items.length - 1]
   startOffset = options.startOffset ? 0
   endOffset = options.endOffset ? lastItem.bodyString.length
-  itemStack = []
   context = {}
 
   serialization.beginSerialization(items, editor, options, context)
 
-  for each in items
-    while itemStack[itemStack.length - 1]?.depth >= each.depth
+  if items.length is 1
+    serialization.beginSerializeItem(items[0], options, context)
+    serialization.serializeItemBody(items[0], items[0].bodyAttributedString.subattributedString(startOffset, endOffset - startOffset), options, context)
+    serialization.endSerializeItem(items[0], options, context)
+  else
+    itemStack = []
+    for each in items
+      while itemStack[itemStack.length - 1]?.depth >= each.depth
+        serialization.endSerializeItem(itemStack.pop(), options, context)
+
+      itemStack.push(each)
+      serialization.beginSerializeItem(each, options, context)
+      itemBody = each.bodyAttributedString
+
+      if each is firstItem
+        itemBody = itemBody.subattributedString(startOffset, itemBody.length - startOffset)
+      else if each is lastItem
+        itemBody = itemBody.subattributedString(0, endOffset)
+      serialization.serializeItemBody(each, itemBody, options, context)
+
+    while itemStack.length
       serialization.endSerializeItem(itemStack.pop(), options, context)
-
-    itemStack.push(each)
-    serialization.beginSerializeItem(each, options, context)
-    itemBody = each.bodyAttributedString
-    if each is firstItem
-      itemBody = itemBody.subattributedString(startOffset, itemBody.length - startOffset)
-    else if each is lastItem
-      itemBody = itemBody.subattributedString(0, endOffset)
-    serialization.serializeItemBody(each, itemBody, options, context)
-
-  while itemStack.length
-    serialization.endSerializeItem(itemStack.pop(), options, context)
 
   serialization.endSerialization(options, context)
 
