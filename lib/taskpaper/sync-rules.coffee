@@ -100,7 +100,7 @@ highlightItemBody = (item, type, tagMatches) ->
     item.addBodyHighlightAttributeInRange('tag', '', start, length)
     localTagName = tag.substr(5)
     attributes = tagname: tag, link: "@#{localTagName}"
-    item.addBodyHighlightAttributesInRange(attributes, start + 1, match[2].length)
+    item.addBodyHighlightAttributesInRange(attributes, start, match[2].length + 1)
 
     if value
       attributes = tagvalue: value, link: "@#{localTagName} = #{value}"
