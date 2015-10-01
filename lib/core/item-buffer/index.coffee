@@ -23,6 +23,16 @@ class ItemBuffer extends LineBuffer
     @subscriptions.dispose()
     super()
 
+  beginChanges: ->
+    unless @isChanging()
+      @outline.beginChanges()
+    super()
+
+  endChanges: ->
+    super()
+    unless @isChanging()
+      @outline.endChanges()
+
   ###
   Section: Events
   ###

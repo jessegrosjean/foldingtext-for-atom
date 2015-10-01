@@ -40,6 +40,19 @@ class SpanBuffer extends SpanBranch
     @_getEmitter().on 'did-destroy', callback
 
   ###
+  Section: Changing
+  ###
+
+  isChanging: ->
+    @changing isnt 0
+
+  beginChanges: ->
+    @changing++
+
+  endChanges: ->
+    @changing--
+
+  ###
   Section: Characters
   ###
 
@@ -57,14 +70,14 @@ class SpanBuffer extends SpanBranch
     if location < 0 or (location + length) > @getLength()
       throw new Error("Invalide text range: #{location}-#{location + length}")
 
-    if @emitter and not @changing
+    if @emitter and not @isChanging()
       changeEvent =
         location: location
         replacedLength: length
         insertedString: string
       @emitter.emit 'will-change', changeEvent
 
-    @changing++
+    @beginChanges()
     if @getSpanCount() is 0
       @insertSpans(0, [@createSpan(string)])
     else
@@ -83,7 +96,7 @@ class SpanBuffer extends SpanBranch
           if string
             start = @getSpanInfoAtLocation(location)
             start.span.appendString(string)
-    @changing--
+    @endChanges()
 
     if changeEvent
       @emitter.emit 'did-change', changeEvent
@@ -102,7 +115,7 @@ class SpanBuffer extends SpanBranch
     unless spans.length
       return
 
-    if @emitter and not @changing
+    if @emitter and not @isChanging()
       insertedString = (each.getString() for each in spans).join('')
       changeEvent =
         location: @getSpan(spanIndex)?.getLocation() ? @getLength()
@@ -111,9 +124,9 @@ class SpanBuffer extends SpanBranch
       adjustChangeEvent?(changeEvent)
       @emitter.emit 'will-change', changeEvent
 
-    @changing++
+    @beginChanges()
     super(spanIndex, spans)
-    @changing--
+    @endChanges()
 
     if changeEvent
       @emitter.emit 'did-change', changeEvent
@@ -125,7 +138,7 @@ class SpanBuffer extends SpanBranch
     unless removeCount
       return
 
-    if @emitter and not @changing
+    if @emitter and not @isChanging()
       replacedLength = 0
       @iterateSpans spanIndex, removeCount, (span) ->
         replacedLength += span.getLength()
@@ -136,9 +149,9 @@ class SpanBuffer extends SpanBranch
       adjustChangeEvent?(changeEvent)
       @emitter.emit 'will-change', changeEvent
 
-    @changing++
+    @beginChanges()
     super(spanIndex, removeCount)
-    @changing--
+    @endChanges()
 
     if changeEvent
       @emitter.emit 'did-change', changeEvent
