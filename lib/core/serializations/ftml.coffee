@@ -60,7 +60,8 @@ beginSerializeItem = (item, options, context) ->
   liElement = context.document.createElement('li')
   liElement.setAttribute 'id', item.id
   for eachName in item.attributeNames
-    liElement.setAttribute eachName, item.getAttribute(eachName)
+    eachValue = item.getAttribute(eachName)
+    liElement.setAttribute eachName, eachValue
   parentElement.appendChild(liElement)
 
   context.pushElement(liElement)

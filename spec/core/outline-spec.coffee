@@ -4,8 +4,8 @@ shortid = require '../../lib/core/shortid'
 path = require 'path'
 fs = require 'fs'
 
-describe 'Outline', ->
-  [editor, outline, root, one, two, three, four, five, six] = []
+fdescribe 'Outline', ->
+  [outline, root, one, two, three, four, five, six] = []
 
   beforeEach ->
     {outline, root, one, two, three, four, five, six} = loadOutlineFixture()

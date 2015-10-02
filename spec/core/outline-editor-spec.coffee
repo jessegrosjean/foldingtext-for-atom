@@ -146,8 +146,23 @@ describe 'OutlineEditor', ->
     it 'should serialize range in single item', ->
       editor.serializeRange(0, 1, 'text/plain').should.equal('o')
 
+    it 'should serialize range in single indented item', ->
+      editor.serializeRange(5, 1, 'text/plain').should.equal('w')
+
     it 'should serialize range accross multiple items', ->
       editor.serializeRange(2, 4, 'text/plain').should.equal('e\n\ttw')
+
+    it 'should serialize range accross multiple indented items', ->
+      editor.serializeRange(5, 4, 'text/plain').should.equal('wo\n\tt')
+
+    it 'should replace range with items', ->
+      serialized = editor.serializeRange(4, 10, 'text/plain')
+      deserializedItems = editor.deserializeItems(serialized, 'text/plain')
+      editor.replaceRangeWithItems(4, 10, deserializedItems)
+      itemBuffer.getString().should.equal('one\ntwo\nthree\nfour\nfive\nsix')
+      two.depth.should.equal(2)
+      two.firstChild.depth.should.equal(3)
+      two.lastChild.depth.should.equal(3)
 
   describe 'Organize', ->
 

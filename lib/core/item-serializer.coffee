@@ -39,13 +39,18 @@ serializeItems = (items, editor, mimeType, options={}) ->
   lastItem = items[items.length - 1]
   startOffset = options.startOffset ? 0
   endOffset = options.endOffset ? lastItem.bodyString.length
+  options.baseDepth ?= Number.MAX_VALUE
   context = {}
+
+  for each in items
+    if each.depth < options.baseDepth
+      options.baseDepth = each.depth
 
   serialization.beginSerialization(items, editor, options, context)
 
   if items.length is 1
     serialization.beginSerializeItem(items[0], options, context)
-    serialization.serializeItemBody(items[0], items[0].bodyAttributedString.subattributedString(startOffset, endOffset - startOffset), options, context)
+    serialization.serializeItemBody(items[0], items[0].bodySubattributedString(startOffset, endOffset - startOffset), options, context)
     serialization.endSerializeItem(items[0], options, context)
   else
     itemStack = []

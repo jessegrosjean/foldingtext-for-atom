@@ -56,14 +56,14 @@ class LineBuffer extends SpanBuffer
       if start.span is end.span and lines.length is 1
         start.span.replaceRange(start.location, length, lines[0])
       else
-        endSuffix = end.span.getLineContent().substr(end.location)
+        endSuffix = end.span.getLineContentSuffix(end.location)
         start.span.replaceRange(start.location, start.span.getLength() - start.location, lines.shift())
         @removeSpans(start.spanIndex + 1, end.spanIndex - start.spanIndex)
         insertedLines = (@createLine(each) for each in lines)
         @insertLines(start.spanIndex + 1, insertedLines)
         if endSuffix.length
           lastLine = insertedLines[insertedLines.length - 1] ? start.span
-          lastLine.appendString(endSuffix)
+          lastLine.replaceRange(lastLine.getLineContent().length, 0, endSuffix)
     @endChanges()
 
     if changeEvent

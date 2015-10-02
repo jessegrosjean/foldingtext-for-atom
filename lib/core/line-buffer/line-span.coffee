@@ -9,6 +9,9 @@ class LineSpan extends Span
   getLineContent: ->
     @string
 
+  getLineContentSuffix: (location) ->
+    @getLineContent().substr(location)
+
   getLength: ->
     length = @string.length
     if @isLast

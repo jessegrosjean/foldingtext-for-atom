@@ -104,6 +104,11 @@ describe 'ItemBuffer', ->
       itemBuffer.deleteRange(3, 1)
       itemBuffer.toString().should.equal('(onetwo\n/1)(three\n/3)(four\n/4)(five\n/5)(six/6)')
 
+    it 'removes item when newline is removed, but preserves body attributes', ->
+      itemBuffer.deleteRange(13, 1)
+      itemBuffer.toString().should.equal('(one\n/1)(two\n/2)(threefour\n/3)(five\n/5)(six/6)')
+      three.toString().should.equal('(3) (three)(fo)(u/B:null)(r)')
+
     it 'remove item in outline when span is removed', ->
       itemBuffer.removeSpans(0, 1)
       itemBuffer.toString().should.equal('(two\n/2)(three\n/3)(four\n/4)(five\n/5)(six/6)')

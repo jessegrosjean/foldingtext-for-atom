@@ -136,9 +136,9 @@ describe 'AttributedString', ->
 
     it 'should update attribute runs when attributed string is modified', ->
       attributedString.addAttributeInRange('name', 'jesse', 0, 12)
-      attributedString.replaceRangeWithText(0, 12, 'Hello')
+      attributedString.replaceRange(0, 12, 'Hello')
       attributedString.toString().should.equal('(Hello/name:"jesse")')
-      attributedString.replaceRangeWithText(5, 0, ' World!')
+      attributedString.replaceRange(5, 0, ' World!')
       attributedString.toString().should.equal('(Hello World!/name:"jesse")')
 
     it 'should update attribute runs when node text is paritially updated', ->
@@ -146,22 +146,22 @@ describe 'AttributedString', ->
       attributedString.addAttributeInRange('name', 'joe', 5, 7)
       attributedString.toString(true).should.equal('(Hello/name:"jesse")( world!/name:"joe")')
 
-      attributedString.replaceRangeWithText(3, 5, '')
+      attributedString.replaceRange(3, 5, '')
       attributedString.toString(true).should.equal('(Hel/name:"jesse")(rld!/name:"joe")')
 
-      attributedString.replaceRangeWithText(3, 0, 'lo wo')
+      attributedString.replaceRange(3, 0, 'lo wo')
       attributedString.toString(true).should.equal('(Hello wo/name:"jesse")(rld!/name:"joe")')
 
     it 'should remove leading attribute run if text in run is fully replaced', ->
       attributedString = new AttributedString('\ttwo')
       attributedString.addAttributeInRange('name', 'jesse', 0, 1)
-      attributedString.replaceRangeWithText(0, 1, '')
+      attributedString.replaceRange(0, 1, '')
       attributedString.toString().should.equal('(two)')
 
     it 'should retain attributes of fully replaced range if replacing string length is not zero.', ->
       attributedString = new AttributedString('\ttwo')
       attributedString.addAttributeInRange('name', 'jesse', 0, 1)
-      attributedString.replaceRangeWithText(0, 1, 'h')
+      attributedString.replaceRange(0, 1, 'h')
       attributedString.toString().should.equal('(h/name:"jesse")(two)')
 
     it 'should allow inserting of another attributed string', ->
@@ -169,8 +169,15 @@ describe 'AttributedString', ->
       newString.addAttributeInRange('b', null, 0, 3)
 
       attributedString.addAttributeInRange('i', null, 0, 12)
-      attributedString.replaceRangeWithText(5, 1, newString)
+      attributedString.replaceRange(5, 1, newString)
       attributedString.toString().should.equal('(Hello/i:null)(two/b:null)(world!/i:null)')
+
+    it 'should allow inserting of another attributed string that has attributes into string without attributes', ->
+      newString = new AttributedString('two')
+      newString.addAttributeInRange('b', null, 0, 3)
+
+      attributedString.appendText(newString)
+      attributedString.toString().should.equal('(Hello world!)(two/b:null)')
 
   describe 'Add/Remove/Find Attributes', ->
 
@@ -249,7 +256,7 @@ describe 'AttributedString', ->
     it 'should throw when accessing attributes past end of string', ->
       (-> attributedString.getAttributesAtIndex(11)).should.not.throw()
       (-> attributedString.getAttributesAtIndex(12)).should.throw()
-      attributedString.replaceRangeWithText(0, 12, '')
+      attributedString.replaceRange(0, 12, '')
       (-> attributedString.getAttributesAtIndex(0)).should.throw()
 
   describe 'Inline FTML', ->

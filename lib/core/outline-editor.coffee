@@ -597,7 +597,7 @@ class OutlineEditor
     else if startOffset is lead and (prefix and not content)
       startItem.bodyString = ''
     else
-      splitText = startItem.bodyAttributedString.subattributedString(startOffset, -1)
+      splitText = startItem.bodySubattributedString(startOffset, -1)
       startItem.replaceBodyRange(startOffset, -1, '')
 
       if prefix and splitText.string.indexOf(prefix) isnt 0
@@ -939,6 +939,33 @@ class OutlineEditor
     ItemSerializer.deserializeItems(data, @itemBuffer.outline, mimeType)
 
   replaceRangeWithItems: (location, length, items) ->
+    outline = @itemBuffer.outline
+    undoManager = outline.undoManager
+    undoManager.beginUndoGrouping()
+
+    outline.beginChanges()
+    @itemBuffer.deleteRange(location, length)
+    items = Item.flattenItemHiearchy(items)
+    firstItem = items[0]
+    insertAt = @itemBuffer.getSpanInfoAtLocation(location, true)
+    insertAtItem = insertAt.span.item
+
+    if items.length > 1
+      trailingBody = insertAtItem.bodySubattributedString(insertAt.location, -1)
+      insertAtItem.replaceBodyRange(insertAt.location, -1, firstItem.bodyAttributedString)
+      items = items.slice(1)
+      for each in items
+        each.indent += (insertAtItem.depth - 1)
+      outline.insertItemsBefore(items, insertAtItem.nextSibling)
+      if trailingBody.length
+        items[items.length - 1].appendBody(trailingBody)
+    else
+      insertAtItem.replaceBodyRange(insertAt.location, 0, firstItem.bodyAttributedString)
+
+    outline.endChanges()
+
+    undoManager.endUndoGrouping()
+    undoManager.setActionName('Paste')
 
   loadItems: (items) ->
     outline = @itemBuffer.outline
@@ -960,10 +987,7 @@ class OutlineEditor
 
   clickedOnLink: (item, link) ->
     if link is 'toggledone'
-      if item.hasAttribute('data-done')
-        item.removeAttribute('data-done')
-      else
-        item.setAttribute('data-done', '')
+      @toggleAttribute('data-done', '', [item])
     else
       @setQuery(link)
     true

@@ -59,7 +59,7 @@ serializeItemBody = (item, bodyAttributedString, options, context) ->
       if bodyString.length
         encodedAttributes = ' ' + encodedAttributes
       bodyString += encodedAttributes
-  context.lines.push(repeat('\t', item.depth - 1) + bodyString)
+  context.lines.push(repeat('\t', item.depth - options.baseDepth) + bodyString)
 
 endSerializeItem = (item, options, context) ->
 

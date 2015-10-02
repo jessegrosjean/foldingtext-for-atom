@@ -45,17 +45,17 @@ class AttributedString
   deleteRange: (location, length) ->
     unless length
       return
-    @replaceRangeWithText(location, length, '')
+    @replaceRange(location, length, '')
 
   insertText: (location, text) ->
     unless text.length
       return
-    @replaceRangeWithText(location, 0, text)
+    @replaceRange(location, 0, text)
 
   appendText: (text) ->
     @insertText(@string.length, text)
 
-  replaceRangeWithText: (location, length, text) ->
+  replaceRange: (location, length, text) ->
     if length is -1
       length = @getLength() - location
 
@@ -74,7 +74,8 @@ class AttributedString
     @runBuffer?.replaceRange(location, length, insertString)
 
     if textRunBuffer and text.length
-      @setAttributesInRange({}, location, text.length)
+      if @runBuffer
+        @setAttributesInRange({}, location, text.length)
       insertRuns = []
       textRunBuffer.iterateRuns 0, textRunBuffer.getRunCount(), (run) ->
         insertRuns.push(run.clone())

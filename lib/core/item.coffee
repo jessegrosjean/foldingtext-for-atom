@@ -215,7 +215,7 @@ class Item
     get: ->
       @body.string.toString()
     set: (text='') ->
-      @replaceBodyRange(0, @body.string.length, text)
+      @replaceBodyRange(0, -1, text)
 
   # Public: Body text as immutable {AttributedString}.
   bodyAttributedString: null
@@ -225,7 +225,7 @@ class Item
         return new AttributedString
       @body
     set: (attributedText) ->
-      @replaceBodyRange(0, @body.string.length, attributedText)
+      @replaceBodyRange(0, -1, attributedText)
 
   # Public: Body text (with syntax highlighting) as read-only {AttributedString}.
   bodyHighlightedAttributedString: null
@@ -241,6 +241,9 @@ class Item
       p = document.createElement 'P'
       p.innerHTML = html
       @bodyAttributedString = AttributedString.fromInlineFTML(p)
+
+  bodySubattributedString: (location, length) ->
+    @bodyAttributedString.subattributedString(location, length)
 
   # Public: Returns an {Object} with keys for each attribute at the given
   # character characterIndex, and by reference the range over which the
@@ -350,7 +353,7 @@ class Item
       outline.beginChanges()
       outline.recordChange mutation
 
-    bodyAttributedString.replaceRangeWithText(index, length, insertedText)
+    bodyAttributedString.replaceRange(index, length, insertedText)
     @bodyHighlighted = null
     outline.syncBodyToAttributes(this, oldBody)
 
@@ -675,6 +678,15 @@ class Item
       @_insertGroup(group, groupDepth, stack, roots)
 
     roots
+
+  @flattenItemHiearchy: (items) ->
+    flattenedItems = []
+    for each in items
+      flattenedItems.push(each)
+      if each.hasChildren
+        flattenedItems.push.apply(flattenedItems, each.descendants)
+    each.removeFromParent() for each in flattenedItems
+    flattenedItems
 
   # Removes items efficiently in minimal number of mutations. Assumes that
   # items are in continiguous outline order.
