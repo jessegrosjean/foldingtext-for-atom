@@ -180,13 +180,16 @@ class SpanBuffer extends SpanBranch
       throw new Error("Invalide cursor location: #{location}")
     if chooseRight
       if location is @getLength()
-        lastSpanBuffer = @getSpanCount() - 1
-        lastSpan = @getSpan(lastSpanBuffer)
-        spanInfo =
-          span: lastSpan
-          spanIndex: lastSpanBuffer
-          location: lastSpan.getLength()
-          spanLocation: location - lastSpan.getLength()
+        lastSpanIndex = @getSpanCount() - 1
+        lastSpan = @getSpan(lastSpanIndex)
+        if lastSpan
+          spanInfo =
+            span: lastSpan
+            spanIndex: lastSpanIndex
+            location: lastSpan.getLength()
+            spanLocation: location - lastSpan.getLength()
+        else
+          null
       else
         spanInfo = super(location + 1)
         spanInfo.location--

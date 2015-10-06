@@ -101,20 +101,20 @@ class Outline
     @loadOptions = {}
 
     @undoSubscriptions = new CompositeDisposable
-    @undoSubscriptions.add undoManager.onDidCloseUndoGroup =>
-      unless undoManager.isUndoing or undoManager.isRedoing
-        @changeCount++
+    @undoSubscriptions.add undoManager.onDidCloseUndoGroup (group) =>
+      if not undoManager.isUndoing and not undoManager.isRedoing and group.length > 0
+        @updateChangeCount(Outline.ChangeDone)
         @scheduleModifiedEvents()
     @undoSubscriptions.add undoManager.onWillUndo =>
       @breakUndoCoalescing()
     @undoSubscriptions.add undoManager.onDidUndo =>
-      @changeCount--
+      @updateChangeCount(Outline.ChangeUndone)
       @breakUndoCoalescing()
       @scheduleModifiedEvents()
     @undoSubscriptions.add undoManager.onWillRedo =>
       @breakUndoCoalescing()
     @undoSubscriptions.add undoManager.onDidRedo =>
-      @changeCount++
+      @updateChangeCount(Outline.ChangeRedone)
       @breakUndoCoalescing()
       @scheduleModifiedEvents()
 
@@ -657,6 +657,9 @@ class Outline
         @syncRules = null
 
   recordChange: (mutation) ->
+    unless @undoManager.isUndoRegistrationEnabled()
+      return
+
     if @undoManager.isUndoing or @undoManager.isUndoing
       @breakUndoCoalescing()
 
@@ -716,10 +719,6 @@ class Outline
     return false unless @loaded
     if @file
       @changeCount isnt 0
-      #if @file.existsSync()
-      #  @getText() isnt @cachedDiskContents
-      #else
-      #  @wasModifiedBeforeRemove ? not @isEmpty()
     else
       not @isEmpty()
 
@@ -841,7 +840,7 @@ class Outline
     @file.writeSync text
     @cachedDiskContents = text
     @conflict = false
-    @changeCount = 0
+    @updateChangeCount(Outline.ChangeCleared)
     @emitModifiedStatusChanged(false)
     @emitter.emit 'did-save', {path: filePath}
 
@@ -857,7 +856,7 @@ class Outline
       @loadOptions = items.loadOptions
       @root.appendChildren(items)
     @endChanges()
-    @changeCount = 0
+    @updateChangeCount(Outline.ChangeCleared)
     @emitModifiedStatusChanged(false)
     @emitter.emit 'did-reload'
 
@@ -871,6 +870,17 @@ class Outline
     Q(@file?.read(flushCache) ? "").then (contents) =>
       @cachedDiskContents = contents
       callback?()
+
+  updateChangeCount: (change) ->
+    switch change
+      when Outline.ChangeDone
+        @changeCount++
+      when Outline.ChangeUndone
+        @changeCount--
+      when Outline.ChangeCleared
+        @changeCount = 0
+      when Outline.ChangeRedone
+        @changeCount++
 
   ###
   Section: Debug
@@ -991,5 +1001,13 @@ class Outline
     return if modifiedStatus is @previousModifiedStatus
     @previousModifiedStatus = modifiedStatus
     @emitter.emit 'did-change-modified', modifiedStatus
+
+Outline.ChangeDone = 0
+Outline.ChangeUndone = 1
+Outline.ChangeCleared = 2
+Outline.ChangeReadOtherContents = 3
+Outline.ChangeAutosaved = 4
+Outline.ChangeRedone = 5
+Outline.ChangeDiscardable = 256
 
 module.exports = Outline

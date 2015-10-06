@@ -44,7 +44,7 @@ syncAttributeToBody = (item, attribute, value, oldValue) ->
           item.replaceBodyRange(0, 0, '- ')
 
     else if attribute.indexOf('data-') is 0
-      if value isnt null
+      if value?
         addTag(item, attribute.substr(5), value)
       else
         removeTag(item, attribute.substr(5))
@@ -102,7 +102,7 @@ highlightItemBody = (item, type, tagMatches) ->
     attributes = tagname: tag, link: "@#{localTagName}"
     item.addBodyHighlightAttributesInRange(attributes, start, match[2].length + 1)
 
-    if value
+    if value?.length
       attributes = tagvalue: value, link: "@#{localTagName} = #{value}"
       item.addBodyHighlightAttributesInRange(attributes, start + 1 + match[2].length + 1, value.length)
 

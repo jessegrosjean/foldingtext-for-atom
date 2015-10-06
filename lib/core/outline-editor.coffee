@@ -53,15 +53,35 @@ class OutlineEditor
     @subscriptions.add outline.onDidEndChanges =>
       @nativeEditor.nativeTextBufferEndEditing()
 
+    undoManager = outline.undoManager
+    @subscriptions.add undoManager.onDidCloseUndoGroup (group) =>
+      if not undoManager.isUndoing and not undoManager.isRedoing and group.length > 0
+        @nativeEditor.nativeUpdateChangeCount(Outline.ChangeDone)
+
+    @subscriptions.add undoManager.onDidUndo =>
+      @nativeEditor.nativeUpdateChangeCount(Outline.ChangeUndone)
+
+    @subscriptions.add undoManager.onDidRedo =>
+      @nativeEditor.nativeUpdateChangeCount(Outline.ChangeRedone)
+
     @setHoistedItem(outline.root)
 
     window.jib = @itemBuffer
 
   nativeTextBufferDidReplaceCharactersInRangeWithString: (location, length, string) ->
     if not @isUpdatingNativeBuffer
+      outline = @itemBuffer.outline
+      undoManager = outline.undoManager
+
+      undoManager.beginUndoGrouping()
+
       @isUpdatingItemBuffer++
+      outline.beginChanges()
       @itemBuffer.replaceRange(location, length, string)
+      outline.endChanges()
       @isUpdatingItemBuffer--
+
+      undoManager.endUndoGrouping()
 
   nativeTextBufferGuideRanges: (location, length) ->
     itemSpansInRange = @itemBuffer.getSpansInRange(location, length, true)
@@ -83,6 +103,7 @@ class OutlineEditor
         ancestor = ancestor.parent
     guideRanges
 
+  ###
   nativeTextBufferDrawingStateForRange: (location, length) ->
     itemSpansInRange = @itemBuffer.getSpansInRange(location, length, true)
     visitedAncestors = new Set(@getHoistedItem())
@@ -118,6 +139,7 @@ class OutlineEditor
     {} =
       visibleItemAncestorRanges: visibleItemAncestorRanges
       visibleItemStates: visibleItemStates
+  ###
 
   destroy: ->
     unless @destroyed
@@ -140,7 +162,10 @@ class OutlineEditor
     @itemBuffer.getHoistedItem()
 
   setHoistedItem: (item) ->
+    selected = @getSelectedItemRange()
+    @nativeEditor.nativeHoistIndent = item.depth
     @itemBuffer.setHoistedItem(item)
+    @setSelectedItemRange(selected)
 
   ###
   Section: Matched Items
@@ -327,7 +352,6 @@ class OutlineEditor
         @getItemEditorState(each).expanded = expanded
     @itemBuffer.isUpdatingIndex--
     @nativeEditor.nativeTextBufferEndEditing()
-
     @setSelectedItemRange(selectedItemRange)
 
   _insertVisibleDescendantLines: (item) ->
@@ -533,7 +557,14 @@ class OutlineEditor
     @getSelectedRanges()[0]
 
   getSelectedRanges: ->
-    [@nativeEditor.nativeSelectedRange]
+    selectedRange = @nativeEditor.nativeSelectedRange
+    length = @itemBuffer.getLength()
+    if selectedRange.location > length
+      selectedRange.location = length
+      selectedRange.length = 0
+    if selectedRange.location + selectedRange.length > length
+      selectedRange.length = length - selectedRange.location
+    [selectedRange]
 
   getSelectedItems: ->
     selectedItems = []
@@ -546,11 +577,8 @@ class OutlineEditor
     selectedItems
 
   getSelectedItemRange: ->
-    if @cachedItemRange
-      @cachedItemRange
-    else
-      range = @getSelectedRange()
-      @itemBuffer.getItemRange(range.location, range.length)
+    range = @getSelectedRange()
+    @itemBuffer.getItemRange(range.location, range.length)
 
   # Public: Sets the selection.
   #
@@ -559,12 +587,12 @@ class OutlineEditor
     @setSelectedRanges([range])
 
   setSelectedRanges: (ranges) ->
-    @cachedItemRange = null
     @nativeEditor.nativeSelectedRange = ranges[0]
 
   setSelectedItemRange: (startItem, startOffset, endItem, endOffset) ->
-    range = @itemBuffer.getRangeFromItemRange(startItem, startOffset, endItem, endOffset)
-    @setSelectedRange(range)
+    if startItem
+      range = @itemBuffer.getRangeFromItemRange(startItem, startOffset, endItem, endOffset)
+      @setSelectedRange(range)
 
   ###
   Section: Insert
@@ -687,6 +715,7 @@ class OutlineEditor
       selectedItemRange = @getSelectedItemRange()
       minDepth = @getHoistedItem().depth + 1
       outline = @itemBuffer.outline
+      undoManager = outline.undoManager
       firstItem = items[0]
       endItem = items[items.length - 1]
       referenceItem = null
@@ -708,6 +737,7 @@ class OutlineEditor
           depthDelta = 1
           referenceItem = endItem.nextItem
 
+      undoManager.beginUndoGrouping()
       outline.beginChanges()
 
       expandItems = []
@@ -729,6 +759,7 @@ class OutlineEditor
         disposable.dispose()
 
       @setSelectedItemRange(selectedItemRange)
+      undoManager.endUndoGrouping()
 
   ###
   Section: Move Branches
@@ -890,9 +921,9 @@ class OutlineEditor
 
   setAttribute: (items, name, value) ->
     items ?= @getSelectedItems()
-    selectedItemRange = @getSelectedItemRange()
     outline = @itemBuffer.outline
     undoManager = outline.undoManager
+    selectedItemRange = @getSelectedItemRange()
 
     undoManager.beginUndoGrouping()
     outline.beginChanges()
@@ -916,6 +947,8 @@ class OutlineEditor
   ###
 
   serializeItems: (items, mimeType) ->
+    if items
+      items = Item.flattenItemHiearchy(items, false)
     items ?= @itemBuffer.outline.root.descendants
     ItemSerializer.serializeItems(items, self, mimeType)
 
@@ -949,18 +982,27 @@ class OutlineEditor
     firstItem = items[0]
     insertAt = @itemBuffer.getSpanInfoAtLocation(location, true)
     insertAtItem = insertAt.span.item
+    nextSelection = {}
 
     if items.length > 1
       trailingBody = insertAtItem.bodySubattributedString(insertAt.location, -1)
       insertAtItem.replaceBodyRange(insertAt.location, -1, firstItem.bodyAttributedString)
       items = items.slice(1)
+      lastItem = items[items.length - 1]
+
       for each in items
         each.indent += (insertAtItem.depth - 1)
-      outline.insertItemsBefore(items, insertAtItem.nextSibling)
-      if trailingBody.length
-        items[items.length - 1].appendBody(trailingBody)
+
+      outline.insertItemsBefore(items, insertAtItem.nextItem)
+      lastItem.appendBody(trailingBody)
+      nextSelection.item = lastItem
+      nextSelection.location = lastItem.bodyString.length - trailingBody.length
     else
       insertAtItem.replaceBodyRange(insertAt.location, 0, firstItem.bodyAttributedString)
+      nextSelection.item = insertAtItem
+      nextSelection.location = insertAt.location + firstItem.bodyString.length
+
+    @setSelectedItemRange(nextSelection.item, nextSelection.location)
 
     outline.endChanges()
 
@@ -969,10 +1011,13 @@ class OutlineEditor
 
   loadItems: (items) ->
     outline = @itemBuffer.outline
+    undoManager = outline.undoManager
+    undoManager.disableUndoRegistration()
     outline.beginChanges()
     outline.root.removeChildren(outline.root.children)
     outline.root.appendChildren(items)
     outline.endChanges()
+    undoManager.enableUndoRegistration()
 
   ###
   Section: Commands
@@ -980,6 +1025,9 @@ class OutlineEditor
 
   performCommand: (commandName, detail) ->
     atom.commands.dispatch(atom.views.getView(@), commandName, detail)
+
+  validateCommandMenuItem: (commandName, menuItem) ->
+    atom.views.getView(@).validateCommandMenuItem?(commandName, menuItem)
 
   ###
   Section: Delegate
@@ -1060,6 +1108,8 @@ class NativeEditor
     @text = @text.substring(0, range.location) + text + @text.substring(range.location + range.length)
 
   nativeTextBufferEndEditing: ->
+
+  nativeUpdateChangeCount: ->
 
 atom.views.addViewProvider OutlineEditor, (editor) ->
   new OutlineEditorElement().initialize(editor)

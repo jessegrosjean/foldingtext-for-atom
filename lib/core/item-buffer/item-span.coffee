@@ -5,7 +5,7 @@ class ItemSpan extends LineSpan
 
   constructor: (@item) ->
     super(@item.bodyString)
-    @bodyAttributedString = item.bodyAttributedString.clone()
+    @bodyAttributedString = @item.bodyAttributedString.clone()
 
   clone: ->
     new @constructor(@item.cloneItem(false))

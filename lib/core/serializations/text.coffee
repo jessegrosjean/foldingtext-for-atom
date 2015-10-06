@@ -88,7 +88,7 @@ deserializeItem = (text, outline, extractAttributes) ->
   item
 
 deserializeItems = (text, outline, options={}) ->
-  extractAttributes = options.extractAttributes ? true
+  extractAttributes = options.extractAttributes ? false
 
   text = text.replace(/(\r\n|\n|\r)/gm,'\n')
   text = text.replace('    ','\t')

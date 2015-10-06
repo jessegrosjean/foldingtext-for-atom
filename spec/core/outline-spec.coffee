@@ -4,7 +4,7 @@ shortid = require '../../lib/core/shortid'
 path = require 'path'
 fs = require 'fs'
 
-fdescribe 'Outline', ->
+describe 'Outline', ->
   [outline, root, one, two, three, four, five, six] = []
 
   beforeEach ->
@@ -152,13 +152,21 @@ fdescribe 'Outline', ->
         one.bodyString.should.equal('one')
 
       it 'should coalesce consecutive body text inserts', ->
+        outline.changeCount.should.equal(0)
+        outline.undoManager.beginUndoGrouping()
         one.replaceBodyRange(1, 0, 'a')
+        outline.undoManager.endUndoGrouping()
+        outline.undoManager.beginUndoGrouping()
         one.replaceBodyRange(2, 0, 'b')
+        outline.undoManager.endUndoGrouping()
         one.replaceBodyRange(3, 0, 'c')
+        outline.changeCount.should.equal(1)
         one.bodyString.should.equal('oabcne')
         outline.undoManager.undo()
+        outline.changeCount.should.equal(0)
         one.bodyString.should.equal('one')
         outline.undoManager.redo()
+        outline.changeCount.should.equal(1)
         one.bodyString.should.equal('oabcne')
 
       it 'should coalesce consecutive body text deletes', ->

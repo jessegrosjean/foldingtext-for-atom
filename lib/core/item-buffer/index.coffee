@@ -151,11 +151,15 @@ class ItemBuffer extends LineBuffer
   getItemRange: (location, length) ->
     start = @getSpanInfoAtLocation(location, true)
     end = @getSpanInfoAtLocation(location + length, true)
-    {} =
-      startItem: start.span.item
-      startOffset: start.location
-      endItem: end.span.item
-      endOffset: end.location
+
+    if start
+      {} =
+        startItem: start.span.item
+        startOffset: start.location
+        endItem: end.span.item
+        endOffset: end.location
+    else
+      null
 
   getRangeFromItemRange: (startItem, startOffset, endItem, endOffset) ->
     unless startItem instanceof Item

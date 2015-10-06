@@ -135,12 +135,14 @@ class Item
       return
 
     outline = @outline
+    undoManager = outline.undoManager
     isInOutline = @isInOutline
     if isInOutline
       mutation = Mutation.createAttributeMutation this, name, oldValue
       outline.emitter.emit 'will-change', mutation
       outline.beginChanges()
       outline.recordChange mutation
+      undoManager.disableUndoRegistration()
 
     if value?
       unless @attributes
@@ -155,6 +157,7 @@ class Item
     if isInOutline
       outline.emitter.emit 'did-change', mutation
       outline.endChanges()
+      undoManager.enableUndoRegistration()
 
   # Public: Removes an attribute from the specified item. Attempting to remove
   # an attribute that is not on the item doesn't raise an exception.
@@ -335,6 +338,7 @@ class Item
     oldBody = bodyAttributedString.getString()
     isInOutline = @isInOutline
     outline = @outline
+    undoManager = outline.undoManager
     insertedString
 
     if insertedText instanceof AttributedString
@@ -352,6 +356,7 @@ class Item
       outline.emitter.emit 'will-change', mutation
       outline.beginChanges()
       outline.recordChange mutation
+      undoManager.disableUndoRegistration()
 
     bodyAttributedString.replaceRange(index, length, insertedText)
     @bodyHighlighted = null
@@ -360,6 +365,7 @@ class Item
     if isInOutline
       outline.emitter.emit 'did-change', mutation
       outline.endChanges()
+      undoManager.enableUndoRegistration()
 
   # Public: Append body text.
   #
@@ -679,13 +685,14 @@ class Item
 
     roots
 
-  @flattenItemHiearchy: (items) ->
+  @flattenItemHiearchy: (items, removeFromParents=true) ->
     flattenedItems = []
     for each in items
       flattenedItems.push(each)
       if each.hasChildren
         flattenedItems.push.apply(flattenedItems, each.descendants)
-    each.removeFromParent() for each in flattenedItems
+    if removeFromParents
+      each.removeFromParent() for each in flattenedItems
     flattenedItems
 
   # Removes items efficiently in minimal number of mutations. Assumes that

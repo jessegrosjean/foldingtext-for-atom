@@ -5,17 +5,19 @@ archiveDone = (editor) ->
   outline = editor.itemBuffer.outline
   undoManager = outline.undoManager
   archive = outline.evaluateItemPath("//@text = Archive:")[0]
+  selectedItemRange = editor.getSelectedItemRange()
+  doneItems = Item.getCommonAncestors(outline.evaluateItemPath("//@done except //@text = Archive://@done"))
+
   undoManager.beginUndoGrouping()
   outline.beginChanges()
 
   unless archive
     outline.root.appendChild(archive = outline.createItem('Archive:'))
-
-  for each in Item.getCommonAncestors(outline.evaluateItemPath("//@done except //@text = Archive://@done"))
-    archive.insertChildBefore(each, archive.firstChild)
+  archive.insertChildrenBefore(doneItems, archive.firstChild)
 
   outline.endChanges()
   undoManager.endUndoGrouping()
+  editor.setSelectedItemRange(selectedItemRange)
 
 atom.commands.add 'outline-editor', stopEventPropagation
   'outline-editor:toggle-done': -> @editor.toggleAttribute('data-done')

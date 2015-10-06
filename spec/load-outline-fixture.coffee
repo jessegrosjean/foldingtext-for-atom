@@ -19,6 +19,9 @@ module.exports = ->
   for each in @outlineTemplate.root.children
     outline.root.appendChild(outline.importItem(each))
 
+  outline.changeCount = 0
+  outline.undoManager.removeAllActions()
+
   {} =
       outline: outline
       root: outline.root

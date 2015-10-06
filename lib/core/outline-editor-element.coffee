@@ -19,11 +19,44 @@ class OutlineEditorElement extends HTMLElement
   initialize: (@editor) ->
     this
 
-  getEditor: -> @editor
+  getEditor: ->
+    @editor
+
+  ###
+  Section: Selection
+  ###
+
+  getSelectedRange: ->
+    @getSelectedRanges()[0]
+
+  setSelectedRange: (location, length) ->
+    @setSelectedRanges([location: location, length: length])
+
+  getSelectedRanges: ->
+    []
+
+  setSelectedRanges: (ranges) ->
+
+  ###
+  Section: Selection
+  ###
+
+  beginChanges: ->
+
+  replaceRange: (location, length, string) ->
+
+  endChanges: ->
+
+  validateCommandMenuItem: (commandName, menuItem) ->
+    switch commandName
+      when 'core:undo'
+        @editor.itemBuffer.outline.undoManager.canUndo()
+      when 'core:redo'
+        @editor.itemBuffer.outline.undoManager.canRedo()
 
 atom.commands.add 'outline-editor', stopEventPropagation
-  'core:undo': -> @editor.undo()
-  'core:redo': -> @editor.redo()
+  'core:undo': -> @editor.itemBuffer.outline.undoManager.undo()
+  'core:redo': -> @editor.itemBuffer.outline.undoManager.redo()
 
   'core:cut': (e) -> @editor.cutSelection clipboardAsDatatransfer
   'core:copy': (e) -> @editor.copySelection clipboardAsDatatransfer

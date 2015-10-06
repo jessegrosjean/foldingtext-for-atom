@@ -36,12 +36,6 @@ class UndoManager
   onDidOpenUndoGroup: (callback) ->
     @emitter.on 'did-open-undo-group', callback
 
-  onDidReopenUndoGroup: (callback) ->
-    @emitter.on 'did-reopen-undo-group', callback
-
-  onWillCloseUndoGroup: (callback) ->
-    @emitter.on 'will-close-undo-group', callback
-
   onDidCloseUndoGroup: (callback) ->
     @emitter.on 'did-close-undo-group', callback
 
@@ -54,23 +48,24 @@ class UndoManager
     if @groupingLevel is 1
       @currentGroup = []
       @currentGroup.metadata = metadata or {}
-      @emitter.emit 'did-open-undo-group'
+      @emitter.emit 'did-open-undo-group', @currentGroup
 
   endUndoGrouping: ->
     if @groupingLevel > 0
       @groupingLevel--
       if @groupingLevel is 0
         if @currentGroup.length > 0
+
           if @isUndoing
             @redoStack.push(@currentGroup)
+          else if @isRedoing
+            @undoStack.push(@currentGroup)
           else
             @undoStack.push(@currentGroup)
+            @redoStack = []
 
-        if not @isUndoing and not @isRedoing
-          @redoStack = []
-
+        @emitter.emit 'did-close-undo-group', @currentGroup
         @currentGroup = null
-        @emitter.emit 'did-close-undo-group'
 
   ###
   Section: Undo Registration
