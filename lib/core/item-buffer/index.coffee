@@ -183,13 +183,20 @@ class ItemBuffer extends LineBuffer
         return location: 0, length: 0
       endOffset = endItem.bodyString.length
 
+    unless startItem
+      return location: 0, length: 0
+
     startOffset ?= 0
+    if startOffset is -1
+      startOffset = startItem.bodyString.length
     if startOffset > startItem.bodyString.length
       startOffset = startItem.bodyString.length
 
     start = @getItemSpanForItem(startItem).getLocation() + startOffset
     if endItem
       endOffset ?= 0
+      if endOffset is -1
+        endOffset = endItem.bodyString.length
       if endOffset > endItem.bodyString.length
         endOffset = endItem.bodyString.length
       end = @getItemSpanForItem(endItem).getLocation() + endOffset
