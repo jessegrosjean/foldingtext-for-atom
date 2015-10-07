@@ -226,7 +226,7 @@ class OutlineEditor
   Section: Expand & Collapse
   ###
 
-  fold: (items, completely=false) ->
+  fold: (items, completely=false, allowFoldParent=true) ->
     items ?= @getSelectedItems()
     if not _.isArray(items)
       items = [items]
@@ -242,7 +242,7 @@ class OutlineEditor
 
     if selectionFoldable
       @_setExpandedState items, not selectionFullyExpanded, completely
-    else
+    else if allowFoldParent
       parent = items[0].parent
       if @isVisible(parent)
         @setSelectedItemRange(parent, parent.bodyString.length)
