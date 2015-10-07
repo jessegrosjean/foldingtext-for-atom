@@ -752,6 +752,10 @@ class Item
     isInOutline = @isInOutline
     outline = @outline
 
+    if isInOutline
+      outline.beginChanges()
+      outline.undoManager.beginUndoGrouping()
+
     Item.removeItemsFromParents(children)
 
     if nextSibling
@@ -762,8 +766,6 @@ class Item
     if isInOutline
       mutation = Mutation.createChildrenMutation this, children, [], previousSibling, nextSibling
       outline.emitter.emit 'will-change', mutation
-      outline.beginChanges()
-      outline.undoManager.beginUndoGrouping()
       outline.recordChange mutation
 
     for each, i in children
