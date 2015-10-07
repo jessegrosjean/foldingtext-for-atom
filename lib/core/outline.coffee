@@ -386,6 +386,18 @@ class Outline
         items.push each
     items
 
+  getAttributeNames: ->
+    attributes = new Set()
+    for each in @root.descendants
+      for eachAttributeName in Object.keys(each.attributes)
+        attributes.add(eachAttributeName)
+
+    attributesArray = []
+    attributes.forEach (each) ->
+      attributesArray.push(each)
+    attributesArray.sort()
+    attributesArray
+
   ###
   Section: Creating Items
   ###
