@@ -98,8 +98,10 @@ class OutlineEditor
           location = ancestorSpan.getLocation()
           end = lastVisibleSpan.getEnd()
           guideRanges.push
+            string: ancestorSpan.item.bodyString
             location: location
             length: end - location
+        ancestors.add(ancestor)
         ancestor = ancestor.parent
     guideRanges
 
@@ -580,6 +582,12 @@ class OutlineEditor
     range = @getSelectedRange()
     @itemBuffer.getItemRange(range.location, range.length)
 
+  selectItem: ->
+    @setSelectedItemRange(@getSelectedItemRange().rangeByExtendingToItem())
+
+  selectBranch: ->
+    @setSelectedItemRange(@getSelectedItemRange().rangeByExtendingToBranch())
+
   # Public: Sets the selection.
   #
   # - `range` {Range}
@@ -810,6 +818,21 @@ class OutlineEditor
 
       if newParent
         @moveBranches(items, newParent, newNextSibling)
+
+  deleteItems: (items) ->
+    items ?= @getSelectedItems()
+    if not _.isArray(items)
+      items = [items]
+
+    selectedItemRange = startItem: @getPreviousVisibleItem(items[0]), startOffset: -1
+    outline = @itemBuffer.outline
+    undoManager = outline.undoManager
+    undoManager.beginUndoGrouping()
+    outline.beginChanges()
+    outline.removeItems(items)
+    outline.endChanges()
+    @setSelectedItemRange(selectedItemRange)
+    undoManager.endUndoGrouping()
 
   groupBranches: (items) ->
     items ?= @getSelectedItems()

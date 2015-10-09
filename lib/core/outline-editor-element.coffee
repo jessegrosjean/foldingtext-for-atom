@@ -89,6 +89,7 @@ atom.commands.add 'outline-editor', stopEventPropagation
   'outline-editor:move-branches-right': -> @editor.moveBranchesRight()
   'outline-editor:move-branches-up': -> @editor.moveBranchesUp()
   'outline-editor:move-branches-down': -> @editor.moveBranchesDown()
+  'outline-editor:delete-items': -> @editor.deleteItems()
   'outline-editor:promote-child-branches': -> @editor.promoteChildBranches()
   'outline-editor:demote-trailing-sibling-branches': -> @editor.demoteTrailingSiblingBranches()
   'outline-editor:group-branches': -> @editor.groupBranches()
@@ -143,6 +144,8 @@ atom.commands.add 'outline-editor', stopEventPropagation
   'outline-editor:remove-link': -> @editor.removeLink()
   'outline-editor:show-link-in-file-manager': -> @editor.showLinkInFileManager()
   'outline-editor:open-link-with-file-manager': -> @editor.openLinkWithFileManager()
+  'outline-editor:select-item': -> @editor.selectItem()
+  'outline-editor:select-branch': -> @editor.selectBranch()
   'editor:copy-path': -> @editor.copyPathToClipboard()
 
 module.exports = OutlineEditorElement = document.registerElement 'outline-editor', prototype: OutlineEditorElement.prototype
