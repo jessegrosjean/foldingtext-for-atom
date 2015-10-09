@@ -14,6 +14,9 @@ class ItemSpan extends LineSpan
   Section: Characters
   ###
 
+  getLineContent: ->
+    @string
+
   getLineContentSuffix: (location) ->
     @bodyAttributedString.subattributedString(location, -1)
 

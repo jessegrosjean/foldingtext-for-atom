@@ -21,9 +21,9 @@ class LineSpan extends Span
 
   getString: ->
     if @isLast
-      @string
+      @getLineContent()
     else
-      @string + '\n'
+      @getLineContent() + '\n'
 
   setString: (string='') ->
     assert(string.indexOf('\n') is -1)
