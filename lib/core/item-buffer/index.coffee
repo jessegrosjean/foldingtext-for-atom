@@ -1,8 +1,10 @@
 {CompositeDisposable} = require 'atom'
 LineBuffer = require '../line-buffer'
+ItemRange = require '../item-range'
 ItemSpan = require './item-span'
 Mutation = require '../mutation'
 Outline = require '../outline'
+_ = require 'underscore-plus'
 assert = require 'assert'
 Item = require '../item'
 
@@ -151,13 +153,8 @@ class ItemBuffer extends LineBuffer
   getItemRange: (location, length) ->
     start = @getSpanInfoAtLocation(location, true)
     end = @getSpanInfoAtLocation(location + length, true)
-
     if start
-      {} =
-        startItem: start.span.item
-        startOffset: start.location
-        endItem: end.span.item
-        endOffset: end.location
+      new ItemRange(start.span.item, start.location, end.span.item, end.location)
     else
       null
 
@@ -213,6 +210,36 @@ class ItemBuffer extends LineBuffer
   ###
   Character attributes
   ###
+
+  getAttributedString: (spanIndex, count) ->
+    runSpans = []
+    for each in @getSpans(spanIndex, count)
+      spanString = each.getString()
+
+      item = each.item
+      itemAttributes =
+        id: item.id
+        parentID: item.parent.id
+        attributes: item.attributes
+
+      body = item.bodyHighlightedAttributedString
+      bodyRunBuffer = body.runBuffer
+      if bodyRunBuffer
+        body.runBuffer.iterateRuns 0, body.runBuffer.getRunCount(), (run) ->
+          attributes = _.clone(run.attributes)
+          attributes.item = itemAttributes
+          runSpans.push
+            string: run.string
+            attributes: attributes
+        if body.length isnt spanString.length
+          runSpans.push
+            string: '\n'
+            attributes: (item: itemAttributes)
+      else
+        runSpans.push
+          string: spanString
+          attributes: (item: itemAttributes)
+    runSpans
 
   getAttributesAtIndex: (location, effectiveRange, longestEffectiveRange) ->
     start = @getSpanInfoAtLocation(location, true)
