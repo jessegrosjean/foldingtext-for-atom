@@ -4,3 +4,4 @@ window.birch = module.exports =
   Mutation: require '../lib/core/mutation'
   themeLoader: require '../lib/themeloader'
   OutlineEditor: require '../lib/core/outline-editor'
+  ItemSerializer: require '../lib/core/item-serializer'
