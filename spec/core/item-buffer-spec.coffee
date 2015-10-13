@@ -173,6 +173,35 @@ describe 'ItemBuffer', ->
         one.bodyString.should.equal('bne')
         one.depth.should.equal(1)
 
+  xdescribe 'Performance', ->
+    it 'should load 10,000 items', ->
+      lines = []
+      for i in [0..(10000 / 10)]
+        lines.push('project:')
+        lines.push('\t- task!')
+        lines.push('\t\tnote')
+        lines.push('\t- task! @done')
+        lines.push('\t\tnote')
+        lines.push('\t- task!')
+        lines.push('\t\tnote')
+        lines.push('\t- task!')
+        lines.push('\t\tnote')
+        lines.push('\t- task!')
+      lines = lines.join('\n')
+
+      console.profile('Insert Many Lines')
+      console.time('Insert Many Lines')
+      itemBuffer.replaceRange(0, 0, lines)
+      console.timeEnd('Insert Many Lines')
+      console.profileEnd()
+
+      console.profile('To Attributed String')
+      console.time('To Attributed String')
+      itemBuffer.getAttributedString(0, itemBuffer.getSpanCount())
+      console.timeEnd('To Attributed String')
+      console.profileEnd()
+
+
 ###
 describe 'OutlineBuffer', ->
   describe 'Outline Changes', ->

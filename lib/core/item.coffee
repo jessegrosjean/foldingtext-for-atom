@@ -759,6 +759,7 @@ class Item
     Item.removeItemsFromParents(children)
 
     if nextSibling
+      assert.ok(nextSibling.parent is @, 'nextSibling must be child of this item')
       previousSibling = nextSibling.previousSibling
     else
       previousSibling = @lastChild

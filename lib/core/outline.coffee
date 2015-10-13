@@ -118,6 +118,7 @@ class Outline
       @breakUndoCoalescing()
       @scheduleModifiedEvents()
 
+    @nativeDocument = options?.nativeDocument
     @setPath(options.filePath) if options?.filePath
     @load() if options?.load
 
@@ -718,6 +719,24 @@ class Outline
     @undoManager.redo()
 
   ###
+  Section: Scripting
+  ###
+
+  evaluateScript: (script, options) ->
+    result = '_wrappedValue': null
+    try
+      if options
+        options = JSON.parse(options)._wrappedValue
+      func = eval("(#{script})")
+      r = func(this, options)
+      if r is undefined
+        r = null # survive JSON round trip
+      result._wrappedValue = r
+    catch e
+      result._wrappedValue = "#{e.toString()}\n\tUse the Help > SDKRunner to debug"
+    JSON.stringify(result)
+
+  ###
   Section: File Details
   ###
 
@@ -893,6 +912,7 @@ class Outline
         @changeCount = 0
       when Outline.ChangeRedone
         @changeCount++
+    @nativeDocument?.updateChangeCount(change)
 
   ###
   Section: Debug
@@ -938,6 +958,7 @@ class Outline
       @cancelStoppedChangingTimeout()
       @undoSubscriptions?.dispose()
       @fileSubscriptions?.dispose()
+      @nativeDocument = null
       @destroyed = true
       @emitter.emit 'did-destroy'
 

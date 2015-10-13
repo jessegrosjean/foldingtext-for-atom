@@ -27,7 +27,7 @@ class OutlineEditor
     TaskPaper.initOutline(outline)
 
     @subscriptions.add outline.onDidBeginChanges =>
-      @nativeEditor.nativeTextBufferBeginEditing()
+      @nativeEditor.beginEditing()
 
     @subscriptions.add @itemBuffer.onWillProcessOutlineMutation (mutation) =>
       target = mutation.target
@@ -41,47 +41,20 @@ class OutlineEditor
 
     @subscriptions.add @itemBuffer.onDidProcessOutlineMutation (mutation) =>
       if mutation.type is Mutation.CHILDREN_CHANGED
-        @nativeEditor.nativeTextBufferInvalidateDisplay()
+        if range = @getVisibleBodyCharacterRange(mutation.target)
+          @nativeEditor.invalidateDisplayForCharacterRange(range)
 
     @subscriptions.add @itemBuffer.onDidChange (e) =>
       if not @isUpdatingItemBuffer
         @isUpdatingNativeBuffer++
         nsrange = location: e.location, length: e.replacedLength
-        @nativeEditor.nativeTextBufferReplaceCharactersInRangeWithString(nsrange, e.insertedString)
+        @nativeEditor.replaceCharactersInRangeWithString(nsrange, e.insertedString)
         @isUpdatingNativeBuffer--
 
     @subscriptions.add outline.onDidEndChanges =>
-      @nativeEditor.nativeTextBufferEndEditing()
-
-    undoManager = outline.undoManager
-    @subscriptions.add undoManager.onDidCloseUndoGroup (group) =>
-      if not undoManager.isUndoing and not undoManager.isRedoing and group.length > 0
-        @nativeEditor.nativeUpdateChangeCount(Outline.ChangeDone)
-
-    @subscriptions.add undoManager.onDidUndo =>
-      @nativeEditor.nativeUpdateChangeCount(Outline.ChangeUndone)
-
-    @subscriptions.add undoManager.onDidRedo =>
-      @nativeEditor.nativeUpdateChangeCount(Outline.ChangeRedone)
+      @nativeEditor.endEditing()
 
     @setHoistedItem(outline.root)
-
-    window.jib = @itemBuffer
-
-  nativeTextBufferDidReplaceCharactersInRangeWithString: (location, length, string) ->
-    if not @isUpdatingNativeBuffer
-      outline = @itemBuffer.outline
-      undoManager = outline.undoManager
-
-      undoManager.beginUndoGrouping()
-
-      @isUpdatingItemBuffer++
-      outline.beginChanges()
-      @itemBuffer.replaceRange(location, length, string)
-      outline.endChanges()
-      @isUpdatingItemBuffer--
-
-      undoManager.endUndoGrouping()
 
   nativeTextBufferGuideRanges: (location, length) ->
     itemSpansInRange = @itemBuffer.getSpansInRange(location, length, true)
@@ -165,7 +138,7 @@ class OutlineEditor
 
   setHoistedItem: (item) ->
     selected = @getSelectedItemRange()
-    @nativeEditor.nativeHoistIndent = item.depth
+    @nativeEditor.baseDepth = item.depth
     @itemBuffer.setHoistedItem(item)
     @setSelectedItemRange(selected)
 
@@ -194,7 +167,7 @@ class OutlineEditor
         itemState.expanded = false
 
     # Clear the display text storage
-    @nativeEditor.nativeTextBufferBeginEditing()
+    @nativeEditor.beginEditing()
     @itemBuffer.isUpdatingIndex++
     @itemBuffer.removeLines(0, @itemBuffer.getLineCount())
     @itemBuffer.isUpdatingIndex--
@@ -206,9 +179,9 @@ class OutlineEditor
       for eachItem in @getHoistedItem().evaluateItemPath(query)
         @_addSearchResult(eachItem)
 
-    @nativeEditor.nativeQuery = query
+    @nativeEditor.query = query
     @setHoistedItem(@getHoistedItem())
-    @nativeEditor.nativeTextBufferEndEditing()
+    @nativeEditor.endEditing()
 
   _addSearchResult: (item) ->
     @getItemEditorState(item).matched = true
@@ -279,10 +252,10 @@ class OutlineEditor
 
   setFoldingLevel: (level) ->
     items = @getHoistedItem().descendants
-    @nativeEditor.nativeTextBufferBeginEditing()
+    @nativeEditor.beginEditing()
     @setCollapsed((item for item in items when item.depth >= level))
     @setExpanded((item for item in items when item.depth < level))
-    @nativeEditor.nativeTextBufferEndEditing()
+    @nativeEditor.endEditing()
 
   isExpanded: (item) ->
     return item and item.hasChildren and @getItemEditorState(item).expanded
@@ -331,8 +304,8 @@ class OutlineEditor
       items = newItems
 
     selectedItemRange = @getSelectedItemRange()
-    @nativeEditor.nativeTextBufferBeginEditing()
-    @nativeEditor.nativeTextBufferInvalidateDisplay()
+    @nativeEditor.beginEditing()
+    #@nativeEditor.invalidateDisplayForCharacterRange()
     @itemBuffer.isUpdatingIndex++
     if expanded
       # for better animations
@@ -353,7 +326,7 @@ class OutlineEditor
       for each in items
         @getItemEditorState(each).expanded = expanded
     @itemBuffer.isUpdatingIndex--
-    @nativeEditor.nativeTextBufferEndEditing()
+    @nativeEditor.endEditing()
     @setSelectedItemRange(selectedItemRange)
 
   _insertVisibleDescendantLines: (item) ->
@@ -505,8 +478,8 @@ class OutlineEditor
   getLastVisibleDescendantLocation: (item, hoistedItem) ->
     if last = @getLastVisibleDescendantOrSelf(item, hoistedItem)
       unless last is item
-        if itemSpan = @itemBuffer.getItemSpanForItem(last)
-          return itemSpan.getLocation() + itemSpan.getLength()
+        if range = @getVisibleBodyCharacterRange(item)
+          return range.location + range.length
     0
 
   # Public: Returns previous visible branch {Item} relative to given item.
@@ -537,9 +510,10 @@ class OutlineEditor
 
   getVisibleBodyCharacterRange: (item) ->
     itemSpan = @itemBuffer.getItemSpanForItem(item)
-    {} =
-      location: itemSpan.getLocation()
-      length: itemSpan.getLength()
+    if itemSpan
+      location: itemSpan.getLocation(), length: itemSpan.getLength()
+    else
+      null
 
   getVisibleBranchCharacterRange: (item, hoistedItem) ->
     startItemSpan = @itemBuffer.getItemSpanForItem(item)
@@ -559,7 +533,7 @@ class OutlineEditor
     @getSelectedRanges()[0]
 
   getSelectedRanges: ->
-    selectedRange = @nativeEditor.nativeSelectedRange
+    selectedRange = @nativeEditor.selectedRange
     length = @itemBuffer.getLength()
     if selectedRange.location > length
       selectedRange.location = length
@@ -595,7 +569,7 @@ class OutlineEditor
     @setSelectedRanges([range])
 
   setSelectedRanges: (ranges) ->
-    @nativeEditor.nativeSelectedRange = ranges[0]
+    @nativeEditor.selectedRange = ranges[0]
 
   setSelectedItemRange: (startItem, startOffset, endItem, endOffset) ->
     if startItem
@@ -915,6 +889,9 @@ class OutlineEditor
       items = [items]
     items = Item.getCommonAncestors(items)
 
+    if items[0] is newNextSibling
+      return
+
     outline = @itemBuffer.outline
 
     undoManager = outline.undoManager
@@ -994,6 +971,19 @@ class OutlineEditor
   deserializeItems: (data, mimeType) ->
     ItemSerializer.deserializeItems(data, @itemBuffer.outline, mimeType)
 
+  replaceRangeWithString: (location, length, string) ->
+    if not @isUpdatingNativeBuffer
+      outline = @itemBuffer.outline
+      undoManager = outline.undoManager
+
+      undoManager.beginUndoGrouping()
+      @isUpdatingItemBuffer++
+      outline.beginChanges()
+      @itemBuffer.replaceRange(location, length, string)
+      outline.endChanges()
+      @isUpdatingItemBuffer--
+      undoManager.endUndoGrouping()
+
   replaceRangeWithItems: (location, length, items) ->
     outline = @itemBuffer.outline
     undoManager = outline.undoManager
@@ -1064,24 +1054,6 @@ class OutlineEditor
     true
 
   ###
-  Section: Scripting
-  ###
-
-  evaluateScript: (script, options) ->
-    result = '_wrappedValue': null
-    try
-      if options
-        options = JSON.parse(options)._wrappedValue
-      func = eval("(#{script})")
-      r = func(this, options)
-      if r is undefined
-        r = null # survive JSON round trip
-      result._wrappedValue = r
-    catch e
-      result._wrappedValue = "#{e.toString()}\n\tUse the Help > SDKRunner to debug"
-    JSON.stringify(result)
-
-  ###
   Section: Item Editor State
   ###
 
@@ -1108,31 +1080,33 @@ class NativeEditor
       location: 0
       length: 0
 
-  Object.defineProperty @::, 'nativeQuery',
+  Object.defineProperty @::, 'query',
     get: ->
-      @query
-    set: (@query) ->
+      @_query
+    set: (@_query) ->
 
-  Object.defineProperty @::, 'nativeSelectedRange',
+  Object.defineProperty @::, 'baseDepth',
     get: ->
-      @selectedRange.location = Math.min(@selectedRange.location, @text.length)
-      @selectedRange.length = Math.min(@selectedRange.length, @text.length - @selectedRange.location)
-      @selectedRange
-    set: (@selectedRange) ->
+      @_baseDepth
+    set: (@_baseDepth) ->
 
-  Object.defineProperty @::, 'nativeTextContent',
-    get: -> @text
+  Object.defineProperty @::, 'selectedRange',
+    get: ->
+      @_selectedRange.location = Math.min(@_selectedRange.location, @text.length)
+      @_selectedRange.length = Math.min(@_selectedRange.length, @text.length - @_selectedRange.location)
+      @_selectedRange
+    set: (@_selectedRange) ->
 
-  nativeTextBufferBeginEditing: ->
+  beginEditing: ->
 
-  nativeTextBufferInvalidateDisplay: ->
+  invalidateAttributesForCharacterRange: (range) ->
 
-  nativeTextBufferReplaceCharactersInRangeWithString: (range, text) ->
+  invalidateDisplayForCharacterRange: (range) ->
+
+  replaceCharactersInRangeWithString: (range, text) ->
     @text = @text.substring(0, range.location) + text + @text.substring(range.location + range.length)
 
-  nativeTextBufferEndEditing: ->
-
-  nativeUpdateChangeCount: ->
+  endEditing: ->
 
 atom.views.addViewProvider OutlineEditor, (editor) ->
   new OutlineEditorElement().initialize(editor)

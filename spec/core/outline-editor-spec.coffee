@@ -6,7 +6,6 @@ describe 'OutlineEditor', ->
 
   beforeEach ->
     {outline, root, one, two, three, four, five, six} = loadOutlineFixture()
-
     editor = new Editor(outline)
     itemBuffer = editor.itemBuffer
     itemBufferSubscription = itemBuffer.onDidChange (e) ->
@@ -277,62 +276,59 @@ describe 'OutlineEditor', ->
         editor.getSelectedRange().should.eql(location: 7, length: 0)
         expect(itemBuffer.getString()).toEqual('three\nfour')
 
-    xdescribe 'Move Branches', ->
-      it 'should move items up', ->
+    describe 'Move Branches', ->
+
+      it 'should move branches up', ->
         editor.setCollapsed([two, five])
-        editor.moveSelectionRange(five)
-        editor.moveItemsUp()
+        editor.setSelectedItemRange(five)
+        editor.moveBranchesUp()
         one.firstChild.should.equal(five)
         one.lastChild.should.equal(two)
-        editor.moveItemsUp() # should do nothing
+        editor.moveBranchesUp() # should do nothing
         one.firstChild.should.equal(five)
 
-      it 'should move items down', ->
+      it 'should move branches down', ->
         editor.setExpanded(one)
-        editor.moveSelectionRange(two)
-        editor.moveItemsDown()
+        editor.setSelectedItemRange(two)
+        editor.moveBranchesDown()
         one.firstChild.should.equal(five)
         one.lastChild.should.equal(two)
-        editor.moveItemsDown() # should do nothing
+        editor.moveBranchesDown() # should do nothing
         one.lastChild.should.equal(two)
 
       it 'should move items left', ->
         editor.setExpanded(one)
-        editor.moveSelectionRange(two)
-        editor.moveItemsLeft()
+        editor.setSelectedItemRange(two)
+        editor.moveBranchesLeft()
         one.firstChild.should.equal(five)
         one.nextSibling.should.equal(two)
-        editor.moveItemsLeft() # should do nothing
+        editor.moveBranchesLeft() # should do nothing
         one.nextSibling.should.equal(two)
 
       it 'should move items left with prev sibling children selected', ->
         editor.setExpanded(one)
         editor.setExpanded(two)
-        editor.moveSelectionRange(four, undefined, five)
-        editor.moveItemsLeft()
+        editor.setSelectedItemRange(four, undefined, five)
+        editor.moveBranchesLeft()
         two.nextSibling.should.equal(four)
         four.nextSibling.should.equal(five)
 
       it 'should move items right', ->
         editor.setExpanded(one)
         editor.setExpanded(two)
-        editor.moveSelectionRange(four)
-        editor.moveItemsRight()
+        editor.setSelectedItemRange(four)
+        editor.moveBranchesRight()
         three.firstChild.should.equal(four)
 
-      it 'should duplicate items', ->
-        editor.setExpanded(one)
-        editor.setExpanded(two)
-        editor.moveSelectionRange(two)
-        editor.duplicateItems()
-        editor.selection.focusItem.should.equal(two.nextSibling)
-        editor.isExpanded(two.nextSibling).should.be.ok()
-        two.nextSibling.bodyString.should.equal('two')
-        two.nextSibling.firstChild.bodyString.should.equal('three')
+      it 'should move to same location as current without crash', ->
+        editor.moveBranches([one], one.parent, one)
 
-      it 'should join items', ->
+      it 'should move to same location as current without crash', ->
+        editor.moveBranches([one], one.parent)
+
+      xit 'should join items', ->
         editor.setExpanded(one)
-        editor.moveSelectionRange(one)
+        editor.setSelectedItemRange(one)
         editor.joinItems()
         one.bodyString.should.equal('one two')
         editor.selection.focusItem.should.equal(one)
@@ -340,9 +336,9 @@ describe 'OutlineEditor', ->
         one.firstChild.should.equal(three)
         one.firstChild.nextSibling.should.equal(four)
 
-      it 'should join items and undo', ->
+      xit 'should join items and undo', ->
         editor.setExpanded(one)
-        editor.moveSelectionRange(one)
+        editor.setSelectedItemRange(one)
         editor.joinItems()
         editor.undo()
         two.firstChild.should.equal(three)
