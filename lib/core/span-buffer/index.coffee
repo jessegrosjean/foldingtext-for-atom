@@ -161,6 +161,10 @@ class SpanBuffer extends SpanBranch
     @getSpans(range.location, range.length)
 
   getSpanRangeForCharacterRange: (location, length, chooseRight=false) ->
+    if @getSpanCount() is 0
+      return {} =
+        location: 0
+        length: 0
     start = @getSpanInfoAtLocation(location, chooseRight)
     end = @getSpanInfoAtLocation(location + length, chooseRight)
     if end.location is 0 and end.spanIndex isnt start.spanIndex
