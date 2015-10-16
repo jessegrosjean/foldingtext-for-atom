@@ -387,8 +387,12 @@ class Outline
         items.push each
     items
 
-  getAttributeNames: ->
+  getAttributeNames: (autoIncludeNames=[]) ->
     attributes = new Set()
+
+    for each in autoIncludeNames
+      attributes.add(each)
+
     for each in @root.descendants
       for eachAttributeName in Object.keys(each.attributes)
         attributes.add(eachAttributeName)
