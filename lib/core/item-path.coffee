@@ -6,8 +6,11 @@ _ = require 'underscore-plus'
 module.exports=
 class ItemPath
 
+  @defaultTypes: {}
+
   @parse: (path, startRule, types) ->
     startRule ?= 'ItemPathExpression'
+    types ?= @defaultTypes
     exception = null
     keywords = []
     parsedPath
@@ -38,7 +41,7 @@ class ItemPath
 
   constructor: (@pathExpressionString, @options) ->
     @options ?= {}
-    parsed = @constructor.parse(@pathExpressionString, undefined, @options.types)
+    parsed = @constructor.parse(@pathExpressionString, undefined, @options.types ? ItemPath.defaultTypes)
     @pathExpressionAST = parsed.parsedPath
     @pathExpressionKeywords = parsed.keywords
     @pathExpressionError = parsed.error
