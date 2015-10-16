@@ -5,3 +5,4 @@ window.birch = module.exports =
   themeLoader: require '../lib/themeloader'
   OutlineEditor: require '../lib/core/outline-editor'
   ItemSerializer: require '../lib/core/item-serializer'
+  ItemPath: require '../lib/core/item-path'
