@@ -1097,6 +1097,8 @@ class NativeEditor
       @_selectedRange
     set: (@_selectedRange) ->
 
+  scrollRangeToVisible: (range) ->
+
   beginEditing: ->
 
   invalidateAttributesForCharacterRange: (range) ->
