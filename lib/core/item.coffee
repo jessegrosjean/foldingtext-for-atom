@@ -139,7 +139,7 @@ class Item
     isInOutline = @isInOutline
     if isInOutline
       mutation = Mutation.createAttributeMutation this, name, oldValue
-      outline.emitter.emit 'will-change', mutation
+      outline.willChange(mutation)
       outline.beginChanges()
       outline.recordChange mutation
       undoManager.disableUndoRegistration()
@@ -155,7 +155,7 @@ class Item
     outline.syncAttributeToBody(this, name, value, oldValue)
 
     if isInOutline
-      outline.emitter.emit 'did-change', mutation
+      outline.didChange(mutation)
       outline.endChanges()
       undoManager.enableUndoRegistration()
 
@@ -353,7 +353,7 @@ class Item
       if replacedText.length is 0 and insertedText.length is 0
         return
       mutation = Mutation.createBodyMutation this, index, insertedString.length, replacedText
-      outline.emitter.emit 'will-change', mutation
+      outline.willChange(mutation)
       outline.beginChanges()
       outline.recordChange mutation
       undoManager.disableUndoRegistration()
@@ -363,7 +363,7 @@ class Item
     outline.syncBodyToAttributes(this, oldBody)
 
     if isInOutline
-      outline.emitter.emit 'did-change', mutation
+      outline.didChange(mutation)
       outline.endChanges()
       undoManager.enableUndoRegistration()
 
@@ -766,7 +766,7 @@ class Item
 
     if isInOutline
       mutation = Mutation.createChildrenMutation this, children, [], previousSibling, nextSibling
-      outline.emitter.emit 'will-change', mutation
+      outline.willChange(mutation)
       outline.recordChange mutation
 
     for each, i in children
@@ -796,7 +796,7 @@ class Item
     if isInOutline
       for each in children
         each.isInOutline = true
-      outline.emitter.emit 'did-change', mutation
+      outline.didChange(mutation)
       outline.undoManager.endUndoGrouping()
       outline.endChanges()
 
@@ -829,7 +829,7 @@ class Item
 
     if isInOutline
       mutation = Mutation.createChildrenMutation this, [], children, previousSibling, nextSibling
-      outline.emitter.emit 'will-change', mutation
+      outline.willChange(mutation)
       outline.beginChanges()
       outline.undoManager.beginUndoGrouping()
       outline.recordChange mutation
@@ -852,7 +852,7 @@ class Item
       each.indent = eachIndent + depth
 
     if isInOutline
-      outline.emitter.emit 'did-change', mutation
+      outline.didChange(mutation)
       outline.undoManager.endUndoGrouping()
       outline.endChanges()
 

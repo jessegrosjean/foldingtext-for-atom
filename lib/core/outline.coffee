@@ -637,6 +637,9 @@ class Outline
   isChanging: -> @changingCount isnt 0
   isUpdating: -> @isChanging()
 
+  willChange: (mutation) ->
+    @emitter.emit 'will-change', mutation
+
   # Public: Begin grouping changes. Must later call {::endChanges} to balance
   # this call.
   beginChanges: ->
@@ -644,6 +647,7 @@ class Outline
     if @changingCount is 1
       @changesCallbacks = []
       @emitter.emit('did-begin-changes')
+      @nativeDocument?.beginChanges()
 
   breakUndoCoalescing: ->
     @coalescingMutation = null
@@ -693,6 +697,10 @@ class Outline
       @undoManager.registerUndoOperation mutation
       @coalescingMutation = mutation
 
+  didChange: (mutation) ->
+    @emitter.emit 'did-change', mutation
+    @nativeDocument?.didChange(mutation)
+
   # Public: End grouping changes. Must call to balance a previous
   # {::beginChanges} call.
   #
@@ -703,6 +711,7 @@ class Outline
     if @changingCount is 0
       @conflict = false if @conflict and not @isModified()
       @emitter.emit('did-end-changes')
+      @nativeDocument?.endChanges()
       @scheduleModifiedEvents()
 
       changesCallbacks = @changesCallbacks
