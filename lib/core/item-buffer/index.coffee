@@ -158,9 +158,13 @@ class ItemBuffer extends LineBuffer
     else
       null
 
-  getRangeFromItemRange: (startItem, startOffset, endItem, endOffset) ->
+  getRangeFromItemRange: (startItem, startOffset, endItem, endOffset, reveal=false) ->
     unless startItem instanceof Item
       {startItem, startOffset, endItem, endOffset} = startItem
+
+    if reveal
+      @editor?.makeVisible(startItem)
+      @editor?.makeVisible(endItem)
 
     visibleStartItem = startItem
     while visibleStartItem and not @isVisible(visibleStartItem)

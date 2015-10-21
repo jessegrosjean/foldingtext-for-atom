@@ -51,6 +51,27 @@ class OutlineEditor
         @nativeEditor.replaceCharactersInRangeWithString(nsrange, e.insertedString)
         @isUpdatingNativeBuffer--
 
+    undoManager = outline.undoManager
+
+    @subscriptions.add undoManager.onDidOpenUndoGroup =>
+      if not undoManager.isUndoing and not undoManager.isRedoing
+        undoManager.setUndoGroupMetadata('undoSelection', @getSelectedItemRange())
+
+    @subscriptions.add undoManager.onWillUndo (undoGroupMetadata) =>
+      undoManager.setUndoGroupMetadata('redoSelection', @getSelectedItemRange())
+
+    @subscriptions.add undoManager.onDidUndo (undoGroupMetadata) =>
+      if s = undoGroupMetadata.undoSelection
+        @setSelectedItemRange(s.startItem, s.startOffset, s.endItem, s.endOffset, true)
+
+    @subscriptions.add undoManager.onDidOpenUndoGroup =>
+      if not undoManager.isUndoing and not undoManager.isRedoing
+        undoManager.setUndoGroupMetadata('undoSelection', @getSelectedItemRange())
+
+    @subscriptions.add undoManager.onDidRedo (undoGroupMetadata) =>
+      if s = undoGroupMetadata.redoSelection
+        @setSelectedItemRange(s.startItem, s.startOffset, s.endItem, s.endOffset, true)
+
     @subscriptions.add outline.onDidEndChanges =>
       @nativeEditor.endEditing()
 
@@ -372,6 +393,28 @@ class OutlineEditor
     else
       return true
 
+  # Public: Make the given item visible in the outline, expanding ancestors,
+  # removing filter, and unhoisting as needed.
+  #
+  # - `item` {Item} to make visible.
+  makeVisible: (item) ->
+    if item and not @isVisible(item) and item.isInOutline and item.outline is @itemBuffer.outline
+      @nativeEditor?.beginEditing()
+      hoistedItem = @getHoistedItem()
+      while not hoistedItem.contains(item)
+        @unhoist()
+        hoistedItem = @getHoistedItem()
+
+      parentsToExpand = []
+      eachParent = item.parent
+      while eachParent and eachParent isnt hoistedItem
+        if @isCollapsed eachParent
+          parentsToExpand.push eachParent
+        eachParent = eachParent.parent
+
+      @setExpanded(parentsToExpand)
+      @nativeEditor?.endEditing()
+
   # Public: Returns first visible {Item} in editor.
   #
   # - `hoistedItem` (optional) Hoisted item {Item} case to consider.
@@ -571,9 +614,9 @@ class OutlineEditor
   setSelectedRanges: (ranges) ->
     @nativeEditor.selectedRange = ranges[0]
 
-  setSelectedItemRange: (startItem, startOffset, endItem, endOffset) ->
+  setSelectedItemRange: (startItem, startOffset, endItem, endOffset, reveal=false) ->
     if startItem
-      range = @itemBuffer.getRangeFromItemRange(startItem, startOffset, endItem, endOffset)
+      range = @itemBuffer.getRangeFromItemRange(startItem, startOffset, endItem, endOffset, reveal)
       @setSelectedRange(range)
 
   ###
