@@ -25,10 +25,10 @@ class ItemBuffer extends LineBuffer
     @subscriptions.dispose()
     super()
 
-  beginChanges: ->
+  beginChanges: (changeEvent) ->
     unless @isChanging()
       @outline.beginChanges()
-    super()
+    super(changeEvent)
 
   endChanges: ->
     super()
@@ -54,6 +54,8 @@ class ItemBuffer extends LineBuffer
 
   setHoistedItem: (@hoistedItem) ->
     assert(@hoistedItem.outline is @outline)
+
+    @beginChanges()
     @isUpdatingIndex++
     @removeSpans(0, @getSpanCount())
     @itemsToItemSpansMap = new Map
@@ -62,6 +64,7 @@ class ItemBuffer extends LineBuffer
       itemSpans = (new ItemSpan(each) for each in @hoistedItem.descendants when @isVisible(each))
       @insertSpans(0, itemSpans)
     @isUpdatingIndex--
+    @endChanges()
 
   outlineDidChange: (mutation) ->
     if @isUpdatingItems

@@ -17,6 +17,7 @@ describe 'OutlineEditor', ->
     expect(itemBufferDidChangeExpects?.length).toBeFalsy()
     itemBufferDidChangeExpects = null
     itemBufferSubscription.dispose()
+    editor.nativeEditor.text.should.equal(itemBuffer.getString())
     editor.destroy()
 
   describe 'View', ->

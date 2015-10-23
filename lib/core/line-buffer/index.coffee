@@ -37,16 +37,15 @@ class LineBuffer extends SpanBuffer
     if location < 0 or (location + length) > @getLength()
       throw new Error("Invalide text range: #{location}-#{location + length}")
 
-    if @emitter and not @isChanging()
+    if @emitter and not @scheduledChangeEvent
       changeEvent =
         location: location
         replacedLength: length
         insertedString: string
-      @emitter.emit 'will-change', changeEvent
 
     lines = string.split('\n')
 
-    @beginChanges()
+    @beginChanges(changeEvent)
     if @getSpanCount() is 0
       @insertSpans(0, (@createSpan(each) for each in lines))
     else
@@ -65,9 +64,6 @@ class LineBuffer extends SpanBuffer
           lastLine = insertedLines[insertedLines.length - 1] ? start.span
           lastLine.replaceRange(lastLine.getLineContent().length, 0, endSuffix)
     @endChanges()
-
-    if changeEvent
-      @emitter.emit 'did-change', changeEvent
 
   insertSpans: (spanIndex, spans) ->
     unless spans.length

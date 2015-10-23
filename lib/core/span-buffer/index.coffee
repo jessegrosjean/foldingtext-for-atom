@@ -12,6 +12,8 @@ class SpanBuffer extends SpanBranch
     @isRoot = true
     @emitter = null
     @changing = 0
+    @scheduledChangeEvent = null
+    @scheduledChangeEventFire = null
 
   clone: ->
     super()
@@ -52,12 +54,23 @@ class SpanBuffer extends SpanBranch
   isChanging: ->
     @changing isnt 0
 
-  beginChanges: ->
+  beginChanges: (changeEvent) ->
     @changing++
     if @changing is 1
       @emitter?.emit('did-begin-changes')
 
+    if changeEvent
+      assert(not @scheduledChangeEvent, 'Can not have two scheduled change events')
+      @emitter.emit 'will-change', changeEvent
+      @scheduledChangeEvent = changeEvent
+      @scheduledChangeEventFire = @changing
+
   endChanges: ->
+    if @scheduledChangeEvent and @scheduledChangeEventFire is @changing
+      @emitter.emit 'did-change', @scheduledChangeEvent
+      @scheduledChangeEvent = null
+      @scheduledChangeEventFire = null
+
     @changing--
     if @changing is 0
       @emitter?.emit('did-end-changes')
@@ -80,14 +93,13 @@ class SpanBuffer extends SpanBranch
     if location < 0 or (location + length) > @getLength()
       throw new Error("Invalide text range: #{location}-#{location + length}")
 
-    if @emitter and not @isChanging()
+    if @emitter and not @scheduledChangeEvent
       changeEvent =
         location: location
         replacedLength: length
         insertedString: string
-      @emitter.emit 'will-change', changeEvent
 
-    @beginChanges()
+    @beginChanges(changeEvent)
     if @getSpanCount() is 0
       @insertSpans(0, [@createSpan(string)])
     else
@@ -108,9 +120,6 @@ class SpanBuffer extends SpanBranch
             start.span.appendString(string)
     @endChanges()
 
-    if changeEvent
-      @emitter.emit 'did-change', changeEvent
-
   ###
   Section: Spans
   ###
@@ -125,21 +134,17 @@ class SpanBuffer extends SpanBranch
     unless spans.length
       return
 
-    if @emitter and not @isChanging()
+    if @emitter and not @scheduledChangeEvent
       insertedString = (each.getString() for each in spans).join('')
       changeEvent =
         location: @getSpan(spanIndex)?.getLocation() ? @getLength()
         replacedLength: 0
         insertedString: insertedString
       adjustChangeEvent?(changeEvent)
-      @emitter.emit 'will-change', changeEvent
 
-    @beginChanges()
+    @beginChanges(changeEvent)
     super(spanIndex, spans)
     @endChanges()
-
-    if changeEvent
-      @emitter.emit 'did-change', changeEvent
 
   removeSpans: (spanIndex, removeCount, adjustChangeEvent) ->
     if spanIndex < 0 or (spanIndex + removeCount) > @getSpanCount()
@@ -148,7 +153,7 @@ class SpanBuffer extends SpanBranch
     unless removeCount
       return
 
-    if @emitter and not @isChanging()
+    if @emitter and not @scheduledChangeEvent
       replacedLength = 0
       @iterateSpans spanIndex, removeCount, (span) ->
         replacedLength += span.getLength()
@@ -157,14 +162,10 @@ class SpanBuffer extends SpanBranch
         replacedLength: replacedLength
         insertedString: ''
       adjustChangeEvent?(changeEvent)
-      @emitter.emit 'will-change', changeEvent
 
-    @beginChanges()
+    @beginChanges(changeEvent)
     super(spanIndex, removeCount)
     @endChanges()
-
-    if changeEvent
-      @emitter.emit 'did-change', changeEvent
 
   getSpansInRange: (location, length, chooseRight=false) ->
     range = @getSpanRangeForCharacterRange(location, length, chooseRight)

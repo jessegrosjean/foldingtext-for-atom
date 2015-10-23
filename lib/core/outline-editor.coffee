@@ -20,13 +20,13 @@ class OutlineEditor
     @subscriptions = new CompositeDisposable
     @itemBuffer = new ItemBuffer(outline, this)
     outline = @itemBuffer.outline
-    @nativeEditor ?= new NativeEditor
+    @nativeEditor ?= new NativeEditor()
     @searchQuery = ''
     @expandedBySearch = null
 
     TaskPaper.initOutline(outline)
 
-    @subscriptions.add outline.onDidBeginChanges =>
+    @subscriptions.add @itemBuffer.onDidBeginChanges =>
       @nativeEditor.beginEditing()
 
     @subscriptions.add @itemBuffer.onWillProcessOutlineMutation (mutation) =>
@@ -72,7 +72,7 @@ class OutlineEditor
       if s = undoGroupMetadata.redoSelection
         @setSelectedItemRange(s.startItem, s.startOffset, s.endItem, s.endOffset, true)
 
-    @subscriptions.add outline.onDidEndChanges =>
+    @subscriptions.add @itemBuffer.onDidEndChanges =>
       @nativeEditor.endEditing()
 
     @setHoistedItem(outline.root)
@@ -157,11 +157,20 @@ class OutlineEditor
   getHoistedItem: ->
     @itemBuffer.getHoistedItem()
 
-  setHoistedItem: (item) ->
-    selected = @getSelectedItemRange()
-    @nativeEditor.baseDepth = item.depth
-    @itemBuffer.setHoistedItem(item)
-    @setSelectedItemRange(selected)
+  setHoistedItem: (item, force) ->
+    if _.isString(item)
+      item = @itemBuffer.outline.getItemForID(item)
+
+    hoistedItem = @getHoistedItem()
+    if item isnt hoistedItem or force
+      savedSelection = @getSelectedItemRange()
+      @nativeEditor.baseDepth = item.depth
+      @itemBuffer.setHoistedItem(item)
+      if not hoistedItem or hoistedItem.contains(item)
+        @setSelectedRange(location: 0, length: 0)
+      else
+        @setSelectedItemRange(savedSelection)
+      @nativeEditor.setHoistedItem(item)
 
   ###
   Section: Matched Items
@@ -188,7 +197,7 @@ class OutlineEditor
         itemState.expanded = false
 
     # Clear the display text storage
-    @nativeEditor.beginEditing()
+    @itemBuffer.beginChanges()
     @itemBuffer.isUpdatingIndex++
     @itemBuffer.removeLines(0, @itemBuffer.getLineCount())
     @itemBuffer.isUpdatingIndex--
@@ -201,8 +210,8 @@ class OutlineEditor
         @_addSearchResult(eachItem)
 
     @nativeEditor.query = query
-    @setHoistedItem(@getHoistedItem())
-    @nativeEditor.endEditing()
+    @setHoistedItem(@getHoistedItem(), true)
+    @itemBuffer.endChanges()
 
   _addSearchResult: (item) ->
     @getItemEditorState(item).matched = true
@@ -273,10 +282,10 @@ class OutlineEditor
 
   setFoldingLevel: (level) ->
     items = @getHoistedItem().descendants
-    @nativeEditor.beginEditing()
+    @itemBuffer.beginChanges()
     @setCollapsed((item for item in items when item.depth >= level))
     @setExpanded((item for item in items when item.depth < level))
-    @nativeEditor.endEditing()
+    @itemBuffer.endChanges()
 
   isExpanded: (item) ->
     return item and item.hasChildren and @getItemEditorState(item).expanded
@@ -325,7 +334,7 @@ class OutlineEditor
       items = newItems
 
     selectedItemRange = @getSelectedItemRange()
-    @nativeEditor.beginEditing()
+    @itemBuffer.beginChanges()
     #@nativeEditor.invalidateDisplayForCharacterRange()
     @itemBuffer.isUpdatingIndex++
     if expanded
@@ -346,8 +355,8 @@ class OutlineEditor
           @_removeDescendantLines(each)
       for each in items
         @getItemEditorState(each).expanded = expanded
+    @itemBuffer.endChanges()
     @itemBuffer.isUpdatingIndex--
-    @nativeEditor.endEditing()
     @setSelectedItemRange(selectedItemRange)
 
   _insertVisibleDescendantLines: (item) ->
@@ -399,7 +408,7 @@ class OutlineEditor
   # - `item` {Item} to make visible.
   makeVisible: (item) ->
     if item and not @isVisible(item) and item.isInOutline and item.outline is @itemBuffer.outline
-      @nativeEditor.beginEditing()
+      @itemBuffer.beginChanges()
       hoistedItem = @getHoistedItem()
       while not hoistedItem.contains(item)
         @unhoist()
@@ -413,7 +422,7 @@ class OutlineEditor
         eachParent = eachParent.parent
 
       @setExpanded(parentsToExpand)
-      @nativeEditor.endEditing()
+      @itemBuffer.endChanges()
 
   # Public: Returns first visible {Item} in editor.
   #
@@ -1116,8 +1125,7 @@ class ItemEditorState
     @matchedAncestor = false
 
 class NativeEditor
-  constructor: ->
-    @text = ''
+  constructor: (@text='') ->
     @query = ''
     @selectedRange =
       location: 0
@@ -1143,6 +1151,8 @@ class NativeEditor
   scrollRangeToVisible: (range) ->
 
   beginEditing: ->
+
+  setHoistedItem: (item) ->
 
   invalidateAttributesForCharacterRange: (range) ->
 
