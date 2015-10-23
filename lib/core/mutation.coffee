@@ -119,6 +119,9 @@ class Mutation
           Array.prototype.push.apply(@flattendedAddedItems, each.descendants)
     @flattendedAddedItems
 
+  getFlattendedAddedItemIds: ->
+    (each.id for each in @getFlattendedAddedItems())
+
   getFlattendedRemovedItems: ->
     unless @flattenedRemovedItems
       @flattenedRemovedItems = []
@@ -127,6 +130,9 @@ class Mutation
         if each.hasChildren
           Array.prototype.push.apply(@flattenedRemovedItems, each.descendants)
     @flattenedRemovedItems
+
+  getFlattendedRemovedItemIds: ->
+    (each.id for each in @getFlattendedRemovedItems())
 
   performUndoOperation: ->
     switch @type
