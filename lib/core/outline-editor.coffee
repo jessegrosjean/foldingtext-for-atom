@@ -399,7 +399,7 @@ class OutlineEditor
   # - `item` {Item} to make visible.
   makeVisible: (item) ->
     if item and not @isVisible(item) and item.isInOutline and item.outline is @itemBuffer.outline
-      @nativeEditor?.beginEditing()
+      @nativeEditor.beginEditing()
       hoistedItem = @getHoistedItem()
       while not hoistedItem.contains(item)
         @unhoist()
@@ -413,7 +413,7 @@ class OutlineEditor
         eachParent = eachParent.parent
 
       @setExpanded(parentsToExpand)
-      @nativeEditor?.endEditing()
+      @nativeEditor.endEditing()
 
   # Public: Returns first visible {Item} in editor.
   #
