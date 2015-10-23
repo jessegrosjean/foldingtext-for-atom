@@ -38,6 +38,12 @@ describe 'OutlineEditor', ->
         editor.setHoistedItem(three)
         expect(itemBuffer.getString()).toBe('')
 
+      it 'should hoist item with no children and insert children when text inserted into buffer', ->
+        editor.setHoistedItem(three)
+        expect(itemBuffer.getString()).toBe('')
+        itemBuffer.replaceRange(0, 0, 'Hello!')
+        three.firstChild.bodyString.should.equal('Hello!')
+
       it 'should not update item index when items are added outide hoisted item', ->
         editor.setHoistedItem(two)
         outline.root.appendChild(outline.createItem('not me!'))

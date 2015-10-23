@@ -276,7 +276,9 @@ class ItemBuffer extends LineBuffer
   ###
 
   createSpan: (text) ->
-    new ItemSpan(@outline.createItem(text))
+    item = @outline.createItem(text)
+    item.indent = @hoistedItem.depth + 1
+    new ItemSpan(item)
 
   createSpanForItem: (item) ->
     new ItemSpan(item)
@@ -286,8 +288,10 @@ class ItemBuffer extends LineBuffer
 
   insertSpans: (spanIndex, itemSpans) ->
     insertBefore = @getSpan(spanIndex)?.item or @hoistedItem.nextSibling
+    hoistedDepth = @getHoistedItem().depth
 
     for each in itemSpans
+      assert(each.item.depth > hoistedDepth, 'Span item depth must be greater then hoisted item depth')
       @itemsToItemSpansMap.set(each.item, each)
 
     unless @isUpdatingIndex
