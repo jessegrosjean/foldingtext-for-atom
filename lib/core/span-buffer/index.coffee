@@ -30,11 +30,17 @@ class SpanBuffer extends SpanBranch
       @emitter = emitter = new Emitter
     emitter
 
+  onDidBeginChanges: (callback) ->
+    @_getEmitter().on 'did-begin-changes', callback
+
   onWillChange: (callback) ->
     @_getEmitter().on 'will-change', callback
 
   onDidChange: (callback) ->
     @_getEmitter().on 'did-change', callback
+
+  onDidEndChanges: (callback) ->
+    @_getEmitter().on 'did-end-changes', callback
 
   onDidDestroy: (callback) ->
     @_getEmitter().on 'did-destroy', callback
@@ -48,9 +54,13 @@ class SpanBuffer extends SpanBranch
 
   beginChanges: ->
     @changing++
+    if @changing is 1
+      @emitter?.emit('did-begin-changes')
 
   endChanges: ->
     @changing--
+    if @changing is 0
+      @emitter?.emit('did-end-changes')
 
   ###
   Section: Characters
