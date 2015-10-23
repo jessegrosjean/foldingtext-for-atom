@@ -94,7 +94,6 @@ class Outline
     @emitter = new Emitter
 
     @syncingToAttributes = 0
-    @syncingToBody = 0
     @syncRules = null
 
     @loaded = false
@@ -655,18 +654,15 @@ class Outline
   syncAttributeToBody: (item, name, value, oldValue) ->
     return unless @syncRules
     unless @syncingToAttributes
-      @syncingToBody++
       for each in @syncRules
         each.syncAttributeToBody(item, name, value, oldValue)
-      @syncingToBody--
 
   syncBodyToAttributes: (item, oldBody) ->
     return unless @syncRules
-    unless @syncingToBody
-      @syncingToAttributes++
-      for each in @syncRules
-        each.syncBodyToAttributes(item, oldBody)
-      @syncingToAttributes--
+    @syncingToAttributes++
+    for each in @syncRules
+      each.syncBodyToAttributes(item, oldBody)
+    @syncingToAttributes--
 
   registerAttributeBodySyncRule: (syncRule) ->
     unless @syncRules

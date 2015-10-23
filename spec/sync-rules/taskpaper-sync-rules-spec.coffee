@@ -14,10 +14,12 @@ describe 'TaskPaper Sync Rules', ->
     it 'should sync project sytax to data-type="project"', ->
       one.bodyString = 'my project:'
       one.getAttribute('data-type').should.equal('project')
+      one.bodyHighlightedAttributedString.toString().should.equal('(my project:)')
 
     it 'should sync task sytax to data-type="task"', ->
-      one.bodyString = '- my task:'
+      one.bodyString = '- my task'
       one.getAttribute('data-type').should.equal('task')
+      one.bodyHighlightedAttributedString.toString().should.equal('(-/link:"toggledone")( my task)')
 
     it 'should sync note sytax to data-type="note"', ->
       one.bodyString = 'my note'
@@ -29,6 +31,7 @@ describe 'TaskPaper Sync Rules', ->
       one.bodyString = '@jesse(washere) @moose'
       one.getAttribute('data-jesse').should.equal('washere')
       one.getAttribute('data-moose').should.equal('')
+      one.bodyHighlightedAttributedString.toString().should.equal('(@jesse/link:"@jesse"/tag:""/tagname:"data-jesse")((/tag:"")(washere/link:"@jesse = washere"/tag:""/tagvalue:"washere")()/tag:"")( )(@moose/link:"@moose"/tag:""/tagname:"data-moose")')
       one.bodyString = 'no tags here'
       expect(one.getAttribute('data-jesse')).toBeUndefined()
       expect(one.getAttribute('data-moose')).toBeUndefined()
@@ -57,14 +60,18 @@ describe 'TaskPaper Sync Rules', ->
     it 'should sync data-type="task" to task syntax', ->
       one.setAttribute('data-type', 'task')
       one.bodyString.should.equal('- one')
+      one.getAttribute('data-type').should.equal('task')
+      one.bodyHighlightedAttributedString.toString().should.equal('(-/link:"toggledone")( one)')
 
     it 'should sync data-type="project" to project syntax', ->
       one.setAttribute('data-type', 'project')
       one.bodyString.should.equal('one:')
+      one.getAttribute('data-type').should.equal('project')
 
     it 'should sync data-type="note" to note syntax', ->
       one.setAttribute('data-type', 'note')
       one.bodyString.should.equal('one')
+      one.getAttribute('data-type').should.equal('note')
 
     it 'should sync between multiple data-types', ->
       one.setAttribute('data-type', 'note')
@@ -89,6 +96,12 @@ describe 'TaskPaper Sync Rules', ->
       one.bodyString.should.equal('one @moose')
       one.setAttribute('data-moose', 'mouse')
       one.bodyString.should.equal('one @moose(mouse)')
+      one.bodyHighlightedAttributedString.toString().should.equal('(one )(@moose/link:"@moose"/tag:""/tagname:"data-moose")((/tag:"")(mouse/link:"@moose = mouse"/tag:""/tagvalue:"mouse")()/tag:"")')
+
+    it 'should sync data- attributes to tags and change type if type changes', ->
+      one.bodyString = 'one:'
+      one.setAttribute('data-moose', '')
+      one.getAttribute('data-type').should.equal('note')
 
     it 'should undo sync data- attributes to tags', ->
       one.setAttribute('data-type', 'project')
