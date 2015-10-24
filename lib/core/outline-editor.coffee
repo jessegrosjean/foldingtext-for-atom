@@ -164,13 +164,11 @@ class OutlineEditor
     hoistedItem = @getHoistedItem()
     if item isnt hoistedItem or force
       savedSelection = @getSelectedItemRange()
-      @nativeEditor.baseDepth = item.depth
+      @itemBuffer.beginChanges()
       @itemBuffer.setHoistedItem(item)
-      if not hoistedItem or hoistedItem.contains(item)
-        @setSelectedRange(location: 0, length: 0)
-      else
-        @setSelectedItemRange(savedSelection)
       @nativeEditor.setHoistedItem(item)
+      @setSelectedRange(location: 0, length: 0)
+      @itemBuffer.endChanges()
 
   ###
   Section: Matched Items
@@ -1135,11 +1133,6 @@ class NativeEditor
     get: ->
       @_query
     set: (@_query) ->
-
-  Object.defineProperty @::, 'baseDepth',
-    get: ->
-      @_baseDepth
-    set: (@_baseDepth) ->
 
   Object.defineProperty @::, 'selectedRange',
     get: ->
