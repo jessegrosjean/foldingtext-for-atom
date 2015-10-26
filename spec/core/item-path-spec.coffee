@@ -31,7 +31,9 @@ describe 'ItemPath', ->
 
   describe 'Set Grouping', ->
     it 'should group path set operations with parentheses', ->
+      console.profile('Parse Path')
       outline.evaluateItemPath('(//one union //two union //three except //two)').should.eql [one, two, three]
+      console.profileEnd()
       outline.evaluateItemPath('((//one union //two union //three) except //two)').should.eql [one, three]
 
     it 'should allow slicing after set group', ->
@@ -52,7 +54,7 @@ describe 'ItemPath', ->
 
   describe 'Axes', ->
     it 'should parse error if axis doesnt have a predicate', ->
-      ItemPath.parse('/ancestor-or-self::').error.column.should.equal(20)
+      ItemPath.parse('/ancestor-or-self::').error.location.start.offset.should.equal(19)
 
     it 'should evaluate ancestor-or-self axis for ancestor-or-self::', ->
       three.evaluateItemPath('ancestor-or-self::*').should.eql [root, one, two, three]
@@ -324,21 +326,6 @@ describe 'ItemPath', ->
         outline.evaluateItemPath('//find in sanskrit पशुपतिरपि तान्यहानि कृच्छ्राद्').should.eql([sanskrit])
         outline.evaluateItemPath('//find in chinese 其為人也孝弟 而好犯上者 鮮矣').should.eql([chinese])
         outline.evaluateItemPath('//find in tamil ஸ்றீனிவாஸ ராமானுஜன் ஐயங்கார்').should.eql([tamil])
-
-    describe 'Tag Syntax', ->
-      beforeEach ->
-        one.setAttribute 'data-tags', ['one', 'two']
-        three.setAttribute 'data-tags', ['one', 'two', 'three']
-
-      it 'should find all tagged items with "#"', ->
-        outline.evaluateItemPath('#').should.eql [one, three]
-
-      it 'should find tagged items', ->
-        outline.evaluateItemPath('#one').should.eql [one, three]
-        outline.evaluateItemPath('#three').should.eql [three]
-
-      it 'should not match partial tags', ->
-        outline.evaluateItemPath('#on').should.eql []
 
   describe 'Slicing', ->
     it 'should slice from start', ->

@@ -28,13 +28,13 @@ describe 'TaskPaper Sync Rules', ->
     it 'should sync tags to data- attributes', ->
       one.bodyString = '@jesse(washere)'
       one.getAttribute('data-jesse').should.equal('washere')
-      one.bodyString = '@jesse(washere) @moose'
+      one.bodyString = '@jesse(washere) @2'
       one.getAttribute('data-jesse').should.equal('washere')
-      one.getAttribute('data-moose').should.equal('')
-      one.bodyHighlightedAttributedString.toString().should.equal('(@jesse/link:"@jesse"/tag:""/tagname:"data-jesse")((/tag:"")(washere/link:"@jesse = washere"/tag:""/tagvalue:"washere")()/tag:"")( )(@moose/link:"@moose"/tag:""/tagname:"data-moose")')
+      one.getAttribute('data-2').should.equal('')
+      one.bodyHighlightedAttributedString.toString().should.equal('(@jesse/link:"@jesse"/tag:""/tagname:"data-jesse")((/tag:"")(washere/link:"@jesse = washere"/tag:""/tagvalue:"washere")()/tag:"")( )(@2/link:"@2"/tag:""/tagname:"data-2")')
       one.bodyString = 'no tags here'
       expect(one.getAttribute('data-jesse')).toBeUndefined()
-      expect(one.getAttribute('data-moose')).toBeUndefined()
+      expect(one.getAttribute('data-2')).toBeUndefined()
 
     it 'should undo sync body text to attribute', ->
       one.bodyString = '@jesse(washere)'
