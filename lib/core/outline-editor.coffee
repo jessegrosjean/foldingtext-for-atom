@@ -1078,6 +1078,51 @@ class OutlineEditor
     outline.endChanges()
     undoManager.enableUndoRegistration()
 
+  encodeRestorableState: ->
+    each = @itemBuffer.outline.root.firstChild
+    hoistedItem = @getHoistedItem()
+    collapsedLines = []
+    line = 0
+
+    while each
+      if @isCollapsed(each)
+        collapsedLines.push(line)
+      if each is hoistedItem
+        hoistedLine = line
+      each = each.nextItem
+      line++
+
+    JSON.stringify
+      hoistedLine: hoistedLine
+      collapsedLines: collapsedLines
+
+  restoreState: (string) ->
+    try
+      state = JSON.parse(string)
+    catch e
+      console.log(e)
+
+    if state
+      @itemBuffer.beginChanges()
+
+      hoistedLine = state.hoistedLine
+      collapsedLines = state.collapsedLines ? []
+      each = @itemBuffer.outline.root.firstChild
+      next = collapsedLines.shift()
+      collapsedItems = []
+      line = 0
+      while each
+        if line is next
+          collapsedItems.push(each)
+          next = collapsedLines.shift()
+        if line is hoistedLine
+          @setHoistedItem(each)
+        each = each.nextItem
+        line++
+
+      @setCollapsed(collapsedItems)
+      @itemBuffer.endChanges()
+
   ###
   Section: Commands
   ###
