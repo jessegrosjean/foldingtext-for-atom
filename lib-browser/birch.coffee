@@ -6,3 +6,4 @@ window.birch = module.exports =
   OutlineEditor: require '../lib/core/outline-editor'
   ItemSerializer: require '../lib/core/item-serializer'
   ItemPath: require '../lib/core/item-path'
+  TaskPaper: require '../lib/taskpaper'

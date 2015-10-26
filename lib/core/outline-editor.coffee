@@ -1,5 +1,3 @@
-TaskPaper = require '../taskpaper'
-
 OutlineEditorElement = require './outline-editor-element'
 ItemSerializer = require './item-serializer'
 {CompositeDisposable} = require 'atom'
@@ -23,8 +21,6 @@ class OutlineEditor
     @nativeEditor ?= new NativeEditor()
     @searchQuery = ''
     @expandedBySearch = null
-
-    TaskPaper.initOutline(outline)
 
     @subscriptions.add @itemBuffer.onDidBeginChanges =>
       @nativeEditor.beginEditing()
