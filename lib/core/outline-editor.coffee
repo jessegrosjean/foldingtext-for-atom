@@ -602,6 +602,11 @@ class OutlineEditor
     range = @getSelectedRange()
     @itemBuffer.getItemRange(range.location, range.length)
 
+  getSelectedText: ->
+    range = @getSelectedRange()
+    text = @itemBuffer.getString()
+    text.substr(range.location, range.length)
+
   selectItem: ->
     @setSelectedItemRange(@getSelectedItemRange().rangeByExtendingToItem())
 
