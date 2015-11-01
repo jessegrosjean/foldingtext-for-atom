@@ -1045,12 +1045,17 @@ class OutlineEditor
     items = Item.flattenItemHiearchy(items)
     firstItem = items[0]
     insertAt = @itemBuffer.getSpanInfoAtLocation(location, true)
-    insertAtItem = insertAt.span.item
+    insertAtItem = insertAt?.span.item
+    insertAtLocation = insertAt?.location ? 0
     nextSelection = {}
 
+    unless insertAtItem
+      insertAtItem = outline.createItem()
+      @getHoistedItem().appendChild(insertAtItem)
+
     if items.length > 1
-      trailingBody = insertAtItem.bodySubattributedString(insertAt.location, -1)
-      insertAtItem.replaceBodyRange(insertAt.location, -1, firstItem.bodyAttributedString)
+      trailingBody = insertAtItem.bodySubattributedString(insertAtLocation, -1)
+      insertAtItem.replaceBodyRange(insertAtLocation, -1, firstItem.bodyAttributedString)
       items = items.slice(1)
       lastItem = items[items.length - 1]
 
@@ -1062,9 +1067,9 @@ class OutlineEditor
       nextSelection.item = lastItem
       nextSelection.location = lastItem.bodyString.length - trailingBody.length
     else
-      insertAtItem.replaceBodyRange(insertAt.location, 0, firstItem.bodyAttributedString)
+      insertAtItem.replaceBodyRange(insertAtLocation, 0, firstItem.bodyAttributedString)
       nextSelection.item = insertAtItem
-      nextSelection.location = insertAt.location + firstItem.bodyString.length
+      nextSelection.location = insertAtLocation + firstItem.bodyString.length
 
     @setSelectedItemRange(nextSelection.item, nextSelection.location)
 
