@@ -12,8 +12,8 @@ class RunBuffer extends SpanBuffer
   getRun: (index) ->
     @getSpan(index)
 
-  getRunBuffer: (child) ->
-    @getSpanBuffer(child)
+  getRunIndex: (child) ->
+    @getSpanIndex(child)
 
   getRuns: (start, count) ->
     @getSpans(start, count)

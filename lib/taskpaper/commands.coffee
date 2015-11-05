@@ -26,9 +26,32 @@ archiveDone = (editor) ->
   undoManager.endUndoGrouping()
   editor.setSelectedItemRange(selectedItemRange)
 
+clearTags = (editor) ->
+  outline = editor.itemBuffer.outline
+  undoManager = outline.undoManager
+  selectedItemRange = editor.getSelectedItemRange()
+  startItem = selectedItemRange.startItem
+  endItem = selectedItemRange.endItem
+
+  undoManager.beginUndoGrouping()
+  outline.beginChanges()
+
+  each = startItem
+  end = endItem.nextItem
+  while each isnt end
+    for eachName in each.attributeNames
+      if eachName.indexOf('data-') is 0 and eachName isnt 'data-type'
+        each.removeAttribute(eachName)
+    each = each.nextItem
+
+  outline.endChanges()
+  undoManager.endUndoGrouping()
+  editor.setSelectedItemRange(selectedItemRange)
+
 atom.commands.add 'outline-editor', stopEventPropagation
   'outline-editor:toggle-done': -> @editor.toggleAttribute('data-done')
   'outline-editor:toggle-today': -> @editor.toggleAttribute('data-today')
+  'outline-editor:clear-tags': -> clearTags(@editor)
   'outline-editor:archive-done': -> archiveDone(@editor)
   'outline-editor:new-task': ->
     task = @editor.insertItem('- New Task')

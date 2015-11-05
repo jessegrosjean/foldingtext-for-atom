@@ -62,7 +62,7 @@ class AttributedString
     if text instanceof AttributedString
       insertString = text.string
       if @runBuffer
-        textRunBuffer = text._getRunBuffer()
+        textRunBuffer = text._getRunIndex()
       else
         textRunBuffer = text.runBuffer
     else
@@ -79,13 +79,13 @@ class AttributedString
       insertRuns = []
       textRunBuffer.iterateRuns 0, textRunBuffer.getRunCount(), (run) ->
         insertRuns.push(run.clone())
-      @_getRunBuffer().replaceSpansFromLocation(location, insertRuns)
+      @_getRunIndex().replaceSpansFromLocation(location, insertRuns)
 
   ###
   Attributes
   ###
 
-  _getRunBuffer: ->
+  _getRunIndex: ->
     unless runBuffer = @runBuffer
       @runBuffer = runBuffer = new RunBuffer
       @runBuffer.insertString(0, @string.toString())
@@ -126,13 +126,13 @@ class AttributedString
       undefined
 
   setAttributesInRange: (attributes, index, length) ->
-    @_getRunBuffer().setAttributesInRange(attributes, index, length)
+    @_getRunIndex().setAttributesInRange(attributes, index, length)
 
   addAttributeInRange: (attribute, value, index, length) ->
-    @_getRunBuffer().addAttributeInRange(attribute, value, index, length)
+    @_getRunIndex().addAttributeInRange(attribute, value, index, length)
 
   addAttributesInRange: (attributes, index, length) ->
-    @_getRunBuffer().addAttributesInRange(attributes, index, length)
+    @_getRunIndex().addAttributesInRange(attributes, index, length)
 
   removeAttributeInRange: (attribute, index, length) ->
     if @runBuffer
@@ -155,7 +155,7 @@ class AttributedString
       insertRuns = []
       @runBuffer.iterateRuns slice.spanIndex, slice.count, (run) ->
         insertRuns.push(run.clone())
-      subattributedString._getRunBuffer().replaceSpansFromLocation(0, insertRuns)
+      subattributedString._getRunIndex().replaceSpansFromLocation(0, insertRuns)
     subattributedString
 
   ###

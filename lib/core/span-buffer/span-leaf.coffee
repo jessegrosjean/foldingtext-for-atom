@@ -46,8 +46,8 @@ class SpanLeaf
   getSpan: (index) ->
     @children[index]
 
-  getSpanBuffer: (child) ->
-    index = @indexParent?.getSpanBuffer(this) or 0
+  getSpanIndex: (child) ->
+    index = @indexParent?.getSpanIndex(this) or 0
     if child
       index += @children.indexOf(child)
     index

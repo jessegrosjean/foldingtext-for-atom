@@ -100,7 +100,7 @@ class ItemBuffer extends LineBuffer
 
     for each in removedDescendants
       if itemSpan = @getItemSpanForItem(each)
-        removeStartIndex ?= itemSpan.getSpanBuffer()
+        removeStartIndex ?= itemSpan.getSpanIndex()
         removeCount++
       else if removeStartIndex
         removeRangeIfDefined()
@@ -128,13 +128,13 @@ class ItemBuffer extends LineBuffer
       while insertBeforeItem and not (insertBeforeLine = @getItemSpanForItem(insertBeforeItem))
         insertBeforeItem = insertBeforeItem.nextItem
       if insertBeforeLine
-        insertIndex = insertBeforeLine.getSpanBuffer()
+        insertIndex = insertBeforeLine.getSpanIndex()
       else
         insertAfterItem = addedItemSpans[0].item.previousItem
         while insertAfterItem and not (insertAfterLine = @getItemSpanForItem(insertAfterItem))
           insertAfterItem = insertAfterItem.nextItem
         if insertAfterLine
-          insertIndex = insertAfterLine.getSpanBuffer() + 1
+          insertIndex = insertAfterLine.getSpanIndex() + 1
         else
           insertIndex = @getLineCount()
       @insertSpans(insertIndex, addedItemSpans)

@@ -143,8 +143,9 @@ class OutlineEditor
   Section: Hoisted Item
   ###
 
-  hoist: ->
-    if item = @getSelectedItems()[0]
+  hoist: (item) ->
+    item ?= @getSelectedItems()[0]
+    if item
       @setHoistedItem(item)
 
   unhoist: ->
@@ -157,6 +158,7 @@ class OutlineEditor
     if _.isString(item)
       item = @itemBuffer.outline.getItemForID(item)
 
+    item ?= @itemBuffer.outline.root
     hoistedItem = @getHoistedItem()
     if item isnt hoistedItem or force
       savedSelection = @getSelectedItemRange()
@@ -361,11 +363,11 @@ class OutlineEditor
         while each isnt end
           insertLines.push(@itemBuffer.createSpanForItem(each))
           each = @getNextVisibleItem(each)
-        @itemBuffer.insertLines(itemSpan.getSpanBuffer() + 1, insertLines)
+        @itemBuffer.insertLines(itemSpan.getSpanIndex() + 1, insertLines)
 
   _removeDescendantLines: (item) ->
     if itemSpan = @itemBuffer.getItemSpanForItem(item)
-      start = itemSpan.getSpanBuffer() + 1
+      start = itemSpan.getSpanIndex() + 1
       end = start
       while item.contains(@itemBuffer.getLine(end)?.item)
         end++
@@ -849,14 +851,14 @@ class OutlineEditor
     if not _.isArray(items)
       items = [items]
 
-    selectedItemRange = startItem: @getPreviousVisibleItem(items[0]), startOffset: -1
+    spanIndex = @itemBuffer.getItemSpanForItem(items[0]).getSpanIndex()
     outline = @itemBuffer.outline
     undoManager = outline.undoManager
     undoManager.beginUndoGrouping()
     outline.beginChanges()
     outline.removeItems(items)
     outline.endChanges()
-    @setSelectedItemRange(selectedItemRange)
+    @setSelectedItemRange(@itemBuffer.getSpan(spanIndex).item)
     undoManager.endUndoGrouping()
 
   groupBranches: (items) ->

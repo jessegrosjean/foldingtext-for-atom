@@ -12,8 +12,8 @@ class LineBuffer extends SpanBuffer
   getLine: (index) ->
     @getSpan(index)
 
-  getLineBuffer: (child) ->
-    @getSpanBuffer(child)
+  getLineIndex: (child) ->
+    @getSpanIndex(child)
 
   getLines: (start, count) ->
     @getSpans(start, count)
