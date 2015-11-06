@@ -1150,11 +1150,14 @@ class OutlineEditor
   ###
 
   clickedOnLink: (item, link) ->
-    if link is 'toggledone'
+    if link is 'button://toggledone'
       @toggleAttribute('data-done', '', [item])
+      true
+    else if link.indexOf('filter://') is 0
+      @setQuery(link.substring(9))
+      true
     else
-      @setQuery(link)
-    true
+      false
 
   ###
   Section: Item Editor State

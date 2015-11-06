@@ -1,4 +1,5 @@
 { tagRegex, regexForTag, tagRange, encodeTag, reservedTags, parseTags } = require '../core/serializations/text'
+smartLinks = require './smart-links'
 taskRegex = /^([\-+*])\s/
 projectRegex = /:$/
 
@@ -77,14 +78,21 @@ syncBodyToAttributes = (item, oldBody) ->
     if newTags[tag] isnt oldTags[tag]
       item.setAttribute(tag, newTags[tag])
 
+emailRegex = /\b[A-Z0-9\._%+\-]+@[A-Z0-9\.\-]+\.[A-Z]{2,4}\b/gi
+webRegex = /\b(?:([a-z][\w\-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.])(?:[^\s()<>]+|\([^\s()<>]+\))+(?:\([^\s()<>]+\)|[^`!()\[\]{};:'".,<>?«»“”‘’\s]))/gi
+
 highlightItemBody = (item, type, tagMatches) ->
-  type ?= parseType(item.bodyString, item)
+  bodyString = item.bodyString
+
+  type ?= parseType(bodyString, item)
   if type is 'task'
-    item.addBodyHighlightAttributeInRange('link', 'toggledone', 0, 1)
+    item.addBodyHighlightAttributeInRange('buttonlink', 'button://toggledone', 0, 1)
+
+  smartLinks.highlightLinks(item)
 
   unless tagMatches
     tagMatches = []
-    parseTags item.bodyString, (tag, value, match) ->
+    parseTags bodyString, (tag, value, match) ->
       tagMatches.push
         tag: tag
         value: value
@@ -99,11 +107,11 @@ highlightItemBody = (item, type, tagMatches) ->
     length = match[0].length - leadingSpace.length
     item.addBodyHighlightAttributeInRange('tag', '', start, length)
     localTagName = tag.substr(5)
-    attributes = tagname: tag, link: "@#{localTagName}"
+    attributes = tagname: tag, filterlink: "filter://@#{localTagName}"
     item.addBodyHighlightAttributesInRange(attributes, start, match[2].length + 1)
 
     if value?.length
-      attributes = tagvalue: value, link: "@#{localTagName} = #{value}"
+      attributes = tagvalue: value, filterlink: "filter://@#{localTagName} = #{value}"
       item.addBodyHighlightAttributesInRange(attributes, start + 1 + match[2].length + 1, value.length)
 
 module.exports =
