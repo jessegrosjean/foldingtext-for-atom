@@ -7,3 +7,4 @@ window.birch = module.exports =
   ItemSerializer: require '../lib/core/item-serializer'
   ItemPath: require '../lib/core/item-path'
   TaskPaper: require '../lib/taskpaper'
+  fuzzaldrinPlus: require 'fuzzaldrin-plus'

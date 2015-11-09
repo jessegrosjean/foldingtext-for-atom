@@ -33,7 +33,7 @@
   "dependencies": {
     "clear-cut": "^2.0.1",
     "fast-diff": "^1.0.0",
-    "fuzzaldrin": "^2.1.0",
+    "fuzzaldrin-plus": "^0.2.0",
     "matches-selector": "^1.0.0",
     "promise": "^7.0.4",
     "q": "^1.1.2",
