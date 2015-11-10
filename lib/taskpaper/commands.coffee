@@ -1,7 +1,8 @@
 {stopEventPropagation} = require '../core/util/dom'
 Item = require '../core/item'
+moment = require 'moment'
 
-archiveDone = (editor) ->
+archiveDone = (e, editor) ->
   outline = editor.itemBuffer.outline
   undoManager = outline.undoManager
   archive = outline.evaluateItemPath("//@text = Archive:")[0]
@@ -9,6 +10,8 @@ archiveDone = (editor) ->
   startItem = selectedItemRange.startItem
   endItem = selectedItemRange.endItem
   doneItems = Item.getCommonAncestors(outline.evaluateItemPath("//@done except //@text = Archive://@done"))
+  removeExtraTags = e?.detail.removeExtraTags
+  addProjectTag = e?.detail.addProjectTag
 
   undoManager.beginUndoGrouping()
   outline.beginChanges()
@@ -17,6 +20,18 @@ archiveDone = (editor) ->
     outline.root.appendChild(archive = outline.createItem('Archive:'))
 
   for each in doneItems
+    if removeExtraTags
+      for eachName in each.attributeNames
+        if eachName.indexOf('data-') is 0 and eachName isnt 'data-type' and eachName isnt 'data-done'
+          each.removeAttribute(eachName)
+
+    if addProjectTag
+      ancestor = each.parent
+      while ancestor and ancestor.getAttribute('data-type') isnt 'project'
+        ancestor = ancestor.parent
+      if ancestor
+        each.setAttribute('data-project', ancestor.bodyString.substr(0, ancestor.bodyString.length - 1))
+
     if (each is startItem or each.contains(startItem)) or (each is endItem or each.contains(endItem))
       selectedItemRange = startItem: editor.getPreviousVisibleItem(startItem), startOffset: -1
 
@@ -49,16 +64,19 @@ clearTags = (editor) ->
   editor.setSelectedItemRange(selectedItemRange)
 
 atom.commands.add 'outline-editor', stopEventPropagation
-  'outline-editor:toggle-done': -> @editor.toggleAttribute('data-done')
-  'outline-editor:toggle-today': -> @editor.toggleAttribute('data-today')
-  'outline-editor:clear-tags': -> clearTags(@editor)
-  'outline-editor:archive-done': -> archiveDone(@editor)
-  'outline-editor:new-task': ->
+  'outline-editor:toggle-done': (e) ->
+    if e.detail.includeDate
+      value = moment().format('YYYY-MM-DD')
+    @editor.toggleAttribute('data-done', value)
+  'outline-editor:toggle-today': (e) -> @editor.toggleAttribute('data-today')
+  'outline-editor:clear-tags': (e) -> clearTags(@editor)
+  'outline-editor:archive-done': (e) -> archiveDone(e, @editor)
+  'outline-editor:new-task': (e) ->
     task = @editor.insertItem('- New Task')
     @editor.setSelectedItemRange(task, 2, task, task.bodyString.length)
-  'outline-editor:new-note': ->
+  'outline-editor:new-note': (e) ->
     note = @editor.insertItem('New Note')
     @editor.setSelectedItemRange(note, 0, note, note.bodyString.length)
-  'outline-editor:new-project': ->
+  'outline-editor:new-project': (e) ->
     project = @editor.insertItem('New Project:')
     @editor.setSelectedItemRange(project, 0, project, project.bodyString.length - 1)
