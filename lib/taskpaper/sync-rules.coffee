@@ -57,9 +57,6 @@ syncBodyToAttributes = (item, oldBody) ->
   type = parseType(item.bodyString, item)
   item.setAttribute('data-type', type)
 
-  if type is 'task'
-    item.addBodyHighlightAttributeInRange('link', 'toggledone', 0, 1)
-
   oldTags = parseTags(oldBody)
   newTagMatches = []
   newTags = parseTags item.bodyString, (tag, value, match) ->
@@ -86,7 +83,7 @@ highlightItemBody = (item, type, tagMatches) ->
 
   type ?= parseType(bodyString, item)
   if type is 'task'
-    item.addBodyHighlightAttributeInRange('buttonlink', 'button://toggledone', 0, 1)
+    item.addBodyHighlightAttributeInRange('url', 'button://toggledone', 0, 1)
 
   smartLinks.highlightLinks(item)
 
@@ -107,11 +104,11 @@ highlightItemBody = (item, type, tagMatches) ->
     length = match[0].length - leadingSpace.length
     item.addBodyHighlightAttributeInRange('tag', '', start, length)
     localTagName = tag.substr(5)
-    attributes = tagname: tag, filterlink: "filter://@#{localTagName}"
+    attributes = tagname: tag, url: "filter://@#{localTagName}"
     item.addBodyHighlightAttributesInRange(attributes, start, match[2].length + 1)
 
     if value?.length
-      attributes = tagvalue: value, filterlink: "filter://@#{localTagName} = #{value}"
+      attributes = tagvalue: value, url: "filter://@#{localTagName} = #{value}"
       item.addBodyHighlightAttributesInRange(attributes, start + 1 + match[2].length + 1, value.length)
 
 module.exports =

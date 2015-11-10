@@ -11,7 +11,7 @@ highlightLinks = (item) ->
       linkText = bodyString.substring(linkIndex, linkIndex + match[0].length)
       # Skip if scheme, will be caught by URL parse
       unless bodyString[linkIndex - 1] is ':'
-        item.addBodyHighlightAttributesInRange(weblink: 'mailto:' + linkText, linkIndex, linkText.length)
+        item.addBodyHighlightAttributesInRange(url: 'mailto:' + linkText, linkIndex, linkText.length)
 
   # URLS
   while match = webRegex.exec(bodyString)
@@ -20,7 +20,7 @@ highlightLinks = (item) ->
     linkTarget = linkText
     if linkText.indexOf('www') is 0
       linkTarget = 'http://' + linkText
-    item.addBodyHighlightAttributesInRange(weblink: linkTarget, linkIndex, linkText.length)
+    item.addBodyHighlightAttributesInRange(url: linkTarget, linkIndex, linkText.length)
 
 module.exports =
   highlightLinks: highlightLinks

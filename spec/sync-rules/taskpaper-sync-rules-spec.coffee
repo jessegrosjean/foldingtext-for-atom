@@ -19,7 +19,7 @@ describe 'TaskPaper Sync Rules', ->
     it 'should sync task sytax to data-type="task"', ->
       one.bodyString = '- my task'
       one.getAttribute('data-type').should.equal('task')
-      one.bodyHighlightedAttributedString.toString().should.equal('(-/link:"toggledone")( my task)')
+      one.bodyHighlightedAttributedString.toString().should.equal('(-/url:"button://toggledone")( my task)')
 
     it 'should sync note sytax to data-type="note"', ->
       one.bodyString = 'my note'
@@ -31,7 +31,7 @@ describe 'TaskPaper Sync Rules', ->
       one.bodyString = '@jesse(washere) @2'
       one.getAttribute('data-jesse').should.equal('washere')
       one.getAttribute('data-2').should.equal('')
-      one.bodyHighlightedAttributedString.toString().should.equal('(@jesse/link:"@jesse"/tag:""/tagname:"data-jesse")((/tag:"")(washere/link:"@jesse = washere"/tag:""/tagvalue:"washere")()/tag:"")( )(@2/link:"@2"/tag:""/tagname:"data-2")')
+      one.bodyHighlightedAttributedString.toString().should.equal('(@jesse/tag:""/tagname:"data-jesse"/url:"filter://@jesse")((/tag:"")(washere/tag:""/tagvalue:"washere"/url:"filter://@jesse = washere")()/tag:"")( )(@2/tag:""/tagname:"data-2"/url:"filter://@2")')
       one.bodyString = 'no tags here'
       expect(one.getAttribute('data-jesse')).toBeUndefined()
       expect(one.getAttribute('data-2')).toBeUndefined()
@@ -61,7 +61,7 @@ describe 'TaskPaper Sync Rules', ->
       one.setAttribute('data-type', 'task')
       one.bodyString.should.equal('- one')
       one.getAttribute('data-type').should.equal('task')
-      one.bodyHighlightedAttributedString.toString().should.equal('(-/link:"toggledone")( one)')
+      one.bodyHighlightedAttributedString.toString().should.equal('(-/url:"button://toggledone")( one)')
 
     it 'should sync data-type="project" to project syntax', ->
       one.setAttribute('data-type', 'project')
@@ -96,7 +96,7 @@ describe 'TaskPaper Sync Rules', ->
       one.bodyString.should.equal('one @moose')
       one.setAttribute('data-moose', 'mouse')
       one.bodyString.should.equal('one @moose(mouse)')
-      one.bodyHighlightedAttributedString.toString().should.equal('(one )(@moose/link:"@moose"/tag:""/tagname:"data-moose")((/tag:"")(mouse/link:"@moose = mouse"/tag:""/tagvalue:"mouse")()/tag:"")')
+      one.bodyHighlightedAttributedString.toString().should.equal('(one )(@moose/tag:""/tagname:"data-moose"/url:"filter://@moose")((/tag:"")(mouse/tag:""/tagvalue:"mouse"/url:"filter://@moose = mouse")()/tag:"")')
 
     it 'should sync data- attributes to tags and change type if type changes', ->
       one.bodyString = 'one:'
