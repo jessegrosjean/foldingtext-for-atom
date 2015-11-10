@@ -748,7 +748,8 @@ class OutlineEditor
 
     if items.length
       selectedItemRange = @getSelectedItemRange()
-      minDepth = @getHoistedItem().depth + 1
+      hoistedItem = @getHoistedItem()
+      minDepth = hoistedItem.depth + 1
       outline = @itemBuffer.outline
       undoManager = outline.undoManager
       firstItem = items[0]
@@ -778,7 +779,7 @@ class OutlineEditor
       expandItems = []
       disposable = outline.onDidChange (mutation) ->
         if mutation.type is Mutation.CHILDREN_CHANGED
-          if not (mutation.target in expandItems)
+          if not (mutation.target in expandItems or mutation.target is hoistedItem)
             expandItems.push mutation.target
 
       outline.removeItems(items)
