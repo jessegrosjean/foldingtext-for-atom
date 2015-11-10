@@ -633,7 +633,7 @@ class OutlineEditor
   Section: Insert
   ###
 
-  insertNewline: ->
+  insertNewline: (e) ->
     outline = @itemBuffer.outline
     undoManager = outline.undoManager
     undoManager.beginUndoGrouping()
@@ -648,8 +648,9 @@ class OutlineEditor
     startItem = selectedItemRange.startItem
     startItemSpan = @itemBuffer.getItemSpanForItem(startItem)
     startOffset = selectedItemRange.startOffset
-
-    match = startItem.bodyString.match(/(- )(.*)/)
+    autoformatLists = e?.detail?.autoformatLists
+    if autoformatLists
+      match = startItem.bodyString.match(/(- )(.*)/)
     prefix = match?[1] ? ''
     content = match?[2] ? startItem.bodyString
     lead = prefix.length
