@@ -51,6 +51,7 @@ class ItemPath
   ###
 
   evaluate: (item) ->
+    @now = new Date
     if @pathExpressionAST
       @evaluatePathExpression @pathExpressionAST, item
     else
@@ -315,7 +316,17 @@ class ItemPath
     else if modifier is 'n'
       parseFloat(value)
     else if modifier is 'd'
-      Date.parse(value) # weak
+      switch value
+        when 'tommorrow'
+          date = new Date(@now.getTime() + 24 * 60 * 60 * 1000)
+          date.setHours(0,0,0,0)
+          date.getTime()
+        when 'today'
+          date = new Date(@now)
+          date.setHours(0,0,0,0)
+          date.getTime()
+        else
+          Date.parse(value) # weak, returns number, need better parsing
     else
       value # case insensitive is default
 
