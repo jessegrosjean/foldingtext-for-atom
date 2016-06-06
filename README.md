@@ -1,3 +1,5 @@
+**NOTICE** This project is no longer active. Instead much of this work is beging applied to my app [TaskPaper for OS X](http://www.taskpaper.com). If Atom changes such that this project breaks in a major way, I expect that I'll fix it and make a new release. But generally I won't be working on this code.
+
 # FoldingText for Atom [![Build Status](https://travis-ci.org/FoldingText/foldingtext-for-atom.svg)](https://travis-ci.org/FoldingText/foldingtext-for-atom) [![Dependencies Status](https://david-dm.org/foldingtext/foldingtext-for-atom.svg)](https://david-dm.org/foldingtext/foldingtext-for-atom)
 
 For making lists in [Atom](https://atom.io). FoldingText is an outline editor with productivity features.
